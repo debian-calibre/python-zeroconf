@@ -1,8 +1,10 @@
 #!/usr/bin/make -f
 #DH_VERBOSE = 1
 
+#LC_ALL=C.UTF-8 Makes sure that it builds correctly with pbuilder
+
 %:
-	dh $@ --with python2,python3 --buildsystem=pybuild
+	LC_ALL=C.UTF-8 dh $@ --with python2,python3 --buildsystem=pybuild
 
 
 override_dh_auto_clean:
