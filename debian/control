@@ -1,0 +1,29 @@
+Source: python-zeroconf
+Section: python
+Priority: optional
+Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
+Uploaders: Ruben Undheim <ruben.undheim@gmail.com>
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               python-all,
+               python-setuptools,
+               python3-all,
+               python3-setuptools
+Standards-Version: 3.9.6
+X-Python-Version: all
+X-Python3-Version: >= 3.1
+Homepage: <insert the upstream URL, if relevant>
+Vcs-Browser: https://anonscm.debian.org/cgit/python-modules/packages/python-spur.git
+Vcs-Git: git://anonscm.debian.org/python-modules/packages/python-spur.git
+
+Package: python-zeroconf
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
+
+Package: python3-zeroconf
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

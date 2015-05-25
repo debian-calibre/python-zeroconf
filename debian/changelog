@@ -1,0 +1,5 @@
+python-zeroconf (0.17.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #786729)
+
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Mon, 25 May 2015 10:46:56 +0200
