@@ -7,7 +7,7 @@ python-zeroconf (0.17.2-1) unstable; urgency=low
     - In Python 3.4, the enum module is already present. Prevent any
       dependency on python3-enum34.
 
- -- Ruben Undheim <ruben.undheim@gmail.com>  Fri, 24 Jul 2015 16:43:51 +0200
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Tue, 25 Aug 2015 18:12:42 +0200
 
 python-zeroconf (0.17.1-1) unstable; urgency=low
 
