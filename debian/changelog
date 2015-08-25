@@ -1,6 +1,11 @@
 python-zeroconf (0.17.2-1) unstable; urgency=low
 
   * New upstream release
+  * debian/pydist-overrides:
+    - Map enum_compat to python-enum34
+  * debian/py3dist-overrides
+    - In Python 3.4, the enum module is already present. Prevent any
+      dependency on python3-enum34.
 
  -- Ruben Undheim <ruben.undheim@gmail.com>  Fri, 24 Jul 2015 16:43:51 +0200
 
