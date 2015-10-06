@@ -15,15 +15,17 @@ This is fork of pyzeroconf, Multicast DNS Service Discovery for Python,
 originally by Paul Scott-Murphy (https://github.com/paulsm/pyzeroconf),
 modified by William McBrine (https://github.com/wmcbrine/pyzeroconf).
 
-This fork is used in all of my TiVo-related projects: HME for Python
-(and therefore HME/VLC), Network Remote, Remote Proxy, and pyTivo.
-Before this, I was tracking the changes for zeroconf.py in three
-separate repos. I figured I should have an authoritative source.
+The original William McBrine's fork note::
 
-Although I make changes based on my experience with TiVos, I expect that
-they're generally applicable. This version also includes patches found
-on the now-defunct (?) Launchpad repo of pyzeroconf, and elsewhere
-around the net -- not always well-documented, sorry.
+    This fork is used in all of my TiVo-related projects: HME for Python
+    (and therefore HME/VLC), Network Remote, Remote Proxy, and pyTivo.
+    Before this, I was tracking the changes for zeroconf.py in three
+    separate repos. I figured I should have an authoritative source.
+    
+    Although I make changes based on my experience with TiVos, I expect that
+    they're generally applicable. This version also includes patches found
+    on the now-defunct (?) Launchpad repo of pyzeroconf, and elsewhere
+    around the net -- not always well-documented, sorry.
 
 Compatible with:
 
@@ -53,6 +55,12 @@ This project's versions follow the following pattern: MAJOR.MINOR.PATCH.
 * MAJOR version has been 0 so far
 * MINOR version is incremented on backward incompatible changes
 * PATCH version is incremented on backward compatible changes
+
+Status
+------
+
+There are some people using this package. I don't actively use it and as such
+any help I can offer with regard to any issues is very limited.
 
 
 How to get python-zeroconf?
@@ -106,6 +114,18 @@ See examples directory for more.
 
 Changelog
 =========
+
+0.17.4
+------
+
+* Fixed support for Linux kernel versions < 3.9 (thanks to Giovanni Harting
+  and Luckydonald, GitHub pull request #26)
+
+0.17.3
+------
+
+* Fixed DNSText repr on Python 3 (it'd crash when the text was longer than
+  10 bytes), thanks to Paulus Schoutsen for the patch, GitHub pull request #24
 
 0.17.2
 ------
