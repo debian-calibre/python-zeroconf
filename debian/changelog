@@ -1,4 +1,4 @@
-python-zeroconf (0.17.4-1) UNRELEASED; urgency=low
+python-zeroconf (0.17.4-1) unstable; urgency=low
 
   * New upstream release
 
