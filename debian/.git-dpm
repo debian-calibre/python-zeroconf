@@ -6,3 +6,6 @@
 python-zeroconf_0.17.4.orig.tar.gz
 ad06e8f202bcf2175627d085fba886b58af1116f
 28205
+debianTag="debian/%e%v"
+patchedTag="patched/%e%v"
+upstreamTag="upstream/%e%u"
