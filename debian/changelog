@@ -1,3 +1,9 @@
+python-zeroconf (0.17.4-1) UNRELEASED; urgency=low
+
+  * New upstream release
+
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Sat, 10 Oct 2015 08:50:44 +0200
+
 python-zeroconf (0.17.2-1) unstable; urgency=low
 
   * New upstream release
