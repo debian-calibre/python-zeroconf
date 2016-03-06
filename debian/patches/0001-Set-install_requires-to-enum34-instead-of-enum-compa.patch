@@ -1,0 +1,22 @@
+From eaa2a8ed38eaa8e15036974101f11cb95eec8db1 Mon Sep 17 00:00:00 2001
+From: Ruben Undheim <ruben.undheim@gmail.com>
+Date: Sun, 6 Mar 2016 10:26:23 +0100
+Subject: Set install_requires to enum34 instead of enum-compat
+
+---
+ setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index 54e05e1..653d963 100755
+--- a/setup.py
++++ b/setup.py
+@@ -51,7 +51,7 @@ setup(
+         'mDNS',
+     ],
+     install_requires=[
+-        'enum-compat',
++        'enum34',
+         'netifaces',
+         'six',
+     ],
