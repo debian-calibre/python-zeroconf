@@ -1,4 +1,4 @@
-python-zeroconf (0.17.4-2) UNRELEASED; urgency=medium
+python-zeroconf (0.17.4-2) unstable; urgency=medium
 
   * Added patch:
     - 0001-Set-install_requires-to-enum34-instead-of-enum-compa.patch
@@ -8,7 +8,7 @@ python-zeroconf (0.17.4-2) UNRELEASED; urgency=medium
   * Updated standards to 3.9.7 - no needed changes
   * Vcs-Git now using https
 
- -- Ruben Undheim <ruben.undheim@gmail.com>  Sun, 06 Mar 2016 10:30:25 +0100
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Sun, 06 Mar 2016 10:48:16 +0100
 
 python-zeroconf (0.17.4-1) unstable; urgency=low
 
