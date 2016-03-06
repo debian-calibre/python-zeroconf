@@ -53,7 +53,7 @@ setup(
         'mDNS',
     ],
     install_requires=[
-        'enum-compat',
+        'enum34',
         'netifaces',
         'six',
     ],
