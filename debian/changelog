@@ -1,3 +1,15 @@
+python-zeroconf (0.17.4-2) UNRELEASED; urgency=medium
+
+  * Added patch:
+    - 0001-Set-install_requires-to-enum34-instead-of-enum-compa.patch
+      makes sure that enum-compat is not listed in requires.txt
+  * Remove d/pydist-overrides. Not needed after adding patch.
+  * Updated d/py3dist-overrides to override enum34 to python3
+  * Updated standards to 3.9.7 - no needed changes
+  * Vcs-Git now using https
+
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Sun, 06 Mar 2016 10:30:25 +0100
+
 python-zeroconf (0.17.4-1) unstable; urgency=low
 
   * New upstream release
