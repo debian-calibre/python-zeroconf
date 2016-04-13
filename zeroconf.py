@@ -38,7 +38,7 @@ from six.moves import xrange
 
 __author__ = 'Paul Scott-Murphy, William McBrine'
 __maintainer__ = 'Jakub Stasiak <jakub@stasiak.at>'
-__version__ = '0.17.4'
+__version__ = '0.17.5'
 __license__ = 'LGPL'
 
 
@@ -790,7 +790,9 @@ class DNSCache(object):
         if not self.cache:
             return []
         else:
-            return reduce(lambda a, b: a + b, self.cache.values())
+            # copy the cache before running the reduce, to avoid size change during iteration
+            values = list(self.cache.values())
+            return reduce(lambda a, b: a + b, values)
 
 
 class Engine(threading.Thread):
@@ -972,7 +974,6 @@ class ServiceBrowser(threading.Thread):
         self.done = False
 
         self.zc.add_listener(self, DNSQuestion(self.type, _TYPE_PTR, _CLASS_IN))
-        self.start()
 
         self._service_state_changed = Signal()
 
@@ -995,6 +996,8 @@ class ServiceBrowser(threading.Thread):
 
         for h in handlers:
             self.service_state_changed.register_handler(h)
+
+        self.start()
 
     @property
     def service_state_changed(self):
@@ -1308,8 +1311,12 @@ def new_socket():
             if not err.errno == errno.ENOPROTOOPT:
                 raise
 
-    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
-    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
+    # OpenBSD needs the ttl and loop values for the IP_MULTICAST_TTL and
+    # IP_MULTICAST_LOOP socket options as an unsigned char.
+    ttl = struct.pack(b'B', 255)
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+    loop = struct.pack(b'B', 1)
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, loop)
 
     s.bind(('', _MDNS_PORT))
     return s
