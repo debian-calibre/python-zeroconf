@@ -1,3 +1,11 @@
+python-zeroconf (0.17.6-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/control:
+    - New standards version 3.9.8 - no changes
+
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Thu, 06 Oct 2016 19:05:02 +0200
+
 python-zeroconf (0.17.5-1) unstable; urgency=medium
 
   * New upstream release 
