@@ -2,10 +2,10 @@
 41fb1b4da7a4581010d2c7dad5342945f7db3cae
 41fb1b4da7a4581010d2c7dad5342945f7db3cae
 e694928afacaf099988e8b2c6f40df196df18245
-e694928afacaf099988e8b2c6f40df196df18245
-python-zeroconf_0.17.6.orig.tar.gz
-2aaa079ff2eecd8ab4f7d8f9f16ebeb76a18fc72
-31309
+8d604d4bb0cba8c3dcdc2cb60df2218d0739aed3
+python-zeroconf_0.18.0.orig.tar.gz
+bcd91740c0030a85753b9ce138cadd8e7a9482f9
+35543
 debianTag="debian/%e%v"
 patchedTag="patched/%e%v"
 upstreamTag="upstream/%e%u"
