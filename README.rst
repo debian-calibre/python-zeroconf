@@ -122,8 +122,21 @@ See examples directory for more.
 Changelog
 =========
 
-0.18.0 (not released yet)
--------------------------
+0.19.1
+------
+
+* Allowed installation with netifaces >= 0.10.6 (a bug that was concerning us
+  got fixed)
+
+0.19.0
+------
+
+* Technically backwards incompatible - restricted netifaces dependency version to
+  work around a bug, see https://github.com/jstasiak/python-zeroconf/issues/84 for
+  details
+
+0.18.0
+------
 
 * Dropped Python 2.6 support
 * Improved error handling inside code executed when Zeroconf object is being closed
