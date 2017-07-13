@@ -1,3 +1,10 @@
+python-zeroconf (0.19.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Upload to unstable
+
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Thu, 13 Jul 2017 19:42:34 +0000
+
 python-zeroconf (0.18.0-1~exp1) experimental; urgency=low
 
   * New upstream release
