@@ -2,6 +2,7 @@ python-zeroconf (0.19.1-1) unstable; urgency=low
 
   * New upstream release
   * Upload to unstable
+  * debian/control: New standards version 4.0.0 - no changes
 
  -- Ruben Undheim <ruben.undheim@gmail.com>  Thu, 13 Jul 2017 19:42:34 +0000
 
