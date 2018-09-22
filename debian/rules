@@ -10,5 +10,3 @@
 override_dh_auto_clean:
 	$(RM) -r .pybuild zeroconf.egg-info
 	dh_auto_clean
-
-
