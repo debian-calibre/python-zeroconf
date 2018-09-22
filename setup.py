@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, print_function
-
+#!/usr/bin/env python3
 from io import open
-
 from os.path import abspath, dirname, join
 
 from setuptools import setup
@@ -38,15 +35,10 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: MacOS :: MacOS X',
         'Topic :: Software Development :: Libraries',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
@@ -55,12 +47,7 @@ setup(
         'mDNS',
     ],
     install_requires=[
-        'enum-compat',
-        # netifaces 0.10.5 has a bug that results in all interfaces' netmasks
-        # to be 255.255.255.255 on Windows which breaks things. See:
-        # * https://github.com/jstasiak/python-zeroconf/issues/84
-        # * https://bitbucket.org/al45tair/netifaces/issues/39/netmask-is-always-255255255255
-        'netifaces!=0.10.5',
-        'six',
+        'ifaddr',
+        'typing;python_version<"3.5"'
     ],
 )

@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, print_function, unicode_literals
+#!/usr/bin/env python3
 
 import logging
 import socket
 import sys
 
-from zeroconf import __version__, ServiceInfo, Zeroconf
+from zeroconf import ServiceInfo, Zeroconf, __version__
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
@@ -30,9 +29,9 @@ if __name__ == '__main__':
         r.get_service_info("_http._tcp.local.", "ZOE._http._tcp.local.")))
     print("   Query done.")
     print("3. Testing query of own service...")
-    info = r.get_service_info("_http._tcp.local.", "My Service Name._http._tcp.local.")
-    assert info
-    print("   Getting self: %s" % (info,))
+    queried_info = r.get_service_info("_http._tcp.local.", "My Service Name._http._tcp.local.")
+    assert queried_info
+    print("   Getting self: %s" % (queried_info,))
     print("   Query done.")
     print("4. Testing unregister of service information...")
     r.unregister_service(info)

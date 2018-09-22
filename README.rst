@@ -43,9 +43,8 @@ Compared to some other Zeroconf/Bonjour/Avahi Python packages, python-zeroconf:
 Python compatibility
 --------------------
 
-* CPython 2.7, 3.3+
-* PyPy 2.2+ (possibly 1.9-2.1 as well)
-* PyPy3 2.4+
+* CPython 3.4+
+* PyPy3 5.8+
 
 Versioning
 ----------
@@ -82,11 +81,10 @@ Here's an example of browsing for a service:
 
 .. code-block:: python
 
-    from six.moves import input
     from zeroconf import ServiceBrowser, Zeroconf
     
     
-    class MyListener(object):
+    class MyListener:
     
         def remove_service(self, zeroconf, type, name):
             print("Service %s removed" % (name,))
@@ -121,6 +119,42 @@ See examples directory for more.
 
 Changelog
 =========
+
+0.21.3
+------
+
+* This time really allowed incoming service names to contain underscores (patch released
+  as part of 0.20.0 was defective)
+
+0.21.2
+------
+
+* Fixed import-time typing-related TypeError when older typing version is used
+
+0.21.1
+------
+
+* Fixed installation on Python 3.4 (we use typing now but there was no explicit dependency on it)
+
+0.21.0
+------
+
+* Added an error message when importing the package using unsupported Python version
+* Fixed TTL handling for published service
+* Implemented unicast support
+* Fixed WSL (Windows Subsystem for Linux) compatibility
+* Fixed occassional UnboundLocalError issue
+* Fixed UTF-8 multibyte name compression
+* Switched from netifaces to ifaddr (pure Python)
+* Allowed incoming service names to contain underscores
+
+0.20.0
+------
+
+* Dropped support for Python 2 (this includes PyPy) and 3.3
+* Fixed some class' equality operators
+* ServiceBrowser entries are being refreshed when 'stale' now
+* Cache returns new records first now instead of last
 
 0.19.1
 ------
