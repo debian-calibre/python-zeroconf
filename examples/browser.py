@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, print_function, unicode_literals
+#!/usr/bin/env python3
 
 """ Example of browsing for a service (in this case, HTTP) """
 
@@ -7,17 +6,20 @@ import logging
 import socket
 import sys
 from time import sleep
+from typing import cast
 
 from zeroconf import ServiceBrowser, ServiceStateChange, Zeroconf
 
 
-def on_service_state_change(zeroconf, service_type, name, state_change):
+def on_service_state_change(
+    zeroconf: Zeroconf, service_type: str, name: str, state_change: ServiceStateChange,
+) -> None:
     print("Service %s of type %s state changed: %s" % (name, service_type, state_change))
 
     if state_change is ServiceStateChange.Added:
         info = zeroconf.get_service_info(service_type, name)
         if info:
-            print("  Address: %s:%d" % (socket.inet_ntoa(info.address), info.port))
+            print("  Address: %s:%d" % (socket.inet_ntoa(cast(bytes, info.address)), cast(int, info.port)))
             print("  Weight: %d, priority: %d" % (info.weight, info.priority))
             print("  Server: %s" % (info.server,))
             if info.properties:
