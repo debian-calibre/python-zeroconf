@@ -6,6 +6,21 @@
 %:
 	LC_ALL=C.UTF-8 dh $@ --with python2,python3 --buildsystem=pybuild
 
+override_dh_auto_clean:
+	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --clean
+	PYBUILD_VERSIONS="3" pybuild --clean
+
+override_dh_auto_build:
+	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --build
+	PYBUILD_VERSIONS="3" pybuild --build
+
+override_dh_auto_test:
+	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --test
+	PYBUILD_VERSIONS="3" pybuild --test
+
+override_dh_auto_install:
+	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --install
+	PYBUILD_VERSIONS="3" pybuild --install
 
 override_dh_auto_clean:
 	$(RM) -r .pybuild zeroconf.egg-info
