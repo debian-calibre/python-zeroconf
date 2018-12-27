@@ -3,25 +3,33 @@
 
 #LC_ALL=C.UTF-8 Makes sure that it builds correctly with pbuilder
 
+PYTHON3VERSIONS := $(shell py3versions -s -v)
+PYTHON2VERSIONS := $(shell pyversions -s -v)
+
 %:
 	LC_ALL=C.UTF-8 dh $@ --with python2,python3 --buildsystem=pybuild
 
 override_dh_auto_clean:
-	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --clean
-	PYBUILD_VERSIONS="3" pybuild --clean
 
 override_dh_auto_build:
-	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --build
-	PYBUILD_VERSIONS="3" pybuild --build
+	cd debian/python2_old && PYBUILD_VERSIONS="$(PYTHON2VERSIONS)" pybuild --build
+	PYBUILD_VERSIONS="$(PYTHON3VERSIONS)" pybuild --build
 
 override_dh_auto_test:
-	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --test
-	PYBUILD_VERSIONS="3" pybuild --test
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	cd debian/python2_old && PYBUILD_VERSIONS="$(PYTHON2VERSIONS)" pybuild --test
+	PYBUILD_VERSIONS="$(PYTHON3VERSIONS)" pybuild --test
+endif
 
 override_dh_auto_install:
-	cd debian/python2_old && PYBUILD_VERSIONS="2" pybuild --install
-	PYBUILD_VERSIONS="3" pybuild --install
+	cd debian/python2_old && PYBUILD_VERSIONS="$(PYTHON2VERSIONS)" pybuild --install
+	PYBUILD_VERSIONS="$(PYTHON3VERSIONS)" pybuild --install
 
 override_dh_auto_clean:
-	$(RM) -r .pybuild zeroconf.egg-info
 	dh_auto_clean
+	cd debian/python2_old && PYBUILD_VERSIONS="$(PYTHON2VERSIONS)" pybuild --clean
+	$(RM) -r .pybuild zeroconf.egg-info
+	$(RM) -r debian/python2_old/.pybuild/
+	$(RM) -r debian/python2_old/debian/
+	$(RM) -r debian/python2_old/zeroconf.egg-info/
+
