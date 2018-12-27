@@ -9,7 +9,6 @@ PYTHON2VERSIONS := $(shell pyversions -s -v)
 %:
 	LC_ALL=C.UTF-8 dh $@ --with python2,python3 --buildsystem=pybuild
 
-override_dh_auto_clean:
 
 override_dh_auto_build:
 	cd debian/python2_old && PYBUILD_VERSIONS="$(PYTHON2VERSIONS)" pybuild --build
