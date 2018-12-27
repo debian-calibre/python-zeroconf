@@ -30,7 +30,7 @@ Description: Pure Python implementation of multicast DNS service discovery
 
 Package: python3-zeroconf
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
+Depends: ${python3:Depends}, ${misc:Depends}, python3-ifaddr
 Description: Pure Python implementation of multicast DNS service discovery (Python3)
  This is an implementation of the multicast DNS Service Discover Library
  zeroconf in pure Python.
