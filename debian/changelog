@@ -1,3 +1,9 @@
+python-zeroconf (0.21.3-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Thu, 27 Dec 2018 13:09:35 +0100
+
 python-zeroconf (0.19.1-2) unstable; urgency=medium
 
   [ Ondřej Nový ]
