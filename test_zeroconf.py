@@ -11,6 +11,8 @@ import struct
 import time
 import unittest
 from threading import Event
+from typing import Dict, Optional  # noqa # used in type hints
+from typing import cast
 
 
 import zeroconf as r
@@ -25,20 +27,21 @@ from zeroconf import (
 )
 
 log = logging.getLogger('zeroconf')
-original_logging_level = [None]
+original_logging_level = logging.NOTSET
 
 
 def setup_module():
-    original_logging_level[0] = log.level
+    global original_logging_level
+    original_logging_level = log.level
     log.setLevel(logging.DEBUG)
 
 
 def teardown_module():
-    log.setLevel(original_logging_level[0])
+    if original_logging_level != logging.NOTSET:
+        log.setLevel(original_logging_level)
 
 
 class TestDunder(unittest.TestCase):
-
     def test_dns_text_repr(self):
         # There was an issue on Python 3 that prevented DNSText's repr
         # from working when the text was longer than 10 bytes
@@ -54,8 +57,7 @@ class TestDunder(unittest.TestCase):
         repr(hinfo)
 
     def test_dns_pointer_repr(self):
-        pointer = r.DNSPointer(
-            'irrelevant', r._TYPE_PTR, r._CLASS_IN, r._DNS_TTL, '123')
+        pointer = r.DNSPointer('irrelevant', r._TYPE_PTR, r._CLASS_IN, r._DNS_OTHER_TTL, '123')
         repr(pointer)
 
     def test_dns_address_repr(self):
@@ -63,18 +65,16 @@ class TestDunder(unittest.TestCase):
         repr(address)
 
     def test_dns_question_repr(self):
-        question = r.DNSQuestion(
-            'irrelevant', r._TYPE_SRV, r._CLASS_IN | r._CLASS_UNIQUE)
+        question = r.DNSQuestion('irrelevant', r._TYPE_SRV, r._CLASS_IN | r._CLASS_UNIQUE)
         repr(question)
         assert not question != question
 
     def test_dns_service_repr(self):
-        service = r.DNSService(
-            'irrelevant', r._TYPE_SRV, r._CLASS_IN, r._DNS_TTL, 0, 0, 80, b'a')
+        service = r.DNSService('irrelevant', r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL, 0, 0, 80, b'a')
         repr(service)
 
     def test_dns_record_abc(self):
-        record = r.DNSRecord('irrelevant', r._TYPE_SRV, r._CLASS_IN, r._DNS_TTL)
+        record = r.DNSRecord('irrelevant', r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL)
         self.assertRaises(r.AbstractMethodException, record.__eq__, record)
         self.assertRaises(r.AbstractMethodException, record.write, None)
 
@@ -83,11 +83,25 @@ class TestDunder(unittest.TestCase):
         name = "xxxyyy"
         registration_name = "%s.%s" % (name, type_)
         info = ServiceInfo(
-            type_, registration_name,
-            socket.inet_aton("10.0.1.2"), 80, 0, 0,
-            None, "ash-2.local.")
+            type_, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, None, "ash-2.local."
+        )
 
         assert not info != info
+        repr(info)
+
+    def test_service_info_text_properties_not_given(self):
+        type_ = "_test-srvc-type._tcp.local."
+        name = "xxxyyy"
+        registration_name = "%s.%s" % (name, type_)
+        info = ServiceInfo(
+            type_=type_,
+            name=registration_name,
+            address=socket.inet_aton("10.0.1.2"),
+            port=80,
+            server="ash-2.local.",
+        )
+
+        assert isinstance(info.text, bytes)
         repr(info)
 
     def test_dns_outgoing_repr(self):
@@ -96,7 +110,6 @@ class TestDunder(unittest.TestCase):
 
 
 class PacketGeneration(unittest.TestCase):
-
     def test_parse_own_packet_simple(self):
         generated = r.DNSOutgoing(0)
         r.DNSIncoming(generated.packet())
@@ -111,14 +124,14 @@ class PacketGeneration(unittest.TestCase):
 
     def test_parse_own_packet_question(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
-        generated.add_question(r.DNSQuestion("testname.local.", r._TYPE_SRV,
-                                             r._CLASS_IN))
+        generated.add_question(r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN))
         r.DNSIncoming(generated.packet())
 
     def test_parse_own_packet_response(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
-        generated.add_answer_at_time(r.DNSService(
-            "æøå.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_TTL, 0, 0, 80, "foo.local."), 0)
+        generated.add_answer_at_time(
+            r.DNSService("æøå.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL, 0, 0, 80, "foo.local."), 0
+        )
         parsed = r.DNSIncoming(generated.packet())
         self.assertEqual(len(generated.answers), 1)
         self.assertEqual(len(generated.answers), len(parsed.answers))
@@ -137,11 +150,14 @@ class PacketGeneration(unittest.TestCase):
         question = r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN)
         query_generated.add_question(question)
         answer1 = r.DNSService(
-            "testname1.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_TTL, 0, 0, 80, "foo.local.")
+            "testname1.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL, 0, 0, 80, "foo.local."
+        )
         staleanswer2 = r.DNSService(
-            "testname2.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_TTL/2, 0, 0, 80, "foo.local.")
+            "testname2.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL / 2, 0, 0, 80, "foo.local."
+        )
         answer2 = r.DNSService(
-            "testname2.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_TTL, 0, 0, 80, "foo.local.")
+            "testname2.local.", r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL, 0, 0, 80, "foo.local."
+        )
         query_generated.add_answer_at_time(answer1, 0)
         query_generated.add_answer_at_time(staleanswer2, 0)
         query = r.DNSIncoming(query_generated.packet())
@@ -177,20 +193,18 @@ class PacketGeneration(unittest.TestCase):
 
     def test_dns_hinfo(self):
         generated = r.DNSOutgoing(0)
-        generated.add_additional_answer(
-            DNSHinfo('irrelevant', r._TYPE_HINFO, 0, 0, 'cpu', 'os'))
+        generated.add_additional_answer(DNSHinfo('irrelevant', r._TYPE_HINFO, 0, 0, 'cpu', 'os'))
         parsed = r.DNSIncoming(generated.packet())
-        self.assertEqual(parsed.answers[0].cpu, u'cpu')
-        self.assertEqual(parsed.answers[0].os, u'os')
+        answer = cast(r.DNSHinfo, parsed.answers[0])
+        self.assertEqual(answer.cpu, u'cpu')
+        self.assertEqual(answer.os, u'os')
 
         generated = r.DNSOutgoing(0)
-        generated.add_additional_answer(
-            DNSHinfo('irrelevant', r._TYPE_HINFO, 0, 0, 'cpu', 'x' * 257))
+        generated.add_additional_answer(DNSHinfo('irrelevant', r._TYPE_HINFO, 0, 0, 'cpu', 'x' * 257))
         self.assertRaises(r.NamePartTooLongException, generated.packet)
 
 
 class PacketForm(unittest.TestCase):
-
     def test_transaction_id(self):
         """ID must be zero in a DNS-SD packet"""
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
@@ -213,8 +227,7 @@ class PacketForm(unittest.TestCase):
     def test_numbers(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
         bytes = generated.packet()
-        (num_questions, num_answers, num_authorities,
-         num_additionals) = struct.unpack('!4H', bytes[4:12])
+        (num_questions, num_answers, num_authorities, num_additionals) = struct.unpack('!4H', bytes[4:12])
         self.assertEqual(num_questions, 0)
         self.assertEqual(num_answers, 0)
         self.assertEqual(num_authorities, 0)
@@ -226,8 +239,7 @@ class PacketForm(unittest.TestCase):
         for i in range(10):
             generated.add_question(question)
         bytes = generated.packet()
-        (num_questions, num_answers, num_authorities,
-         num_additionals) = struct.unpack('!4H', bytes[4:12])
+        (num_questions, num_answers, num_authorities, num_additionals) = struct.unpack('!4H', bytes[4:12])
         self.assertEqual(num_questions, 10)
         self.assertEqual(num_answers, 0)
         self.assertEqual(num_authorities, 0)
@@ -235,11 +247,11 @@ class PacketForm(unittest.TestCase):
 
 
 class Names(unittest.TestCase):
-
     def test_long_name(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
-        question = r.DNSQuestion("this.is.a.very.long.name.with.lots.of.parts.in.it.local.",
-                                 r._TYPE_SRV, r._CLASS_IN)
+        question = r.DNSQuestion(
+            "this.is.a.very.long.name.with.lots.of.parts.in.it.local.", r._TYPE_SRV, r._CLASS_IN
+        )
         generated.add_question(question)
         r.DNSIncoming(generated.packet())
 
@@ -282,19 +294,20 @@ class Names(unittest.TestCase):
         # we are going to monkey patch the zeroconf send to check packet sizes
         old_send = zc.send
 
-        # needs to be a list so that we can modify it in our phony send
-        longest_packet = [0, None]
+        longest_packet_len = 0
+        longest_packet = None  # type: Optional[r.DNSOutgoing]
 
         def send(out, addr=r._MDNS_ADDR, port=r._MDNS_PORT):
             """Sends an outgoing packet."""
             packet = out.packet()
-            if longest_packet[0] < len(packet):
-                longest_packet[0] = len(packet)
-                longest_packet[1] = out
+            nonlocal longest_packet_len, longest_packet
+            if longest_packet_len < len(packet):
+                longest_packet_len = len(packet)
+                longest_packet = out
             old_send(out, addr=addr, port=port)
 
         # monkey patch the zeroconf send
-        zc.send = send
+        setattr(zc, "send", send)
 
         # dummy service callback
         def on_service_state_change(zeroconf, service_type, state_change, name):
@@ -305,8 +318,7 @@ class Names(unittest.TestCase):
 
         # wait until the browse request packet has maxed out in size
         sleep_count = 0
-        while sleep_count < 100 and \
-                longest_packet[0] < r._MAX_MSG_ABSOLUTE - 100:
+        while sleep_count < 100 and longest_packet_len < r._MAX_MSG_ABSOLUTE - 100:
             sleep_count += 1
             time.sleep(0.1)
 
@@ -314,15 +326,16 @@ class Names(unittest.TestCase):
         time.sleep(0.5)
 
         import zeroconf
-        zeroconf.log.debug('sleep_count %d, sized %d',
-                           sleep_count, longest_packet[0])
+
+        zeroconf.log.debug('sleep_count %d, sized %d', sleep_count, longest_packet_len)
 
         # now the browser has sent at least one request, verify the size
-        assert longest_packet[0] <= r._MAX_MSG_ABSOLUTE
-        assert longest_packet[0] >= r._MAX_MSG_ABSOLUTE - 100
+        assert longest_packet_len <= r._MAX_MSG_ABSOLUTE
+        assert longest_packet_len >= r._MAX_MSG_ABSOLUTE - 100
 
         # mock zeroconf's logger warning() and debug()
         from unittest.mock import patch
+
         patch_warn = patch('zeroconf.log.warning')
         patch_debug = patch('zeroconf.log.debug')
         mocked_log_warn = patch_warn.start()
@@ -330,7 +343,8 @@ class Names(unittest.TestCase):
 
         # now that we have a long packet in our possession, let's verify the
         # exception handling.
-        out = longest_packet[1]
+        out = longest_packet
+        assert out is not None
         out.data.append(b'\0' * 1000)
 
         # mock the zeroconf logger and check for the correct logging backoff
@@ -353,10 +367,9 @@ class Names(unittest.TestCase):
         s.sendto(packet, 0, (r._MDNS_ADDR, r._MDNS_PORT))
         s.sendto(packet, 0, (r._MDNS_ADDR, r._MDNS_PORT))
         time.sleep(2.0)
-        zeroconf.log.debug('warn %d debug %d was %s',
-                           mocked_log_warn.call_count,
-                           mocked_log_debug.call_count,
-                           call_counts)
+        zeroconf.log.debug(
+            'warn %d debug %d was %s', mocked_log_warn.call_count, mocked_log_debug.call_count, call_counts
+        )
         assert mocked_log_debug.call_count > call_counts[0]
 
         # close our zeroconf which will close the sockets
@@ -370,17 +383,15 @@ class Names(unittest.TestCase):
         call_counts = mocked_log_warn.call_count, mocked_log_debug.call_count
         # send on a closed socket (force a socket error)
         zc.send(out)
-        zeroconf.log.debug('warn %d debug %d was %s',
-                           mocked_log_warn.call_count,
-                           mocked_log_debug.call_count,
-                           call_counts)
+        zeroconf.log.debug(
+            'warn %d debug %d was %s', mocked_log_warn.call_count, mocked_log_debug.call_count, call_counts
+        )
         assert mocked_log_warn.call_count > call_counts[0]
         assert mocked_log_debug.call_count > call_counts[0]
         zc.send(out)
-        zeroconf.log.debug('warn %d debug %d was %s',
-                           mocked_log_warn.call_count,
-                           mocked_log_debug.call_count,
-                           call_counts)
+        zeroconf.log.debug(
+            'warn %d debug %d was %s', mocked_log_warn.call_count, mocked_log_debug.call_count, call_counts
+        )
         assert mocked_log_debug.call_count > call_counts[0] + 2
 
         mocked_log_warn.stop()
@@ -389,17 +400,14 @@ class Names(unittest.TestCase):
     def verify_name_change(self, zc, type_, name, number_hosts):
         desc = {'path': '/~paulsm/'}
         info_service = ServiceInfo(
-            type_, '%s.%s' % (name, type_), socket.inet_aton("10.0.1.2"),
-            80, 0, 0, desc, "ash-2.local.")
+            type_, '%s.%s' % (name, type_), socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local."
+        )
 
         # verify name conflict
-        self.assertRaises(
-            r.NonUniqueNameException,
-            zc.register_service, info_service)
+        self.assertRaises(r.NonUniqueNameException, zc.register_service, info_service)
 
         zc.register_service(info_service, allow_name_change=True)
-        assert info_service.name.split('.')[0] == '%s-%d' % (
-            name, number_hosts + 1)
+        assert info_service.name.split('.')[0] == '%s-%d' % (name, number_hosts + 1)
 
     def generate_many_hosts(self, zc, type_, name, number_hosts):
         records_per_server = 2
@@ -410,9 +418,7 @@ class Names(unittest.TestCase):
             self.generate_host(zc, next_name, type_)
             if i % block_size == 0:
                 sleep_count = 0
-                while sleep_count < 40 and \
-                        i * records_per_server > len(
-                            zc.cache.entries_with_name(type_)):
+                while sleep_count < 40 and i * records_per_server > len(zc.cache.entries_with_name(type_)):
                     sleep_count += 1
                     time.sleep(0.05)
 
@@ -420,18 +426,14 @@ class Names(unittest.TestCase):
     def generate_host(zc, host_name, type_):
         name = '.'.join((host_name, type_))
         out = r.DNSOutgoing(r._FLAGS_QR_RESPONSE | r._FLAGS_AA)
+        out.add_answer_at_time(r.DNSPointer(type_, r._TYPE_PTR, r._CLASS_IN, r._DNS_OTHER_TTL, name), 0)
         out.add_answer_at_time(
-            r.DNSPointer(type_, r._TYPE_PTR, r._CLASS_IN,
-                         r._DNS_TTL, name), 0)
-        out.add_answer_at_time(
-            r.DNSService(type_, r._TYPE_SRV, r._CLASS_IN,
-                         r._DNS_TTL, 0, 0, 80,
-                         name), 0)
+            r.DNSService(type_, r._TYPE_SRV, r._CLASS_IN, r._DNS_HOST_TTL, 0, 0, 80, name), 0
+        )
         zc.send(out)
 
 
 class Framework(unittest.TestCase):
-
     def test_launch_and_close(self):
         rv = r.Zeroconf(interfaces=r.InterfaceChoice.All)
         rv.close()
@@ -453,9 +455,7 @@ class Exceptions(unittest.TestCase):
         cls.browser = None
 
     def test_bad_service_info_name(self):
-        self.assertRaises(
-            r.BadTypeInNameException,
-            self.browser.get_service_info, "type", "type_not")
+        self.assertRaises(r.BadTypeInNameException, self.browser.get_service_info, "type", "type_not")
 
     def test_bad_service_names(self):
         bad_names_to_try = (
@@ -475,15 +475,13 @@ class Exceptions(unittest.TestCase):
             '\x00._x._udp.local.',
         )
         for name in bad_names_to_try:
-            self.assertRaises(
-                r.BadTypeInNameException,
-                self.browser.get_service_info, name, 'x.' + name)
+            self.assertRaises(r.BadTypeInNameException, self.browser.get_service_info, name, 'x.' + name)
 
     def test_good_instance_names(self):
         good_names_to_try = (
             '.._x._tcp.local.',
             'x.sub._http._tcp.local.',
-            '6d86f882b90facee9170ad3439d72a4d6ee9f511._zget._http._tcp.local.'
+            '6d86f882b90facee9170ad3439d72a4d6ee9f511._zget._http._tcp.local.',
         )
         for name in good_names_to_try:
             r.service_type_name(name)
@@ -495,8 +493,7 @@ class Exceptions(unittest.TestCase):
             'a' * 62 + u'â._sub._http._tcp.local.',
         )
         for name in bad_names_to_try:
-            self.assertRaises(
-                r.BadTypeInNameException, r.service_type_name, name)
+            self.assertRaises(r.BadTypeInNameException, r.service_type_name, name)
 
     def test_bad_sub_types(self):
         bad_names_to_try = (
@@ -506,8 +503,7 @@ class Exceptions(unittest.TestCase):
             '\x1f._sub._http._tcp.local.',
         )
         for name in bad_names_to_try:
-            self.assertRaises(
-                r.BadTypeInNameException, r.service_type_name, name)
+            self.assertRaises(r.BadTypeInNameException, r.service_type_name, name)
 
     def test_good_service_names(self):
         good_names_to_try = (
@@ -525,7 +521,6 @@ class Exceptions(unittest.TestCase):
 
 
 class TestDnsIncoming(unittest.TestCase):
-
     def test_incoming_exception_handling(self):
         generated = r.DNSOutgoing(0)
         packet = generated.packet()
@@ -550,7 +545,6 @@ class TestDnsIncoming(unittest.TestCase):
 
 
 class TestRegistrar(unittest.TestCase):
-
     def test_ttl(self):
 
         # instantiate a zeroconf instance
@@ -563,39 +557,45 @@ class TestRegistrar(unittest.TestCase):
 
         desc = {'path': '/~paulsm/'}
         info = ServiceInfo(
-            type_, registration_name,
-            socket.inet_aton("10.0.1.2"), 80, 0, 0,
-            desc, "ash-2.local.")
+            type_, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local."
+        )
 
         # we are going to monkey patch the zeroconf send to check packet sizes
         old_send = zc.send
 
-        # needs to be a list so that we can modify it in our phony send
-        nbr_answers = [0, None]
-        nbr_additionals = [0, None]
-        nbr_authorities = [0, None]
+        nbr_answers = nbr_additionals = nbr_authorities = 0
+
+        def get_ttl(record_type):
+            if expected_ttl is not None:
+                return expected_ttl
+            elif record_type in [r._TYPE_A, r._TYPE_SRV]:
+                return r._DNS_HOST_TTL
+            else:
+                return r._DNS_OTHER_TTL
 
         def send(out, addr=r._MDNS_ADDR, port=r._MDNS_PORT):
             """Sends an outgoing packet."""
+            nonlocal nbr_answers, nbr_additionals, nbr_authorities
+
             for answer, time_ in out.answers:
-                nbr_answers[0] += 1
-                assert answer.ttl == expected_ttl
+                nbr_answers += 1
+                assert answer.ttl == get_ttl(answer.type)
             for answer in out.additionals:
-                nbr_additionals[0] += 1
-                assert answer.ttl == expected_ttl
+                nbr_additionals += 1
+                assert answer.ttl == get_ttl(answer.type)
             for answer in out.authorities:
-                nbr_authorities[0] += 1
-                assert answer.ttl == expected_ttl
+                nbr_authorities += 1
+                assert answer.ttl == get_ttl(answer.type)
             old_send(out, addr=addr, port=port)
 
         # monkey patch the zeroconf send
-        zc.send = send
+        setattr(zc, "send", send)
 
         # register service with default TTL
-        expected_ttl = r._DNS_TTL
+        expected_ttl = None
         zc.register_service(info)
-        assert nbr_answers[0] == 12 and nbr_additionals[0] == 0 and nbr_authorities[0] == 3
-        nbr_answers[0] = nbr_additionals[0] = nbr_authorities[0] = 0
+        assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 3
+        nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # query
         query = r.DNSOutgoing(r._FLAGS_QR_QUERY | r._FLAGS_AA)
@@ -603,22 +603,22 @@ class TestRegistrar(unittest.TestCase):
         query.add_question(r.DNSQuestion(info.name, r._TYPE_SRV, r._CLASS_IN))
         query.add_question(r.DNSQuestion(info.name, r._TYPE_TXT, r._CLASS_IN))
         query.add_question(r.DNSQuestion(info.server, r._TYPE_A, r._CLASS_IN))
-        zc.handle_query(query, r._MDNS_ADDR, r._MDNS_PORT)
-        assert nbr_answers[0] == 4 and nbr_additionals[0] == 1 and nbr_authorities[0] == 0
-        nbr_answers[0] = nbr_additionals[0] = nbr_authorities[0] = 0
+        zc.handle_query(r.DNSIncoming(query.packet()), r._MDNS_ADDR, r._MDNS_PORT)
+        assert nbr_answers == 4 and nbr_additionals == 1 and nbr_authorities == 0
+        nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # unregister
         expected_ttl = 0
         zc.unregister_service(info)
-        assert nbr_answers[0] == 12 and nbr_additionals[0] == 0 and nbr_authorities[0] == 0
-        nbr_answers[0] = nbr_additionals[0] = nbr_authorities[0] = 0
+        assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 0
+        nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # register service with custom TTL
-        expected_ttl = r._DNS_TTL * 2
-        assert expected_ttl != r._DNS_TTL
+        expected_ttl = r._DNS_HOST_TTL * 2
+        assert expected_ttl != r._DNS_HOST_TTL
         zc.register_service(info, ttl=expected_ttl)
-        assert nbr_answers[0] == 12 and nbr_additionals[0] == 0 and nbr_authorities[0] == 3
-        nbr_answers[0] = nbr_additionals[0] = nbr_authorities[0] = 0
+        assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 3
+        nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # query
         query = r.DNSOutgoing(r._FLAGS_QR_QUERY | r._FLAGS_AA)
@@ -626,19 +626,18 @@ class TestRegistrar(unittest.TestCase):
         query.add_question(r.DNSQuestion(info.name, r._TYPE_SRV, r._CLASS_IN))
         query.add_question(r.DNSQuestion(info.name, r._TYPE_TXT, r._CLASS_IN))
         query.add_question(r.DNSQuestion(info.server, r._TYPE_A, r._CLASS_IN))
-        zc.handle_query(query, r._MDNS_ADDR, r._MDNS_PORT)
-        assert nbr_answers[0] == 4 and nbr_additionals[0] == 1 and nbr_authorities[0] == 0
-        nbr_answers[0] = nbr_additionals[0] = nbr_authorities[0] = 0
+        zc.handle_query(r.DNSIncoming(query.packet()), r._MDNS_ADDR, r._MDNS_PORT)
+        assert nbr_answers == 4 and nbr_additionals == 1 and nbr_authorities == 0
+        nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # unregister
         expected_ttl = 0
         zc.unregister_service(info)
-        assert nbr_answers[0] == 12 and nbr_additionals[0] == 0 and nbr_authorities[0] == 0
-        nbr_answers[0] = nbr_additionals[0] = nbr_authorities[0] = 0
+        assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 0
+        nbr_answers = nbr_additionals = nbr_authorities = 0
 
 
 class TestDNSCache(unittest.TestCase):
-
     def test_order(self):
         record1 = r.DNSAddress('a', r._TYPE_SOA, r._CLASS_IN, 1, b'a')
         record2 = r.DNSAddress('a', r._TYPE_SOA, r._CLASS_IN, 1, b'b')
@@ -651,7 +650,6 @@ class TestDNSCache(unittest.TestCase):
 
 
 class ServiceTypesQuery(unittest.TestCase):
-
     def test_integration_with_listener(self):
 
         type_ = "_test-srvc-type._tcp.local."
@@ -661,17 +659,14 @@ class ServiceTypesQuery(unittest.TestCase):
         zeroconf_registrar = Zeroconf(interfaces=['127.0.0.1'])
         desc = {'path': '/~paulsm/'}
         info = ServiceInfo(
-            type_, registration_name,
-            socket.inet_aton("10.0.1.2"), 80, 0, 0,
-            desc, "ash-2.local.")
+            type_, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local."
+        )
         zeroconf_registrar.register_service(info)
 
         try:
-            service_types = ZeroconfServiceTypes.find(
-                interfaces=['127.0.0.1'], timeout=0.5)
+            service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=0.5)
             assert type_ in service_types
-            service_types = ZeroconfServiceTypes.find(
-                zc=zeroconf_registrar, timeout=0.5)
+            service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
             assert type_ in service_types
 
         finally:
@@ -688,17 +683,14 @@ class ServiceTypesQuery(unittest.TestCase):
         zeroconf_registrar = Zeroconf(interfaces=['127.0.0.1'])
         desc = {'path': '/~paulsm/'}
         info = ServiceInfo(
-            discovery_type, registration_name,
-            socket.inet_aton("10.0.1.2"), 80, 0, 0,
-            desc, "ash-2.local.")
+            discovery_type, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local."
+        )
         zeroconf_registrar.register_service(info)
 
         try:
-            service_types = ZeroconfServiceTypes.find(
-                interfaces=['127.0.0.1'], timeout=0.5)
+            service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=0.5)
             assert discovery_type in service_types
-            service_types = ZeroconfServiceTypes.find(
-                zc=zeroconf_registrar, timeout=0.5)
+            service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
             assert discovery_type in service_types
 
         finally:
@@ -706,25 +698,35 @@ class ServiceTypesQuery(unittest.TestCase):
 
 
 class ListenerTest(unittest.TestCase):
-
     def test_integration_with_listener_class(self):
 
         service_added = Event()
         service_removed = Event()
+        service_updated = Event()
 
         subtype_name = "My special Subtype"
         type_ = "_http._tcp.local."
         subtype = subtype_name + "._sub." + type_
         name = "xxxyyyæøå"
-        registration_name = "%s.%s" % (name, type_)
+        registration_name = "%s.%s" % (name, subtype)
 
-        class MyListener:
+        class MyListener(r.ServiceListener):
             def add_service(self, zeroconf, type, name):
                 zeroconf.get_service_info(type, name)
                 service_added.set()
 
             def remove_service(self, zeroconf, type, name):
                 service_removed.set()
+
+        class MySubListener(r.ServiceListener):
+            def add_service(self, zeroconf, type, name):
+                pass
+
+            def remove_service(self, zeroconf, type, name):
+                pass
+
+            def update_service(self, zeroconf, type, name):
+                service_updated.set()
 
         listener = MyListener()
         zeroconf_browser = Zeroconf(interfaces=['127.0.0.1'])
@@ -740,12 +742,11 @@ class ListenerTest(unittest.TestCase):
         )
 
         zeroconf_registrar = Zeroconf(interfaces=['127.0.0.1'])
-        desc = {'path': '/~paulsm/'}
+        desc = {'path': '/~paulsm/'}  # type: r.ServicePropertiesType
         desc.update(properties)
         info_service = ServiceInfo(
-            subtype, registration_name,
-            socket.inet_aton("10.0.1.2"), 80, 0, 0,
-            desc, "ash-2.local.")
+            subtype, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local."
+        )
         zeroconf_registrar.register_service(info_service)
 
         try:
@@ -753,7 +754,7 @@ class ListenerTest(unittest.TestCase):
             assert service_added.is_set()
 
             # short pause to allow multicast timers to expire
-            time.sleep(2)
+            time.sleep(3)
 
             # clear the answer cache to force query
             for record in zeroconf_browser.cache.entries():
@@ -761,7 +762,7 @@ class ListenerTest(unittest.TestCase):
 
             # get service info without answer cache
             info = zeroconf_browser.get_service_info(type_, registration_name)
-
+            assert info is not None
             assert info.properties[b'prop_none'] is False
             assert info.properties[b'prop_string'] == properties['prop_string']
             assert info.properties[b'prop_float'] is False
@@ -770,15 +771,102 @@ class ListenerTest(unittest.TestCase):
             assert info.properties[b'prop_false'] is False
 
             info = zeroconf_browser.get_service_info(subtype, registration_name)
+            assert info is not None
             assert info.properties[b'prop_none'] is False
+
+            # Begin material test addition
+            sublistener = MySubListener()
+            zeroconf_browser.add_service_listener(registration_name, sublistener)
+            properties['prop_blank'] = b'an updated string'
+            desc.update(properties)
+            info_service = ServiceInfo(
+                subtype, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local."
+            )
+            zeroconf_registrar.update_service(info_service)
+            service_updated.wait(1)
+            assert service_updated.is_set()
+
+            info = zeroconf_browser.get_service_info(type_, registration_name)
+            assert info is not None
+            assert info.properties[b'prop_blank'] == properties['prop_blank']
+            # End material test addition
 
             zeroconf_registrar.unregister_service(info_service)
             service_removed.wait(1)
             assert service_removed.is_set()
+
         finally:
             zeroconf_registrar.close()
             zeroconf_browser.remove_service_listener(listener)
             zeroconf_browser.close()
+
+
+def test_backoff():
+    got_query = Event()
+
+    type_ = "_http._tcp.local."
+    zeroconf_browser = Zeroconf(interfaces=['127.0.0.1'])
+
+    # we are going to monkey patch the zeroconf send to check query transmission
+    old_send = zeroconf_browser.send
+
+    time_offset = 0.0
+    start_time = time.time() * 1000
+    initial_query_interval = r._BROWSER_TIME / 1000
+
+    def current_time_millis():
+        """Current system time in milliseconds"""
+        return start_time + time_offset * 1000
+
+    def send(out, addr=r._MDNS_ADDR, port=r._MDNS_PORT):
+        """Sends an outgoing packet."""
+        got_query.set()
+        old_send(out, addr=addr, port=port)
+
+    # monkey patch the zeroconf send
+    setattr(zeroconf_browser, "send", send)
+
+    # monkey patch the zeroconf current_time_millis
+    r.current_time_millis = current_time_millis
+
+    # monkey patch the backoff limit to prevent test running forever
+    r._BROWSER_BACKOFF_LIMIT = 10  # seconds
+
+    # dummy service callback
+    def on_service_state_change(zeroconf, service_type, state_change, name):
+        pass
+
+    browser = ServiceBrowser(zeroconf_browser, type_, [on_service_state_change])
+
+    try:
+        # Test that queries are sent at increasing intervals
+        sleep_count = 0
+        next_query_interval = 0.0
+        expected_query_time = 0.0
+        while True:
+            zeroconf_browser.notify_all()
+            sleep_count += 1
+            got_query.wait(0.1)
+            if time_offset == expected_query_time:
+                assert got_query.is_set()
+                got_query.clear()
+                if next_query_interval == r._BROWSER_BACKOFF_LIMIT:
+                    # Only need to test up to the point where we've seen a query
+                    # after the backoff limit has been hit
+                    break
+                elif next_query_interval == 0:
+                    next_query_interval = initial_query_interval
+                    expected_query_time = initial_query_interval
+                else:
+                    next_query_interval = min(2 * next_query_interval, r._BROWSER_BACKOFF_LIMIT)
+                    expected_query_time += next_query_interval
+            else:
+                assert not got_query.is_set()
+            time_offset += initial_query_interval
+
+    finally:
+        browser.cancel()
+        zeroconf_browser.close()
 
 
 def test_integration():
@@ -802,23 +890,22 @@ def test_integration():
     # we are going to monkey patch the zeroconf send to check packet sizes
     old_send = zeroconf_browser.send
 
-    time_offset = 0
+    time_offset = 0.0
 
     def current_time_millis():
         """Current system time in milliseconds"""
         return time.time() * 1000 + time_offset * 1000
 
-    expected_ttl = r._DNS_TTL
+    expected_ttl = r._DNS_HOST_TTL
 
-    # needs to be a list so that we can modify it in our phony send
-    nbr_queries = [0, None]
+    nbr_answers = 0
 
     def send(out, addr=r._MDNS_ADDR, port=r._MDNS_PORT):
         """Sends an outgoing packet."""
         pout = r.DNSIncoming(out.packet())
-
+        nonlocal nbr_answers
         for answer in pout.answers:
-            nbr_queries[0] += 1
+            nbr_answers += 1
             if not answer.ttl > expected_ttl / 2:
                 unexpected_ttl.set()
 
@@ -826,10 +913,13 @@ def test_integration():
         old_send(out, addr=addr, port=port)
 
     # monkey patch the zeroconf send
-    zeroconf_browser.send = send
+    setattr(zeroconf_browser, "send", send)
 
     # monkey patch the zeroconf current_time_millis
     r.current_time_millis = current_time_millis
+
+    # monkey patch the backoff limit to ensure we always get one query every 1/4 of the DNS TTL
+    r._BROWSER_BACKOFF_LIMIT = int(expected_ttl / 4)
 
     service_added = Event()
     service_removed = Event()
@@ -838,28 +928,70 @@ def test_integration():
 
     zeroconf_registrar = Zeroconf(interfaces=['127.0.0.1'])
     desc = {'path': '/~paulsm/'}
-    info = ServiceInfo(
-        type_, registration_name,
-        socket.inet_aton("10.0.1.2"), 80, 0, 0,
-        desc, "ash-2.local.")
+    info = ServiceInfo(type_, registration_name, socket.inet_aton("10.0.1.2"), 80, 0, 0, desc, "ash-2.local.")
     zeroconf_registrar.register_service(info)
 
     try:
         service_added.wait(1)
         assert service_added.is_set()
 
+        # Test that we receive queries containing answers only if the remaining TTL
+        # is greater than half the original TTL
         sleep_count = 0
-        while nbr_queries[0] < 50:
+        test_iterations = 50
+        while nbr_answers < test_iterations:
+            # Increase simulated time shift by 1/4 of the TTL in seconds
             time_offset += expected_ttl / 4
             zeroconf_browser.notify_all()
             sleep_count += 1
-            got_query.wait(1)
+            got_query.wait(0.1)
             got_query.clear()
+            # Prevent the test running indefinitely in an error condition
+            assert sleep_count < test_iterations * 4
         assert not unexpected_ttl.is_set()
 
         # Don't remove service, allow close() to cleanup
 
     finally:
         zeroconf_registrar.close()
+        service_removed.wait(1)
+        assert service_removed.is_set()
         browser.cancel()
         zeroconf_browser.close()
+
+
+def test_multiple_addresses():
+    type_ = "_http._tcp.local."
+    registration_name = "xxxyyy.%s" % type_
+    desc = {'path': '/~paulsm/'}
+    address = socket.inet_aton("10.0.1.2")
+
+    # Old way
+    info = ServiceInfo(type_, registration_name, address, 80, 0, 0, desc, "ash-2.local.")
+
+    assert info.address == address
+    assert info.addresses == [address]
+
+    # Updating works
+    address2 = socket.inet_aton("10.0.1.3")
+    info.address = address2
+
+    assert info.address == address2
+    assert info.addresses == [address2]
+
+    info.address = None
+
+    assert info.address is None
+    assert info.addresses == []
+
+    # Compatibility way
+    info = ServiceInfo(type_, registration_name, [address, address], 80, 0, 0, desc, "ash-2.local.")
+
+    assert info.addresses == [address, address]
+
+    # New kwarg way
+    info = ServiceInfo(
+        type_, registration_name, None, 80, 0, 0, desc, "ash-2.local.", addresses=[address, address]
+    )
+
+    assert info.addresses == [address, address]
