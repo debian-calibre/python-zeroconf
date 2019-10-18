@@ -1,4 +1,4 @@
-python-zeroconf (0.23.0-1) UNRELEASED; urgency=medium
+python-zeroconf (0.23.0-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
   * Use debhelper-compat instead of debian/compat.
@@ -10,7 +10,7 @@ python-zeroconf (0.23.0-1) UNRELEASED; urgency=medium
     - New standards version 4.4.0 - no changes
     - DH level 12
 
- -- Ruben Undheim <ruben.undheim@gmail.com>  Fri, 18 Oct 2019 22:28:44 +0200
+ -- Ruben Undheim <ruben.undheim@gmail.com>  Fri, 18 Oct 2019 22:32:39 +0200
 
 python-zeroconf (0.21.3-1) unstable; urgency=medium
 
