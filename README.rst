@@ -43,7 +43,7 @@ Compared to some other Zeroconf/Bonjour/Avahi Python packages, python-zeroconf:
 Python compatibility
 --------------------
 
-* CPython 3.4+
+* CPython 3.5+
 * PyPy3 5.8+
 
 Versioning
@@ -120,11 +120,36 @@ See examples directory for more.
 Changelog
 =========
 
+0.23.0
+------
+
+* Added support for MyListener call getting updates to service TXT records, thanks to Matt Saxon
+* Added support for multiple addresses when publishing a service, getting/setting single address
+  has become deprecated. Change thanks to Dmitry Tantsur
+
+Backwards incompatible:
+
+* Dropped Python 3.4 support
+
+0.22.0
+------
+
+* A lot of maintenance work (tooling, typing coverage and improvements, spelling) done, thanks to Ville Skyttä
+* Provided saner defaults in ServiceInfo's constructor, thanks to Jorge Miranda
+* Fixed service removal packets not being sent on shutdown, thanks to Andrew Bonney
+* Added a way to define TTL-s through ServiceInfo contructor parameters, thanks to Andrew Bonney
+
+Technically backwards incompatible:
+
+* Adjusted query intervals to match RFC 6762, thanks to Andrew Bonney
+* Made default TTL-s match RFC 6762, thanks to Andrew Bonney
+
+
 0.21.3
 ------
 
 * This time really allowed incoming service names to contain underscores (patch released
-  as part of 0.20.0 was defective)
+  as part of 0.21.0 was defective)
 
 0.21.2
 ------
@@ -143,7 +168,7 @@ Changelog
 * Fixed TTL handling for published service
 * Implemented unicast support
 * Fixed WSL (Windows Subsystem for Linux) compatibility
-* Fixed occassional UnboundLocalError issue
+* Fixed occasional UnboundLocalError issue
 * Fixed UTF-8 multibyte name compression
 * Switched from netifaces to ifaddr (pure Python)
 * Allowed incoming service names to contain underscores

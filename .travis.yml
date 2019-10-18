@@ -1,9 +1,8 @@
 language: python
 python:
-    - "3.4"
     - "3.5"
     - "3.6"
-    - "pypy3.5-5.8.0"
+    - "pypy3.5-5.10.1"
 matrix:
     fast_finish: true
     include:
@@ -12,10 +11,8 @@ install:
     - pip install -r requirements-dev.txt
     # mypy can't be installed on pypy
     - if [[ "${TRAVIS_PYTHON_VERSION}" != "pypy"* ]] ; then pip install mypy ; fi
+    - if [[ "${TRAVIS_PYTHON_VERSION}" != *"3.5"* ]] ; then pip install black ; fi
 script:
-    - make test_coverage
-    - flake8 --version
-    - make flake8
-    - if [[ "${TRAVIS_PYTHON_VERSION}" != "pypy"* ]] ; then make mypy ; fi
+    - make ci
 after_success:
     - coveralls

@@ -12,14 +12,15 @@ from zeroconf import ServiceBrowser, ServiceStateChange, Zeroconf
 
 
 def on_service_state_change(
-    zeroconf: Zeroconf, service_type: str, name: str, state_change: ServiceStateChange,
+    zeroconf: Zeroconf, service_type: str, name: str, state_change: ServiceStateChange
 ) -> None:
     print("Service %s of type %s state changed: %s" % (name, service_type, state_change))
 
     if state_change is ServiceStateChange.Added:
         info = zeroconf.get_service_info(service_type, name)
         if info:
-            print("  Address: %s:%d" % (socket.inet_ntoa(cast(bytes, info.address)), cast(int, info.port)))
+            addresses = ["%s:%d" % (socket.inet_ntoa(addr), cast(int, info.port)) for addr in info.addresses]
+            print("  Addresses: %s" % ", ".join(addresses))
             print("  Weight: %d, priority: %d" % (info.weight, info.priority))
             print("  Server: %s" % (info.server,))
             if info.properties:
