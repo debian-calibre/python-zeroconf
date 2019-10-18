@@ -3,30 +3,15 @@ Section: python
 Priority: optional
 Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
 Uploaders: Ruben Undheim <ruben.undheim@gmail.com>
-Build-Depends: debhelper-compat (= 11),
+Build-Depends: debhelper-compat (= 12),
                dh-python,
-               python-all,
-               python-setuptools,
                python3-all,
                python3-setuptools
-Standards-Version: 4.2.1
+Standards-Version: 4.4.0
 X-Python-Version: all
 Homepage: https://github.com/jstasiak/python-zeroconf
 Vcs-Browser: https://salsa.debian.org/python-team/modules/python-zeroconf
 Vcs-Git: https://salsa.debian.org/python-team/modules/python-zeroconf.git
-
-Package: python-zeroconf
-Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}
-Description: Pure Python implementation of multicast DNS service discovery
- This is an implementation of the multicast DNS Service Discover Library
- zeroconf in pure Python.
- .
- Compared to some other Zeroconf/Bonjour/Avahi Python packages:
- .
-  - isn't tied to Bonjour or Avahi
-  - doesn't use D-Bus
-  - doesn't force you to use particular event loop or Twisted
 
 Package: python3-zeroconf
 Architecture: all
