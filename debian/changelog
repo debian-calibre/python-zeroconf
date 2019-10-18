@@ -9,6 +9,8 @@ python-zeroconf (0.23.0-1) unstable; urgency=medium
   * debian/control:
     - New standards version 4.4.0 - no changes
     - DH level 12
+  * debian/rules:
+    - Clean up more in dh_auto_clean
 
  -- Ruben Undheim <ruben.undheim@gmail.com>  Fri, 18 Oct 2019 22:32:39 +0200
 
