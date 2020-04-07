@@ -7,6 +7,9 @@ Build-Depends: debhelper-compat (= 12),
                dh-python,
                python3-all,
                python3-setuptools
+Build-Depends-Indep:
+ python3-ifaddr,
+ python3-nose,
 Standards-Version: 4.4.0
 X-Python-Version: all
 Homepage: https://github.com/jstasiak/python-zeroconf

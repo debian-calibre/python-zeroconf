@@ -2,6 +2,7 @@ python-zeroconf (0.25.0-1) unstable; urgency=medium
 
   * Team upload.
   * New upstream release.
+  * Add python3-{ifaddr,nose} as build-depends-indep.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 07 Apr 2020 16:55:29 +0200
 
