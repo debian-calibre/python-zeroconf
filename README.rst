@@ -10,6 +10,7 @@ python-zeroconf
 .. image:: https://img.shields.io/coveralls/jstasiak/python-zeroconf.svg
     :target: https://coveralls.io/r/jstasiak/python-zeroconf
 
+`Documentation <https://python-zeroconf.readthedocs.io/en/latest/>`_.
     
 This is fork of pyzeroconf, Multicast DNS Service Discovery for Python,
 originally by Paul Scott-Murphy (https://github.com/paulsm/pyzeroconf),
@@ -61,6 +62,19 @@ Status
 There are some people using this package. I don't actively use it and as such
 any help I can offer with regard to any issues is very limited.
 
+IPv6 support
+------------
+
+IPv6 support is relatively new and currently limited, specifically:
+
+* `InterfaceChoice.All` is an alias for `InterfaceChoice.Default` on non-POSIX
+  systems.
+* On Windows specific interfaces can only be requested as interface indexes,
+  not as IP addresses.
+* Dual-stack IPv6 sockets are used, which may not be supported everywhere (some
+  BSD variants do not have them).
+* Listening on localhost (`::1`) does not work. Help with understanding why is
+  appreciated.
 
 How to get python-zeroconf?
 ===========================
@@ -119,6 +133,66 @@ See examples directory for more.
 
 Changelog
 =========
+
+0.25.0
+------
+
+* Reverted uniqueness assertions when browsing, they caused a regression
+
+Backwards incompatible:
+
+* Rationalized handling of TXT records. Non-bytes values are converted to str and encoded to bytes
+  using UTF-8 now, None values mean value-less attributes. When receiving TXT records no decoding
+  is performed now, keys are always bytes and values are either bytes or None in value-less
+  attributes.
+
+0.24.5
+------
+
+* Fixed issues with shared records being used where they shouldn't be (TXT, SRV, A records are
+  unique now), thanks to Matt Saxon
+* Stopped unnecessarily excluding host-only interfaces from InterfaceChoice.all as they don't
+  forbid multicast, thanks to Andreas Oberritter
+* Fixed repr() of IPv6 DNSAddress, thanks to Aldo Hoeben
+* Removed duplicate update messages sent to listeners, thanks to Matt Saxon
+* Added support for cooperating responders, thanks to Matt Saxon
+* Optimized handle_response cache check, thanks to J. Nick Koston
+* Fixed memory leak in DNSCache, thanks to J. Nick Koston
+
+0.24.4
+------
+
+* Fixed resetting TTL in DNSRecord.reset_ttl(), thanks to Matt Saxon
+* Improved various DNS class' string representations, thanks to Jay Hogg
+
+0.24.3
+------
+
+* Fixed import-time "TypeError: 'ellipsis' object is not iterable." on CPython 3.5.2
+
+0.24.2
+------
+
+* Added support for AWDL interface on macOS (needed and used by the opendrop project but should be
+  useful in general), thanks to Milan Stute
+* Added missing type hints
+
+0.24.1
+------
+
+* Applied some significant performance optimizations, thanks to Jaime van Kessel for the patch and
+  to Ghostkeeper for performance measurements
+* Fixed flushing outdated cache entries when incoming record is unique, thanks to Michael Hu
+* Fixed handling updates of TXT records (they'd not get recorded previously), thanks to Michael Hu
+
+0.24.0
+------
+
+* Added IPv6 support, thanks to Dmitry Tantsur
+* Added additional recommended records to PTR responses, thanks to Scott Mertz
+* Added handling of ENOTCONN being raised during shutdown when using Eventlet, thanks to Tamás Nepusz
+* Included the py.typed marker in the package so that type checkers know to use type hints from the
+  source code, thanks to Dmitry Tantsur
 
 0.23.0
 ------
