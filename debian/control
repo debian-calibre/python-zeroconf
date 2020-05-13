@@ -19,6 +19,7 @@ Vcs-Git: https://salsa.debian.org/python-team/modules/python-zeroconf.git
 Package: python3-zeroconf
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}, python3-ifaddr
+Breaks: python3-pychromecast (<< 4.2.0~)
 Description: Pure Python implementation of multicast DNS service discovery (Python3)
  This is an implementation of the multicast DNS Service Discover Library
  zeroconf in pure Python.
