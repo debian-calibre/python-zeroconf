@@ -6,6 +6,7 @@
 
 import copy
 import logging
+import os
 import socket
 import struct
 import time
@@ -13,8 +14,6 @@ import unittest
 from threading import Event
 from typing import Dict, Optional  # noqa # used in type hints
 from typing import cast
-
-from nose.plugins.attrib import attr
 
 import zeroconf as r
 from zeroconf import (
@@ -169,17 +168,17 @@ class PacketGeneration(unittest.TestCase):
             0,
         )
         parsed = r.DNSIncoming(generated.packet())
-        self.assertEqual(len(generated.answers), 1)
-        self.assertEqual(len(generated.answers), len(parsed.answers))
+        assert len(generated.answers) == 1
+        assert len(generated.answers) == len(parsed.answers)
 
     def test_match_question(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
         question = r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN)
         generated.add_question(question)
         parsed = r.DNSIncoming(generated.packet())
-        self.assertEqual(len(generated.questions), 1)
-        self.assertEqual(len(generated.questions), len(parsed.questions))
-        self.assertEqual(question, parsed.questions[0])
+        assert len(generated.questions) == 1
+        assert len(generated.questions) == len(parsed.questions)
+        assert question == parsed.questions[0]
 
     def test_suppress_answer(self):
         query_generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
@@ -253,8 +252,8 @@ class PacketGeneration(unittest.TestCase):
         generated.add_additional_answer(DNSHinfo('irrelevant', r._TYPE_HINFO, 0, 0, 'cpu', 'os'))
         parsed = r.DNSIncoming(generated.packet())
         answer = cast(r.DNSHinfo, parsed.answers[0])
-        self.assertEqual(answer.cpu, u'cpu')
-        self.assertEqual(answer.os, u'os')
+        assert answer.cpu == u'cpu'
+        assert answer.os == u'os'
 
         generated = r.DNSOutgoing(0)
         generated.add_additional_answer(DNSHinfo('irrelevant', r._TYPE_HINFO, 0, 0, 'cpu', 'x' * 257))
@@ -267,28 +266,28 @@ class PacketForm(unittest.TestCase):
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
         bytes = generated.packet()
         id = bytes[0] << 8 | bytes[1]
-        self.assertEqual(id, 0)
+        assert id == 0
 
     def test_query_header_bits(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
         bytes = generated.packet()
         flags = bytes[2] << 8 | bytes[3]
-        self.assertEqual(flags, 0x0)
+        assert flags == 0x0
 
     def test_response_header_bits(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
         bytes = generated.packet()
         flags = bytes[2] << 8 | bytes[3]
-        self.assertEqual(flags, 0x8000)
+        assert flags == 0x8000
 
     def test_numbers(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
         bytes = generated.packet()
         (num_questions, num_answers, num_authorities, num_additionals) = struct.unpack('!4H', bytes[4:12])
-        self.assertEqual(num_questions, 0)
-        self.assertEqual(num_answers, 0)
-        self.assertEqual(num_authorities, 0)
-        self.assertEqual(num_additionals, 0)
+        assert num_questions == 0
+        assert num_answers == 0
+        assert num_authorities == 0
+        assert num_additionals == 0
 
     def test_numbers_questions(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
@@ -297,10 +296,10 @@ class PacketForm(unittest.TestCase):
             generated.add_question(question)
         bytes = generated.packet()
         (num_questions, num_answers, num_authorities, num_additionals) = struct.unpack('!4H', bytes[4:12])
-        self.assertEqual(num_questions, 10)
-        self.assertEqual(num_answers, 0)
-        self.assertEqual(num_authorities, 0)
-        self.assertEqual(num_additionals, 0)
+        assert num_questions == 10
+        assert num_answers == 0
+        assert num_authorities == 0
+        assert num_additionals == 0
 
 
 class Names(unittest.TestCase):
@@ -502,7 +501,7 @@ class Framework(unittest.TestCase):
         rv.close()
 
     @unittest.skipIf(not socket.has_ipv6, 'Requires IPv6')
-    @attr('IPv6')
+    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
     def test_launch_and_close_v4_v6(self):
         rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.All)
         rv.close()
@@ -510,7 +509,7 @@ class Framework(unittest.TestCase):
         rv.close()
 
     @unittest.skipIf(not socket.has_ipv6, 'Requires IPv6')
-    @attr('IPv6')
+    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
     def test_launch_and_close_v6_only(self):
         rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.V6Only)
         rv.close()
@@ -826,7 +825,7 @@ class TestDNSCache(unittest.TestCase):
         cache.add(record2)
         entry = r.DNSEntry('a', r._TYPE_SOA, r._CLASS_IN)
         cached_record = cache.get(entry)
-        self.assertEqual(cached_record, record2)
+        assert cached_record == record2
 
     def test_cache_empty_does_not_leak_memory_by_leaving_empty_list(self):
         record1 = r.DNSAddress('a', r._TYPE_SOA, r._CLASS_IN, 1, b'a')
@@ -864,6 +863,7 @@ class ServiceTypesQuery(unittest.TestCase):
             zeroconf_registrar.close()
 
     @unittest.skipIf(not socket.has_ipv6, 'Requires IPv6')
+    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
     def test_integration_with_listener_v6_records(self):
 
         type_ = "_test-srvc-type._tcp.local."
@@ -888,7 +888,7 @@ class ServiceTypesQuery(unittest.TestCase):
             zeroconf_registrar.close()
 
     @unittest.skipIf(not socket.has_ipv6, 'Requires IPv6')
-    @attr('IPv6')
+    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
     def test_integration_with_listener_ipv6(self):
 
         type_ = "_test-srvc-type._tcp.local."
@@ -904,9 +904,9 @@ class ServiceTypesQuery(unittest.TestCase):
 
         try:
             service_types = ZeroconfServiceTypes.find(ip_version=r.IPVersion.V6Only, timeout=0.5)
-            assert type_ in service_types, service_types
+            assert type_ in service_types
             service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
-            assert type_ in service_types, service_types
+            assert type_ in service_types
 
         finally:
             zeroconf_registrar.close()
@@ -988,7 +988,7 @@ class ListenerTest(unittest.TestCase):
         desc = {'path': '/~paulsm/'}  # type: Dict
         desc.update(properties)
         addresses = [socket.inet_aton("10.0.1.2")]
-        if socket.has_ipv6:
+        if socket.has_ipv6 and not os.environ.get('SKIP_IPV6'):
             addresses.append(socket.inet_pton(socket.AF_INET6, "2001:db8::1"))
         info_service = ServiceInfo(
             subtype, registration_name, port=80, properties=desc, server="ash-2.local.", addresses=addresses
@@ -1016,8 +1016,7 @@ class ListenerTest(unittest.TestCase):
             assert info.properties[b'prop_true'] == b'1'
             assert info.properties[b'prop_false'] == b'0'
             assert info.addresses == addresses[:1]  # no V6 by default
-            all_addresses = info.addresses_by_version(r.IPVersion.All)
-            assert all_addresses == addresses, all_addresses
+            assert info.addresses_by_version(r.IPVersion.All) == addresses
 
             info = zeroconf_browser.get_service_info(subtype, registration_name)
             assert info is not None
@@ -1054,12 +1053,12 @@ class TestServiceBrowser(unittest.TestCase):
 
         service_name = 'name._type._tcp.local.'
         service_type = '_type._tcp.local.'
-        service_server = 'ash-2.local.'
-        service_text = b'path=/~paulsm/'
+        service_server = 'ash-1.local.'
+        service_text = b'path=/~matt1/'
         service_address = '10.0.1.2'
 
-        service_added = False
-        service_removed = False
+        service_added_count = 0
+        service_removed_count = 0
         service_updated_count = 0
         service_add_event = Event()
         service_removed_event = Event()
@@ -1067,49 +1066,44 @@ class TestServiceBrowser(unittest.TestCase):
 
         class MyServiceListener(r.ServiceListener):
             def add_service(self, zc, type_, name) -> None:
-                nonlocal service_added
-                service_added = True
+                nonlocal service_added_count
+                service_added_count += 1
                 service_add_event.set()
 
             def remove_service(self, zc, type_, name) -> None:
-                nonlocal service_added, service_removed
-                service_added = False
-                service_removed = True
+                nonlocal service_removed_count
+                service_removed_count += 1
                 service_removed_event.set()
 
             def update_service(self, zc, type_, name) -> None:
                 nonlocal service_updated_count
                 service_updated_count += 1
-
                 service_info = zc.get_service_info(type_, name)
+                assert service_info.addresses[0] == socket.inet_aton(service_address)
                 assert service_info.text == service_text
+                assert service_info.server == service_server
                 service_updated_event.set()
 
         def mock_incoming_msg(service_state_change: r.ServiceStateChange) -> r.DNSIncoming:
-            ttl = 120
-            generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
 
-            if service_state_change == r.ServiceStateChange.Updated:
-                generated.add_answer_at_time(
-                    r.DNSText(service_name, r._TYPE_TXT, r._CLASS_IN | r._CLASS_UNIQUE, ttl, service_text), 0
-                )
-                return r.DNSIncoming(generated.packet())
+            generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
 
             if service_state_change == r.ServiceStateChange.Removed:
                 ttl = 0
+            else:
+                ttl = 120
 
             generated.add_answer_at_time(
-                r.DNSPointer(service_type, r._TYPE_PTR, r._CLASS_IN, ttl, service_name), 0
+                r.DNSText(service_name, r._TYPE_TXT, r._CLASS_IN | r._CLASS_UNIQUE, ttl, service_text), 0
             )
+
             generated.add_answer_at_time(
                 r.DNSService(
                     service_name, r._TYPE_SRV, r._CLASS_IN | r._CLASS_UNIQUE, ttl, 0, 0, 80, service_server
                 ),
                 0,
             )
-            generated.add_answer_at_time(
-                r.DNSText(service_name, r._TYPE_TXT, r._CLASS_IN | r._CLASS_UNIQUE, ttl, service_text), 0
-            )
+
             generated.add_answer_at_time(
                 r.DNSAddress(
                     service_server,
@@ -1121,36 +1115,69 @@ class TestServiceBrowser(unittest.TestCase):
                 0,
             )
 
+            generated.add_answer_at_time(
+                r.DNSPointer(service_type, r._TYPE_PTR, r._CLASS_IN, ttl, service_name), 0
+            )
+
             return r.DNSIncoming(generated.packet())
 
         zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
         service_browser = r.ServiceBrowser(zeroconf, service_type, listener=MyServiceListener())
 
         try:
+            wait_time = 3
+
             # service added
             zeroconf.handle_response(mock_incoming_msg(r.ServiceStateChange.Added))
-            service_add_event.wait(1)
-            service_updated_event.wait(1)
-            assert service_added is True
-            assert service_updated_count == 1
-            assert service_removed is False
+            service_add_event.wait(wait_time)
+            assert service_added_count == 1
+            assert service_updated_count == 0
+            assert service_removed_count == 0
 
-            # service updated. currently only text record can be updated
+            # service SRV updated
             service_updated_event.clear()
-            service_text = b'path=/~humingchun/'
+            service_server = 'ash-2.local.'
             zeroconf.handle_response(mock_incoming_msg(r.ServiceStateChange.Updated))
+            service_updated_event.wait(wait_time)
+            assert service_added_count == 1
+            assert service_updated_count == 1
+            assert service_removed_count == 0
+
+            # service TXT updated
+            service_updated_event.clear()
+            service_text = b'path=/~matt2/'
             zeroconf.handle_response(mock_incoming_msg(r.ServiceStateChange.Updated))
-            service_updated_event.wait(1)
-            assert service_added is True
+            service_updated_event.wait(wait_time)
+            assert service_added_count == 1
             assert service_updated_count == 2
-            assert service_removed is False
+            assert service_removed_count == 0
+
+            # service A updated
+            service_updated_event.clear()
+            service_address = '10.0.1.3'
+            zeroconf.handle_response(mock_incoming_msg(r.ServiceStateChange.Updated))
+            service_updated_event.wait(wait_time)
+            assert service_added_count == 1
+            assert service_updated_count == 3
+            assert service_removed_count == 0
+
+            # service all updated
+            service_updated_event.clear()
+            service_server = 'ash-3.local.'
+            service_text = b'path=/~matt3/'
+            service_address = '10.0.1.3'
+            zeroconf.handle_response(mock_incoming_msg(r.ServiceStateChange.Updated))
+            service_updated_event.wait(wait_time)
+            assert service_added_count == 1
+            assert service_updated_count == 4
+            assert service_removed_count == 0
 
             # service removed
             zeroconf.handle_response(mock_incoming_msg(r.ServiceStateChange.Removed))
-            service_removed_event.wait(1)
-            assert service_added is False
-            assert service_updated_count == 2
-            assert service_removed is True
+            service_removed_event.wait(wait_time)
+            assert service_added_count == 1
+            assert service_updated_count == 4
+            assert service_removed_count == 1
 
         finally:
             service_browser.cancel()
@@ -1359,7 +1386,7 @@ def test_multiple_addresses():
 
     assert info.addresses == [address, address]
 
-    if socket.has_ipv6:
+    if socket.has_ipv6 and not os.environ.get('SKIP_IPV6'):
         address_v6_parsed = "2001:db8::1"
         address_v6 = socket.inet_pton(socket.AF_INET6, address_v6_parsed)
         info = ServiceInfo(type_, registration_name, [address, address_v6], 80, 0, 0, desc, "ash-2.local.")
