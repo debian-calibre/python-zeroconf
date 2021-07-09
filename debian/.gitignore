@@ -1,0 +1,8 @@
+/.debhelper/
+/debhelper-build-stamp
+/files
+/python3-zeroconf.postinst.debhelper
+/python3-zeroconf.prerm.debhelper
+/python3-zeroconf.substvars
+/python3-zeroconf/
+/tmp/
