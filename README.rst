@@ -1,14 +1,14 @@
 python-zeroconf
 ===============
 
-.. image:: https://travis-ci.org/jstasiak/python-zeroconf.svg?branch=master
-    :target: https://travis-ci.org/jstasiak/python-zeroconf
-    
+.. image:: https://github.com/jstasiak/python-zeroconf/workflows/CI/badge.svg
+   :target: https://github.com/jstasiak/python-zeroconf?query=workflow%3ACI+branch%3Amaster
+
 .. image:: https://img.shields.io/pypi/v/zeroconf.svg
     :target: https://pypi.python.org/pypi/zeroconf
 
-.. image:: https://img.shields.io/coveralls/jstasiak/python-zeroconf.svg
-    :target: https://coveralls.io/r/jstasiak/python-zeroconf
+.. image:: https://codecov.io/gh/jstasiak/python-zeroconf/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/jstasiak/python-zeroconf
 
 `Documentation <https://python-zeroconf.readthedocs.io/en/latest/>`_.
     
@@ -37,15 +37,15 @@ Compared to some other Zeroconf/Bonjour/Avahi Python packages, python-zeroconf:
 
 * isn't tied to Bonjour or Avahi
 * doesn't use D-Bus
-* doesn't force you to use particular event loop or Twisted
+* doesn't force you to use particular event loop or Twisted (asyncio is used under the hood but not required)
 * is pip-installable
 * has PyPI distribution
 
 Python compatibility
 --------------------
 
-* CPython 3.5+
-* PyPy3 5.8+
+* CPython 3.6+
+* PyPy3 7.2+
 
 Versioning
 ----------
@@ -59,8 +59,14 @@ This project's versions follow the following pattern: MAJOR.MINOR.PATCH.
 Status
 ------
 
-There are some people using this package. I don't actively use it and as such
-any help I can offer with regard to any issues is very limited.
+This project is actively maintained.
+
+Traffic Reduction
+-----------------
+
+Before version 0.32, most traffic reduction techniques described in https://datatracker.ietf.org/doc/html/rfc6762#section-7
+where not implemented which could lead to excessive network traffic.  It is highly recommended that version 0.32 or later
+is used if this is a concern.
 
 IPv6 support
 ------------
@@ -133,6 +139,411 @@ See examples directory for more.
 
 Changelog
 =========
+
+
+0.32.1
+======
+
+* Increased timeout in ServiceInfo.request to handle loaded systems (#895) @bdraco
+
+  It can take a few seconds for a loaded system to run the `async_request`
+  coroutine when the event loop is busy, or the system is CPU bound (example being
+  Home Assistant startup).  We now add an additional `_LOADED_SYSTEM_TIMEOUT` (10s)
+  to the  `run_coroutine_threadsafe` calls to ensure the coroutine has the total
+  amount of time to run up to its internal timeout (default of 3000ms).
+
+  Ten seconds is a bit large of a timeout; however, it is only used in cases
+  where we wrap other timeouts. We now expect the only instance the
+  `run_coroutine_threadsafe` result timeout will happen in a production
+  circumstance is when someone is running a `ServiceInfo.request()` in a thread and
+  another thread calls `Zeroconf.close()` at just the right moment that the future
+  is never completed unless the system is so loaded that it is nearly unresponsive.
+
+  The timeout for `run_coroutine_threadsafe` is the maximum time a thread can
+  cleanly shut down when zeroconf is closed out in another thread, which should
+  always be longer than the underlying thread operation.
+
+0.32.0
+======
+
+This release offers 100% line and branch coverage.
+
+* Made ServiceInfo first question QU (#852) @bdraco
+
+  We want an immediate response when requesting with ServiceInfo
+  by asking a QU question; most responders will not delay the response
+  and respond right away to our question. This also improves compatibility
+  with split networks as we may not have been able to see the response
+  otherwise.  If the responder has not multicast the record recently,
+  it may still choose to do so in addition to responding via unicast
+
+  Reduces traffic when there are multiple zeroconf instances running
+  on the network running ServiceBrowsers
+
+  If we don't get an answer on the first try, we ask a QM question
+  in the event, we can't receive a unicast response for some reason
+
+  This change puts ServiceInfo inline with ServiceBrowser which
+  also asks the first question as QU since ServiceInfo is commonly
+  called from ServiceBrowser callbacks
+* Limited duplicate packet suppression to 1s intervals (#841) @bdraco
+
+  Only suppress duplicate packets that happen within the same
+  second. Legitimate queriers will retry the question if they
+  are suppressed. The limit was reduced to one second to be
+  in line with rfc6762
+* Made multipacket known answer suppression per interface (#836) @bdraco
+
+  The suppression was happening per instance of Zeroconf instead
+  of per interface. Since the same network can be seen on multiple
+  interfaces (usually and wifi and ethernet), this would confuse the
+  multi-packet known answer supression since it was not expecting
+  to get the same data more than once
+* New ServiceBrowsers now request QU in the first outgoing when unspecified (#812) @bdraco
+
+  https://datatracker.ietf.org/doc/html/rfc6762#section-5.4
+  When we start a ServiceBrowser and zeroconf has just started up, the known
+  answer list will be small. By asking a QU question first, it is likely
+  that we have a large known answer list by the time we ask the QM question
+  a second later (current default which is likely too low but would be
+  a breaking change to increase). This reduces the amount of traffic on
+  the network, and has the secondary advantage that most responders will
+  answer a QU question without the typical delay answering QM questions.
+* IPv6 link-local addresses are now qualified with scope_id (#343) @ibygrave
+
+  When a service is advertised on an IPv6 address where
+  the scope is link local, i.e. fe80::/64 (see RFC 4007)
+  the resolved IPv6 address must be extended with the
+  scope_id that identifies through the "%" symbol the
+  local interface to be used when routing to that address.
+  A new API `parsed_scoped_addresses()` is provided to
+  return qualified addresses to avoid breaking compatibility
+  on the existing parsed_addresses().
+* Network adapters that are disconnected are now skipped (#327) @ZLJasonG
+* Fixed listeners missing initial packets if Engine starts too quickly (#387) @bdraco
+
+  When manually creating a zeroconf.Engine object, it is no longer started automatically.
+  It must manually be started by calling .start() on the created object.
+
+  The Engine thread is now started after all the listeners have been added to avoid a
+  race condition where packets could be missed at startup.
+* Fixed answering matching PTR queries with the ANY query (#618) @bdraco
+* Fixed lookup of uppercase names in the registry (#597) @bdraco
+
+  If the ServiceInfo was registered with an uppercase name and the query was
+  for a lowercase name, it would not be found and vice-versa.
+* Fixed unicast responses from any source port (#598) @bdraco
+
+  Unicast responses were only being sent if the source port
+  was 53, this prevented responses when testing with dig:
+
+    dig -p 5353 @224.0.0.251 media-12.local
+
+  The above query will now see a response
+* Fixed queries for AAAA records not being answered (#616) @bdraco
+* Removed second level caching from ServiceBrowsers (#737) @bdraco
+
+  The ServiceBrowser had its own cache of the last time it
+  saw a service that was reimplementing the DNSCache and
+  presenting a source of truth problem that lead to unexpected
+  queries when the two disagreed.
+* Fixed server cache not being case-insensitive (#731) @bdraco
+
+  If the server name had uppercase chars and any of the
+  matching records were lowercase, and the server would not be
+  found
+* Fixed cache handling of records with different TTLs (#729) @bdraco
+
+  There should only be one unique record in the cache at
+  a time as having multiple unique records will different
+  TTLs in the cache can result in unexpected behavior since
+  some functions returned all matching records and some
+  fetched from the right side of the list to return the
+  newest record. Instead we now store the records in a dict
+  to ensure that the newest record always replaces the same
+  unique record, and we never have a source of truth problem
+  determining the TTL of a record from the cache.
+* Fixed ServiceInfo with multiple A records (#725) @bdraco
+
+  If there were multiple A records for the host, ServiceInfo
+  would always return the last one that was in the incoming
+  packet, which was usually not the one that was wanted.
+* Fixed stale unique records expiring too quickly (#706) @bdraco
+
+  Records now expire 1s in the future instead of instant removal.
+
+  tools.ietf.org/html/rfc6762#section-10.2
+  Queriers receiving a Multicast DNS response with a TTL of zero SHOULD
+  NOT immediately delete the record from the cache, but instead record
+  a TTL of 1 and then delete the record one second later.  In the case
+  of multiple Multicast DNS responders on the network described in
+  Section 6.6 above, if one of the responders shuts down and
+  incorrectly sends goodbye packets for its records, it gives the other
+  cooperating responders one second to send out their own response to
+  "rescue" the records before they expire and are deleted.
+* Fixed exception when unregistering a service multiple times (#679) @bdraco
+* Added an AsyncZeroconfServiceTypes to mirror ZeroconfServiceTypes to zeroconf.asyncio (#658) @bdraco
+* Fixed interface_index_to_ip6_address not skiping ipv4 adapters (#651) @bdraco
+* Added async_unregister_all_services to AsyncZeroconf (#649) @bdraco
+* Fixed services not being removed from the registry when calling unregister_all_services (#644) @bdraco
+
+  There was a race condition where a query could be answered for a service
+  in the registry, while goodbye packets which could result in a fresh record
+  being broadcast after the goodbye if a query came in at just the right
+  time. To avoid this, we now remove the services from the registry right
+  after we generate the goodbye packet
+* Fixed zeroconf exception on load when the system disables IPv6 (#624) @bdraco
+* Fixed the QU bit missing from for probe queries (#609) @bdraco
+
+  The bit should be set per
+  datatracker.ietf.org/doc/html/rfc6762#section-8.1
+
+* Fixed the TC bit missing for query packets where the known answers span multiple packets (#494) @bdraco
+* Fixed packets not being properly separated when exceeding maximum size (#498) @bdraco
+
+  Ensure that questions that exceed the max packet size are
+  moved to the next packet. This fixes DNSQuestions being
+  sent in multiple packets in violation of:
+  datatracker.ietf.org/doc/html/rfc6762#section-7.2
+
+  Ensure only one resource record is sent when a record
+  exceeds _MAX_MSG_TYPICAL
+  datatracker.ietf.org/doc/html/rfc6762#section-17
+* Fixed PTR questions asked in uppercase not being answered (#465) @bdraco
+* Added Support for context managers in Zeroconf and AsyncZeroconf (#284) @shenek
+* Implemented an AsyncServiceBrowser to compliment the sync ServiceBrowser (#429) @bdraco
+* Added async_get_service_info to AsyncZeroconf and async_request to AsyncServiceInfo (#408) @bdraco
+* Implemented allowing passing in a sync Zeroconf instance to AsyncZeroconf (#406) @bdraco
+* Fixed IPv6 setup under MacOS when binding to "" (#392) @bdraco
+* Fixed ZeroconfServiceTypes.find not always cancels the ServiceBrowser (#389) @bdraco
+
+  There was a short window where the ServiceBrowser thread
+  could be left running after Zeroconf is closed because
+  the .join() was never waited for when a new Zeroconf
+  object was created
+* Fixed duplicate packets triggering duplicate updates (#376) @bdraco
+
+  If TXT or SRV records update was already processed and then
+  received again, it was possible for a second update to be
+  called back in the ServiceBrowser
+* Fixed ServiceStateChange.Updated event happening for IPs that already existed (#375) @bdraco
+* Fixed RFC6762 Section 10.2 paragraph 2 compliance (#374) @bdraco
+* Reduced length of ServiceBrowser thread name with many types (#373) @bdraco
+* Fixed empty answers being added in ServiceInfo.request (#367) @bdraco
+* Fixed ServiceInfo not populating all AAAA records (#366) @bdraco
+
+  Use get_all_by_details to ensure all records are loaded
+  into addresses.
+
+  Only load A/AAAA records from the cache once in load_from_cache
+  if there is a SRV record present
+
+  Move duplicate code that checked if the ServiceInfo was complete
+  into its own function
+* Fixed a case where the cache list can change during iteration (#363) @bdraco
+* Return task objects created by AsyncZeroconf (#360) @nocarryr
+
+Traffic Reduction:
+
+* Added support for handling QU questions (#621) @bdraco
+
+  Implements RFC 6762 sec 5.4:
+  Questions Requesting Unicast Responses
+  datatracker.ietf.org/doc/html/rfc6762#section-5.4
+* Implemented protect the network against excessive packet flooding (#619) @bdraco
+* Additionals are now suppressed when they are already in the answers section (#617) @bdraco
+* Additionals are no longer included when the answer is suppressed by known-answer suppression (#614) @bdraco
+* Implemented multi-packet known answer supression (#687) @bdraco
+
+  Implements datatracker.ietf.org/doc/html/rfc6762#section-7.2
+* Implemented efficient bucketing of queries with known answers (#698) @bdraco
+* Implemented duplicate question suppression (#770) @bdraco
+
+  http://datatracker.ietf.org/doc/html/rfc6762#section-7.3
+
+Technically backwards incompatible:
+
+* Update internal version check to match docs (3.6+) (#491) @bdraco
+
+  Python version earlier then 3.6 were likely broken with zeroconf
+  already, however, the version is now explicitly checked.
+* Update python compatibility as PyPy3 7.2 is required (#523) @bdraco
+
+Backwards incompatible:
+
+* Drop oversize packets before processing them (#826) @bdraco
+
+  Oversized packets can quickly overwhelm the system and deny
+  service to legitimate queriers. In practice, this is usually due to broken mDNS
+  implementations rather than malicious actors.
+* Guard against excessive ServiceBrowser queries from PTR records significantly lowerthan recommended (#824) @bdraco
+
+  We now enforce a minimum TTL for PTR records to avoid
+  ServiceBrowsers generating excessive queries refresh queries.
+  Apple uses a 15s minimum TTL, however, we do not have the same
+  level of rate limit and safeguards, so we use 1/4 of the recommended value.
+* RecordUpdateListener now uses async_update_records instead of update_record (#419, #726) @bdraco
+
+  This allows the listener to receive all the records that have
+  been updated in a single transaction such as a packet or
+  cache expiry.
+
+  update_record has been deprecated in favor of async_update_records
+  A compatibility shim exists to ensure classes that use
+  RecordUpdateListener as a base class continue to have
+  update_record called, however, they should be updated
+  as soon as possible.
+
+  A new method async_update_records_complete is now called on each
+  listener when all listeners have completed processing updates
+  and the cache has been updated. This allows ServiceBrowsers
+  to delay calling handlers until they are sure the cache
+  has been updated as its a common pattern to call for
+  ServiceInfo when a ServiceBrowser handler fires.
+
+  The async\_ prefix was chosen to make it clear that these
+  functions run in the eventloop and should never do blocking
+  I/O. Before 0.32+ these functions ran in a select() loop and
+  should not have been doing any blocking I/O, but it was not
+  clear to implementors that I/O would block the loop.
+* Pass both the new and old records to async_update_records (#792) @bdraco
+
+  Pass the old_record (cached) as the value and the new_record (wire)
+  to async_update_records instead of forcing each consumer to
+  check the cache since we will always have the old_record
+  when generating the async_update_records call. This avoids
+  the overhead of multiple cache lookups for each listener.
+
+0.31.0
+======
+
+* Separated cache loading from I/O in ServiceInfo and fixed cache lookup (#356),
+  thanks to J. Nick Koston.
+  
+  The ServiceInfo class gained a load_from_cache() method to only fetch information
+  from Zeroconf cache (if it exists) with no IO performed. Additionally this should
+  reduce IO in cases where cache lookups were previously incorrectly failing.
+
+0.30.0
+======
+
+* Some nice refactoring work including removal of the Reaper thread,
+  thanks to J. Nick Koston.
+
+* Fixed a Windows-specific The requested address is not valid in its context regression,
+  thanks to Timothee ‘TTimo’ Besset and J. Nick Koston.
+
+* Provided an asyncio-compatible service registration layer (in the zeroconf.asyncio module),
+  thanks to J. Nick Koston.
+
+0.29.0
+======
+
+* A single socket is used for listening on responding when `InterfaceChoice.Default` is chosen.
+  Thanks to J. Nick Koston.
+
+Backwards incompatible:
+
+* Dropped Python 3.5 support
+
+0.28.8
+======
+
+* Fixed the packet generation when multiple packets are necessary, previously invalid
+  packets were generated sometimes. Patch thanks to J. Nick Koston.
+
+0.28.7
+======
+
+* Fixed the IPv6 address rendering in the browser example, thanks to Alexey Vazhnov.
+* Fixed a crash happening when a service is added or removed during handle_response
+  and improved exception handling, thanks to J. Nick Koston.
+
+0.28.6
+======
+
+* Loosened service name validation when receiving from the network this lets us handle
+  some real world devices previously causing errors, thanks to J. Nick Koston.
+
+0.28.5
+======
+
+* Enabled ignoring duplicated messages which decreases CPU usage, thanks to J. Nick Koston.
+* Fixed spurious AttributeError: module 'unittest' has no attribute 'mock' in tests.
+
+0.28.4
+======
+
+* Improved cache reaper performance significantly, thanks to J. Nick Koston.
+* Added ServiceListener to __all__ as it's part of the public API, thanks to Justin Nesselrotte.
+
+0.28.3
+======
+
+* Reduced a time an internal lock is held which should eliminate deadlocks in high-traffic networks,
+  thanks to J. Nick Koston.
+
+0.28.2
+======
+
+* Stopped asking questions we already have answers for in cache, thanks to Paul Daumlechner.
+* Removed initial delay before querying for service info, thanks to Erik Montnemery.
+
+0.28.1
+======
+
+* Fixed a resource leak connected to using ServiceBrowser with multiple types, thanks to
+  J. Nick Koston.
+
+0.28.0
+======
+
+* Improved Windows support when using socket errno checks, thanks to Sandy Patterson.
+* Added support for passing text addresses to ServiceInfo.
+* Improved logging (includes fixing an incorrect logging call)
+* Improved Windows compatibility by using Adapter.index from ifaddr, thanks to PhilippSelenium.
+* Improved Windows compatibility by stopping using socket.if_nameindex.
+* Fixed an OS X edge case which should also eliminate a memory leak, thanks to Emil Styrke.
+
+Technically backwards incompatible:
+
+* ``ifaddr`` 0.1.7 or newer is required now.
+
+0.27.1
+------
+
+* Improved the logging situation (includes fixing a false-positive "packets() made no progress
+  adding records", thanks to Greg Badros)
+
+0.27.0
+------
+
+* Large multi-resource responses are now split into separate packets which fixes a bad
+  mdns-repeater/ChromeCast Audio interaction ending with ChromeCast Audio crash (and possibly
+  some others) and improves RFC 6762 compliance, thanks to Greg Badros
+* Added a warning presented when the listener passed to ServiceBrowser lacks update_service()
+  callback
+* Added support for finding all services available in the browser example, thanks to Perry Kunder
+
+Backwards incompatible:
+
+* Removed previously deprecated ServiceInfo address constructor parameter and property
+
+0.26.3
+------
+
+* Improved readability of logged incoming data, thanks to Erik Montnemery
+* Threads are given unique names now to aid debugging, thanks to Erik Montnemery
+* Fixed a regression where get_service_info() called within a listener add_service method
+  would deadlock, timeout and incorrectly return None, fix thanks to Erik Montnemery, but
+  Matt Saxon and Hmmbob were also involved in debugging it.
+
+0.26.2
+------
+
+* Added support for multiple types to ServiceBrowser, thanks to J. Nick Koston
+* Fixed a race condition where a listener gets a message before the lock is created, thanks to
+  J. Nick Koston
 
 0.26.1
 ------

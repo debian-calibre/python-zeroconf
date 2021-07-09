@@ -9,7 +9,7 @@ with open(join(PROJECT_ROOT, 'README.rst'), encoding='utf-8') as f:
     readme = f.read()
 
 version = (
-    [l for l in open(join(PROJECT_ROOT, 'zeroconf', '__init__.py')) if '__version__' in l][0]
+    [ln for ln in open(join(PROJECT_ROOT, 'zeroconf', '__init__.py')) if '__version__' in ln][0]
     .split('=')[-1]
     .strip()
     .strip('\'"')
@@ -23,7 +23,7 @@ setup(
     author='Paul Scott-Murphy, William McBrine, Jakub Stasiak',
     url='https://github.com/jstasiak/python-zeroconf',
     package_data={"zeroconf": ["py.typed"]},
-    packages=["zeroconf"],
+    packages=["zeroconf", "zeroconf._services", "zeroconf._utils"],
     platforms=['unix', 'linux', 'osx'],
     license='LGPL',
     zip_safe=False,
@@ -39,9 +39,10 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     keywords=['Bonjour', 'Avahi', 'Zeroconf', 'Multicast DNS', 'Service Discovery', 'mDNS'],
-    install_requires=['ifaddr', 'typing;python_version<"3.5"'],
+    install_requires=['ifaddr>=0.1.7'],
 )
