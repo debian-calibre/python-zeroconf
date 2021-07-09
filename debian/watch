@@ -1,2 +1,2 @@
-version=3
-https://github.com/jstasiak/python-zeroconf/releases /jstasiak/python-zeroconf/archive/(\d\S+)\.tar\.(?:bz2|gz|xz)
+version=4
+https://github.com/jstasiak/python-zeroconf/releases /jstasiak/python-zeroconf/archive/refs/tags/(\d\S+)\.tar\.(?:bz2|gz|xz)
