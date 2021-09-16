@@ -1,4 +1,6 @@
-python-zeroconf (0.32.1-1) UNRELEASED; urgency=medium
+python-zeroconf (0.32.1-1) unstable; urgency=medium
+
+  * Team upload.
 
   [ YOKOTA Hiroshi ]
   * Update uscan watch file
@@ -10,7 +12,7 @@ python-zeroconf (0.32.1-1) UNRELEASED; urgency=medium
   * d/control: Update Vcs-* fields with new Debian Python Team Salsa
     layout.
 
- -- Norbert Preining <norbert@preining.info>  Sat, 10 Jul 2021 05:32:53 +0900
+ -- Norbert Preining <norbert@preining.info>  Fri, 17 Sep 2021 08:44:25 +0900
 
 python-zeroconf (0.26.1-1) unstable; urgency=medium
 
