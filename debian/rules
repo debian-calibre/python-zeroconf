@@ -13,9 +13,7 @@ override_dh_auto_build:
 	PYBUILD_VERSIONS="$(PYTHON3VERSIONS)" pybuild --build
 
 override_dh_auto_test:
-ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	PYBUILD_VERSIONS="$(PYTHON3VERSIONS)" pybuild --test || true
-endif
 
 override_dh_auto_install:
 	PYBUILD_VERSIONS="$(PYTHON3VERSIONS)" pybuild --install
