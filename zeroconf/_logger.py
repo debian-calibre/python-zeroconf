@@ -24,7 +24,7 @@ import logging
 import sys
 from typing import Any, Dict, Union, cast
 
-log = logging.getLogger(__name__.split('.')[0])
+log = logging.getLogger(__name__.split('.', maxsplit=1)[0])
 log.addHandler(logging.NullHandler())
 
 
@@ -61,3 +61,14 @@ class QuietLogger:
             logger = log.debug
         cls._seen_logs[msg_str] = cast(int, cls._seen_logs[msg_str]) + 1
         logger(*args)
+
+    @classmethod
+    def log_exception_once(cls, exc: Exception, *args: Any) -> None:
+        msg_str = args[0]
+        if msg_str not in cls._seen_logs:
+            cls._seen_logs[msg_str] = 0
+            logger = log.warning
+        else:
+            logger = log.debug
+        cls._seen_logs[msg_str] = cast(int, cls._seen_logs[msg_str]) + 1
+        logger(*args, exc_info=exc)

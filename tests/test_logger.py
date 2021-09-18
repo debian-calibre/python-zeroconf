@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 """Unit tests for logger.py."""
@@ -59,6 +58,27 @@ def test_log_exception_warning():
         "zeroconf._logger.log.debug"
     ) as mock_log_debug:
         quiet_logger.log_exception_warning("the exception warning")
+
+    assert not mock_log_warning.mock_calls
+    assert mock_log_debug.mock_calls
+
+
+def test_log_exception_once():
+    """Test we only log with warning level once."""
+    quiet_logger = QuietLogger()
+    exc = Exception()
+    with patch("zeroconf._logger.log.warning") as mock_log_warning, patch(
+        "zeroconf._logger.log.debug"
+    ) as mock_log_debug:
+        quiet_logger.log_exception_once(exc, "the exceptional exception warning")
+
+    assert mock_log_warning.mock_calls
+    assert not mock_log_debug.mock_calls
+
+    with patch("zeroconf._logger.log.warning") as mock_log_warning, patch(
+        "zeroconf._logger.log.debug"
+    ) as mock_log_debug:
+        quiet_logger.log_exception_once(exc, "the exceptional exception warning")
 
     assert not mock_log_warning.mock_calls
     assert mock_log_debug.mock_calls

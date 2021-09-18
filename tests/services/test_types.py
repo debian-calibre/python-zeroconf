@@ -50,17 +50,17 @@ class ServiceTypesQuery(unittest.TestCase):
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
         )
-        zeroconf_registrar.registry.add(info)
+        zeroconf_registrar.registry.async_add(info)
         try:
             with patch.object(
                 zeroconf_registrar.engine.protocols[0], "suppress_duplicate_packet", return_value=False
             ), patch.object(
                 zeroconf_registrar.engine.protocols[1], "suppress_duplicate_packet", return_value=False
             ):
-                service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=2)
                 assert type_ in service_types
                 _clear_cache(zeroconf_registrar)
-                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=2)
                 assert type_ in service_types
 
         finally:
@@ -87,17 +87,17 @@ class ServiceTypesQuery(unittest.TestCase):
             "ash-2.local.",
             addresses=[socket.inet_pton(socket.AF_INET6, addr)],
         )
-        zeroconf_registrar.registry.add(info)
+        zeroconf_registrar.registry.async_add(info)
         try:
             with patch.object(
                 zeroconf_registrar.engine.protocols[0], "suppress_duplicate_packet", return_value=False
             ), patch.object(
                 zeroconf_registrar.engine.protocols[1], "suppress_duplicate_packet", return_value=False
             ):
-                service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=2)
                 assert type_ in service_types
                 _clear_cache(zeroconf_registrar)
-                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=2)
                 assert type_ in service_types
 
         finally:
@@ -124,17 +124,17 @@ class ServiceTypesQuery(unittest.TestCase):
             "ash-2.local.",
             addresses=[socket.inet_pton(socket.AF_INET6, addr)],
         )
-        zeroconf_registrar.registry.add(info)
+        zeroconf_registrar.registry.async_add(info)
         try:
             with patch.object(
                 zeroconf_registrar.engine.protocols[0], "suppress_duplicate_packet", return_value=False
             ), patch.object(
                 zeroconf_registrar.engine.protocols[1], "suppress_duplicate_packet", return_value=False
             ):
-                service_types = ZeroconfServiceTypes.find(ip_version=r.IPVersion.V6Only, timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(ip_version=r.IPVersion.V6Only, timeout=2)
                 assert type_ in service_types
                 _clear_cache(zeroconf_registrar)
-                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=2)
                 assert type_ in service_types
 
         finally:
@@ -160,17 +160,17 @@ class ServiceTypesQuery(unittest.TestCase):
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
         )
-        zeroconf_registrar.registry.add(info)
+        zeroconf_registrar.registry.async_add(info)
         try:
             with patch.object(
                 zeroconf_registrar.engine.protocols[0], "suppress_duplicate_packet", return_value=False
             ), patch.object(
                 zeroconf_registrar.engine.protocols[1], "suppress_duplicate_packet", return_value=False
             ):
-                service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(interfaces=['127.0.0.1'], timeout=2)
                 assert discovery_type in service_types
                 _clear_cache(zeroconf_registrar)
-                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=0.5)
+                service_types = ZeroconfServiceTypes.find(zc=zeroconf_registrar, timeout=2)
                 assert discovery_type in service_types
 
         finally:

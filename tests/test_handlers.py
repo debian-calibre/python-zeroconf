@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 """ Unit tests for zeroconf._handlers """
 
 import asyncio
 import logging
+import os
 import pytest
 import socket
 import time
@@ -14,13 +14,14 @@ import unittest.mock
 from typing import List
 
 import zeroconf as r
-from zeroconf import ServiceInfo, Zeroconf, current_time_millis
+from zeroconf import _handlers, ServiceInfo, Zeroconf, current_time_millis
 from zeroconf import const
-from zeroconf._dns import DNSRRSet
+from zeroconf._handlers import construct_outgoing_multicast_answers, MulticastOutgoingQueue
+from zeroconf._utils.time import millis_to_seconds
 from zeroconf.asyncio import AsyncZeroconf
 
 
-from . import _clear_cache, _inject_response
+from . import _clear_cache, _inject_response, has_working_ipv6
 
 log = logging.getLogger('zeroconf')
 original_logging_level = logging.NOTSET
@@ -46,7 +47,7 @@ class TestRegistrar(unittest.TestCase):
         # service definition
         type_ = "_test-srvc-type._tcp.local."
         name = "xxxyyy"
-        registration_name = "%s.%s" % (name, type_)
+        registration_name = f"{name}.{type_}"
 
         desc = {'path': '/~paulsm/'}
         info = ServiceInfo(
@@ -88,7 +89,7 @@ class TestRegistrar(unittest.TestCase):
         expected_ttl = None
         for _ in range(3):
             _process_outgoing_packet(zc.generate_service_query(info))
-        zc.registry.add(info)
+        zc.registry.async_add(info)
         for _ in range(3):
             _process_outgoing_packet(zc.generate_service_broadcast(info, None))
         assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 3
@@ -101,19 +102,20 @@ class TestRegistrar(unittest.TestCase):
         query.add_question(r.DNSQuestion(info.name, const._TYPE_SRV, const._CLASS_IN))
         query.add_question(r.DNSQuestion(info.name, const._TYPE_TXT, const._CLASS_IN))
         query.add_question(r.DNSQuestion(info.server, const._TYPE_A, const._CLASS_IN))
-        multicast_out = zc.query_handler.async_response(
-            [r.DNSIncoming(packet) for packet in query.packets()], None, const._MDNS_PORT
-        )[1]
-        _process_outgoing_packet(multicast_out)
+        question_answers = zc.query_handler.async_response(
+            [r.DNSIncoming(packet) for packet in query.packets()], False
+        )
+        _process_outgoing_packet(construct_outgoing_multicast_answers(question_answers.mcast_aggregate))
 
         # The additonals should all be suppresed since they are all in the answers section
+        # There will be one NSEC additional to indicate the lack of AAAA record
         #
-        assert nbr_answers == 4 and nbr_additionals == 0 and nbr_authorities == 0
+        assert nbr_answers == 4 and nbr_additionals == 1 and nbr_authorities == 0
         nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # unregister
         expected_ttl = 0
-        zc.registry.remove(info)
+        zc.registry.async_remove(info)
         for _ in range(3):
             _process_outgoing_packet(zc.generate_service_broadcast(info, 0))
         assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 0
@@ -122,7 +124,7 @@ class TestRegistrar(unittest.TestCase):
         expected_ttl = None
         for _ in range(3):
             _process_outgoing_packet(zc.generate_service_query(info))
-        zc.registry.add(info)
+        zc.registry.async_add(info)
         # register service with custom TTL
         expected_ttl = const._DNS_HOST_TTL * 2
         assert expected_ttl != const._DNS_HOST_TTL
@@ -138,17 +140,18 @@ class TestRegistrar(unittest.TestCase):
         query.add_question(r.DNSQuestion(info.name, const._TYPE_SRV, const._CLASS_IN))
         query.add_question(r.DNSQuestion(info.name, const._TYPE_TXT, const._CLASS_IN))
         query.add_question(r.DNSQuestion(info.server, const._TYPE_A, const._CLASS_IN))
-        _process_outgoing_packet(
-            zc.query_handler.async_response(
-                [r.DNSIncoming(packet) for packet in query.packets()], None, const._MDNS_PORT
-            )[1]
+        question_answers = zc.query_handler.async_response(
+            [r.DNSIncoming(packet) for packet in query.packets()], False
         )
-        assert nbr_answers == 4 and nbr_additionals == 0 and nbr_authorities == 0
+        _process_outgoing_packet(construct_outgoing_multicast_answers(question_answers.mcast_aggregate))
+
+        # There will be one NSEC additional to indicate the lack of AAAA record
+        assert nbr_answers == 4 and nbr_additionals == 1 and nbr_authorities == 0
         nbr_answers = nbr_additionals = nbr_authorities = 0
 
         # unregister
         expected_ttl = 0
-        zc.registry.remove(info)
+        zc.registry.async_remove(info)
         for _ in range(3):
             _process_outgoing_packet(zc.generate_service_broadcast(info, 0))
         assert nbr_answers == 12 and nbr_additionals == 0 and nbr_authorities == 0
@@ -160,7 +163,7 @@ class TestRegistrar(unittest.TestCase):
         zc = Zeroconf(interfaces=['127.0.0.1'])
         type_ = "_homeassistant._tcp.local."
         name = "Home"
-        registration_name = "%s.%s" % (name, type_)
+        registration_name = f"{name}.{type_}"
 
         info = ServiceInfo(
             type_,
@@ -189,7 +192,7 @@ class TestRegistrar(unittest.TestCase):
         zc = Zeroconf(interfaces=['127.0.0.1'])
         type_ = "_mylowertype._tcp.local."
         name = "Home"
-        registration_name = "%s.%s" % (name, type_)
+        registration_name = f"{name}.{type_}"
 
         info = ServiceInfo(
             type_,
@@ -208,7 +211,7 @@ class TestRegistrar(unittest.TestCase):
         out = r.DNSOutgoing(const._FLAGS_QR_QUERY)
         out.add_question(r.DNSQuestion(type_.upper(), const._TYPE_PTR, const._CLASS_IN))
         zc.send(out)
-        time.sleep(0.5)
+        time.sleep(1)
         info = ServiceInfo(type_, registration_name)
         info.load_from_cache(zc)
         assert info.addresses == [socket.inet_pton(socket.AF_INET, "1.2.3.4")]
@@ -224,7 +227,7 @@ def test_ptr_optimization():
     # service definition
     type_ = "_test-srvc-type._tcp.local."
     name = "xxxyyy"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
 
     desc = {'path': '/~paulsm/'}
     info = ServiceInfo(
@@ -237,11 +240,15 @@ def test_ptr_optimization():
     # Verify we won't respond for 1s with the same multicast
     query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     query.add_question(r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN))
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], None, const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert unicast_out is None
-    assert multicast_out is None
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    # Since we sent the PTR in the last second, they
+    # should end up in the delayed at least one second bucket
+    assert question_answers.mcast_aggregate_last_second
 
     # Clear the cache to allow responding again
     _clear_cache(zc)
@@ -249,17 +256,17 @@ def test_ptr_optimization():
     # Verify we will now respond
     query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     query.add_question(r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN))
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], None, const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out.id == query.id
-    assert unicast_out is None
-    assert multicast_out is not None
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate_last_second
     has_srv = has_txt = has_a = False
     nbr_additionals = 0
-    nbr_answers = len(multicast_out.answers)
-    nbr_authorities = len(multicast_out.authorities)
-    for answer in multicast_out.additionals:
+    nbr_answers = len(question_answers.mcast_aggregate)
+    additionals = set().union(*question_answers.mcast_aggregate.values())
+    for answer in additionals:
         nbr_additionals += 1
         if answer.type == const._TYPE_SRV:
             has_srv = True
@@ -267,7 +274,9 @@ def test_ptr_optimization():
             has_txt = True
         elif answer.type == const._TYPE_A:
             has_a = True
-    assert nbr_answers == 1 and nbr_additionals == 3 and nbr_authorities == 0
+    assert nbr_answers == 1 and nbr_additionals == 4
+    # There will be one NSEC additional to indicate the lack of AAAA record
+
     assert has_srv and has_txt and has_a
 
     # unregister
@@ -275,64 +284,68 @@ def test_ptr_optimization():
     zc.close()
 
 
+@unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+@unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
 def test_any_query_for_ptr():
-    """Test that queries for ANY will return PTR records."""
+    """Test that queries for ANY will return PTR records and the response is aggregated."""
     zc = Zeroconf(interfaces=['127.0.0.1'])
     type_ = "_anyptr._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
     ipv6_address = socket.inet_pton(socket.AF_INET6, "2001:db8::1")
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, server_name, addresses=[ipv6_address])
-    zc.registry.add(info)
+    zc.registry.async_add(info)
 
     _clear_cache(zc)
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(type_, const._TYPE_ANY, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    _, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert multicast_out.answers[0][0].name == type_
-    assert multicast_out.answers[0][0].alias == registration_name
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    mcast_answers = list(question_answers.mcast_aggregate)
+    assert mcast_answers[0].name == type_
+    assert mcast_answers[0].alias == registration_name
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
     zc.close()
 
 
+@unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+@unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
 def test_aaaa_query():
-    """Test that queries for AAAA records work."""
+    """Test that queries for AAAA records work and should respond right away."""
     zc = Zeroconf(interfaces=['127.0.0.1'])
     type_ = "_knownaaaservice._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
     ipv6_address = socket.inet_pton(socket.AF_INET6, "2001:db8::1")
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, server_name, addresses=[ipv6_address])
-    zc.registry.add(info)
+    zc.registry.async_add(info)
 
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(server_name, const._TYPE_AAAA, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    _, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert multicast_out.answers[0][0].address == ipv6_address
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    mcast_answers = list(question_answers.mcast_now)
+    assert mcast_answers[0].address == ipv6_address
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
     zc.close()
 
 
+@unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+@unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
 def test_a_and_aaaa_record_fate_sharing():
-    """Test that queries for AAAA always return A records in the additionals."""
+    """Test that queries for AAAA always return A records in the additionals and should respond right away."""
     zc = Zeroconf(interfaces=['127.0.0.1'])
     type_ = "_a-and-aaaa-service._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
     ipv6_address = socket.inet_pton(socket.AF_INET6, "2001:db8::1")
@@ -343,40 +356,34 @@ def test_a_and_aaaa_record_fate_sharing():
     aaaa_record = info.dns_addresses(version=r.IPVersion.V6Only)[0]
     a_record = info.dns_addresses(version=r.IPVersion.V4Only)[0]
 
-    zc.registry.add(info)
+    zc.registry.async_add(info)
 
     # Test AAAA query
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(server_name, const._TYPE_AAAA, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    _, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    answers = DNSRRSet([answer[0] for answer in multicast_out.answers])
-    additionals = DNSRRSet(multicast_out.additionals)
-    assert aaaa_record in answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    additionals = set().union(*question_answers.mcast_now.values())
+    assert aaaa_record in question_answers.mcast_now
     assert a_record in additionals
-    assert len(multicast_out.answers) == 1
-    assert len(multicast_out.additionals) == 1
+    assert len(question_answers.mcast_now) == 1
+    assert len(additionals) == 1
 
     # Test A query
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(server_name, const._TYPE_A, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    _, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    answers = DNSRRSet([answer[0] for answer in multicast_out.answers])
-    additionals = DNSRRSet(multicast_out.additionals)
-
-    assert a_record in answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    additionals = set().union(*question_answers.mcast_now.values())
+    assert a_record in question_answers.mcast_now
     assert aaaa_record in additionals
-    assert len(multicast_out.answers) == 1
-    assert len(multicast_out.additionals) == 1
+    assert len(question_answers.mcast_now) == 1
+    assert len(additionals) == 1
+
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
     zc.close()
 
 
@@ -388,28 +395,27 @@ def test_unicast_response():
     # service definition
     type_ = "_test-srvc-type._tcp.local."
     name = "xxxyyy"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     info = ServiceInfo(
         type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.2")]
     )
     # register
-    zc.registry.add(info)
+    zc.registry.async_add(info)
     _clear_cache(zc)
 
     # query
     query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     query.add_question(r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN))
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", 1234
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], True
     )
-    for out in (unicast_out, multicast_out):
-        assert out.id == query.id
-        has_srv = has_txt = has_a = False
+    for answers in (question_answers.ucast, question_answers.mcast_aggregate):
+        has_srv = has_txt = has_a = has_aaaa = has_nsec = False
         nbr_additionals = 0
-        nbr_answers = len(out.answers)
-        nbr_authorities = len(out.authorities)
-        for answer in out.additionals:
+        nbr_answers = len(answers)
+        additionals = set().union(*answers.values())
+        for answer in additionals:
             nbr_additionals += 1
             if answer.type == const._TYPE_SRV:
                 has_srv = True
@@ -417,11 +423,59 @@ def test_unicast_response():
                 has_txt = True
             elif answer.type == const._TYPE_A:
                 has_a = True
-        assert nbr_answers == 1 and nbr_additionals == 3 and nbr_authorities == 0
-        assert has_srv and has_txt and has_a
+            elif answer.type == const._TYPE_AAAA:
+                has_aaaa = True
+            elif answer.type == const._TYPE_NSEC:
+                has_nsec = True
+        # There will be one NSEC additional to indicate the lack of AAAA record
+        assert nbr_answers == 1 and nbr_additionals == 4
+        assert has_srv and has_txt and has_a and has_nsec
+        assert not has_aaaa
 
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
+    zc.close()
+
+
+@pytest.mark.asyncio
+async def test_probe_answered_immediately():
+    """Verify probes are responded to immediately."""
+    # instantiate a zeroconf instance
+    zc = Zeroconf(interfaces=['127.0.0.1'])
+
+    # service definition
+    type_ = "_test-srvc-type._tcp.local."
+    name = "xxxyyy"
+    registration_name = f"{name}.{type_}"
+    desc = {'path': '/~paulsm/'}
+    info = ServiceInfo(
+        type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    zc.registry.async_add(info)
+    query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
+    question = r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN)
+    query.add_question(question)
+    query.add_authorative_answer(info.dns_pointer())
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
+    )
+    assert not question_answers.ucast
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+    assert question_answers.mcast_now
+
+    query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
+    question = r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN)
+    question.unicast = True
+    query.add_question(question)
+    query.add_authorative_answer(info.dns_pointer())
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
+    )
+    assert question_answers.ucast
+    assert question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
     zc.close()
 
 
@@ -434,8 +488,8 @@ def test_qu_response():
     type_ = "_test-srvc-type._tcp.local."
     other_type_ = "_notthesame._tcp.local."
     name = "xxxyyy"
-    registration_name = "%s.%s" % (name, type_)
-    registration_name2 = "%s.%s" % (name, other_type_)
+    registration_name = f"{name}.{type_}"
+    registration_name2 = f"{name}.{other_type_}"
     desc = {'path': '/~paulsm/'}
     info = ServiceInfo(
         type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.2")]
@@ -453,22 +507,26 @@ def test_qu_response():
     # register
     zc.register_service(info)
 
-    def _validate_complete_response(query, out):
-        assert out.id == query.id
-        has_srv = has_txt = has_a = False
-        nbr_additionals = 0
-        nbr_answers = len(out.answers)
-        nbr_authorities = len(out.authorities)
-        for answer in out.additionals:
-            nbr_additionals += 1
+    def _validate_complete_response(answers):
+        has_srv = has_txt = has_a = has_aaaa = has_nsec = False
+        nbr_answers = len(answers.keys())
+        additionals = set().union(*answers.values())
+        nbr_additionals = len(additionals)
+
+        for answer in additionals:
             if answer.type == const._TYPE_SRV:
                 has_srv = True
             elif answer.type == const._TYPE_TXT:
                 has_txt = True
             elif answer.type == const._TYPE_A:
                 has_a = True
-        assert nbr_answers == 1 and nbr_additionals == 3 and nbr_authorities == 0
-        assert has_srv and has_txt and has_a
+            elif answer.type == const._TYPE_AAAA:
+                has_aaaa = True
+            elif answer.type == const._TYPE_NSEC:
+                has_nsec = True
+        assert nbr_answers == 1 and nbr_additionals == 4
+        assert has_srv and has_txt and has_a and has_nsec
+        assert not has_aaaa
 
     # With QU should respond to only unicast when the answer has been recently multicast
     query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
@@ -477,11 +535,13 @@ def test_qu_response():
     assert question.unicast is True
     query.add_question(question)
 
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out is None
-    _validate_complete_response(query, unicast_out)
+    _validate_complete_response(question_answers.ucast)
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     _clear_cache(zc)
     # With QU should respond to only multicast since the response hasn't been seen since 75% of the ttl
@@ -490,11 +550,13 @@ def test_qu_response():
     question.unicast = True  # Set the QU bit
     assert question.unicast is True
     query.add_question(question)
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert unicast_out is None
-    _validate_complete_response(query, multicast_out)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate
+    _validate_complete_response(question_answers.mcast_now)
 
     # With QU set and an authorative answer (probe) should respond to both unitcast and multicast since the response hasn't been seen since 75% of the ttl
     query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
@@ -503,24 +565,28 @@ def test_qu_response():
     assert question.unicast is True
     query.add_question(question)
     query.add_authorative_answer(info2.dns_pointer())
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    _validate_complete_response(query, unicast_out)
-    _validate_complete_response(query, multicast_out)
+    _validate_complete_response(question_answers.ucast)
+    _validate_complete_response(question_answers.mcast_now)
 
-    _inject_response(zc, r.DNSIncoming(multicast_out.packets()[0]))
+    _inject_response(
+        zc, r.DNSIncoming(construct_outgoing_multicast_answers(question_answers.mcast_now).packets()[0])
+    )
     # With the cache repopulated; should respond to only unicast when the answer has been recently multicast
     query = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN)
     question.unicast = True  # Set the QU bit
     assert question.unicast is True
     query.add_question(question)
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out is None
-    _validate_complete_response(query, unicast_out)
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+    _validate_complete_response(question_answers.ucast)
     # unregister
     zc.unregister_service(info)
     zc.close()
@@ -530,13 +596,13 @@ def test_known_answer_supression():
     zc = Zeroconf(interfaces=['127.0.0.1'])
     type_ = "_knownanswersv8._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
     info = ServiceInfo(
         type_, registration_name, 80, 0, 0, desc, server_name, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
+    zc.registry.async_add(info)
 
     now = current_time_millis()
     _clear_cache(zc)
@@ -545,34 +611,33 @@ def test_known_answer_supression():
     question = r.DNSQuestion(type_, const._TYPE_PTR, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is not None and multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(type_, const._TYPE_PTR, const._CLASS_IN)
     generated.add_question(question)
     generated.add_answer_at_time(info.dns_pointer(), now)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    # If the answer is suppressed, the additional should be suppresed as well
-    assert not multicast_out or not multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     # Test A supression
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(server_name, const._TYPE_A, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is not None and multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(server_name, const._TYPE_A, const._CLASS_IN)
@@ -580,59 +645,73 @@ def test_known_answer_supression():
     for dns_address in info.dns_addresses():
         generated.add_answer_at_time(dns_address, now)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert not multicast_out or not multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+
+    # Test NSEC record returned when there is no AAAA record and we expectly ask
+    generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
+    question = r.DNSQuestion(server_name, const._TYPE_AAAA, const._CLASS_IN)
+    generated.add_question(question)
+    for dns_address in info.dns_addresses():
+        generated.add_answer_at_time(dns_address, now)
+    packets = generated.packets()
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    expected_nsec_record: r.DNSNsec = list(question_answers.mcast_now)[0]
+    assert const._TYPE_A not in expected_nsec_record.rdtypes
+    assert const._TYPE_AAAA in expected_nsec_record.rdtypes
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     # Test SRV supression
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(registration_name, const._TYPE_SRV, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is not None and multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(registration_name, const._TYPE_SRV, const._CLASS_IN)
     generated.add_question(question)
     generated.add_answer_at_time(info.dns_service(), now)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    # If the answer is suppressed, the additional should be suppresed as well
-    assert not multicast_out or not multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     # Test TXT supression
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(registration_name, const._TYPE_TXT, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is not None and multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(registration_name, const._TYPE_TXT, const._CLASS_IN)
     generated.add_question(question)
     generated.add_answer_at_time(info.dns_text(), now)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert not multicast_out or not multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
     zc.close()
 
 
@@ -643,9 +722,9 @@ def test_multi_packet_known_answer_supression():
     name2 = "knownname2"
     name3 = "knownname3"
 
-    registration_name = "%s.%s" % (name, type_)
-    registration2_name = "%s.%s" % (name2, type_)
-    registration3_name = "%s.%s" % (name3, type_)
+    registration_name = f"{name}.{type_}"
+    registration2_name = f"{name2}.{type_}"
+    registration3_name = f"{name3}.{type_}"
 
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
@@ -661,9 +740,9 @@ def test_multi_packet_known_answer_supression():
     info3 = ServiceInfo(
         type_, registration3_name, 80, 0, 0, desc, server_name3, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
-    zc.registry.add(info2)
-    zc.registry.add(info3)
+    zc.registry.async_add(info)
+    zc.registry.async_add(info2)
+    zc.registry.async_add(info3)
 
     now = current_time_millis()
     _clear_cache(zc)
@@ -678,15 +757,15 @@ def test_multi_packet_known_answer_supression():
     generated.add_answer_at_time(info3.dns_pointer(), now)
     packets = generated.packets()
     assert len(packets) > 1
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is None
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
     # unregister
-    zc.registry.remove(info)
-    zc.registry.remove(info2)
-    zc.registry.remove(info3)
+    zc.registry.async_remove(info)
+    zc.registry.async_remove(info2)
+    zc.registry.async_remove(info3)
     zc.close()
 
 
@@ -694,23 +773,23 @@ def test_known_answer_supression_service_type_enumeration_query():
     zc = Zeroconf(interfaces=['127.0.0.1'])
     type_ = "_otherknown._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
     info = ServiceInfo(
         type_, registration_name, 80, 0, 0, desc, server_name, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
+    zc.registry.async_add(info)
 
     type_2 = "_otherknown2._tcp.local."
     name = "knownname"
-    registration_name2 = "%s.%s" % (name, type_2)
+    registration_name2 = f"{name}.{type_2}"
     desc = {'path': '/~paulsm/'}
     server_name2 = "ash-3.local."
     info2 = ServiceInfo(
         type_2, registration_name2, 80, 0, 0, desc, server_name2, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info2)
+    zc.registry.async_add(info2)
     now = current_time_millis()
     _clear_cache(zc)
 
@@ -719,11 +798,11 @@ def test_known_answer_supression_service_type_enumeration_query():
     question = r.DNSQuestion(const._SERVICE_TYPE_ENUMERATION_NAME, const._TYPE_PTR, const._CLASS_IN)
     generated.add_question(question)
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is not None and multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     generated = r.DNSOutgoing(const._FLAGS_QR_QUERY)
     question = r.DNSQuestion(const._SERVICE_TYPE_ENUMERATION_NAME, const._TYPE_PTR, const._CLASS_IN)
@@ -749,15 +828,15 @@ def test_known_answer_supression_service_type_enumeration_query():
         now,
     )
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert not multicast_out or not multicast_out.answers
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
     # unregister
-    zc.registry.remove(info)
-    zc.registry.remove(info2)
+    zc.registry.async_remove(info)
+    zc.registry.async_remove(info2)
     zc.close()
 
 
@@ -772,23 +851,23 @@ async def test_qu_response_only_sends_additionals_if_sends_answer():
 
     type_ = "_addtest1._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
     info = ServiceInfo(
         type_, registration_name, 80, 0, 0, desc, server_name, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
+    zc.registry.async_add(info)
 
     type_2 = "_addtest2._tcp.local."
     name = "knownname"
-    registration_name2 = "%s.%s" % (name, type_2)
+    registration_name2 = f"{name}.{type_2}"
     desc = {'path': '/~paulsm/'}
     server_name2 = "ash-3.local."
     info2 = ServiceInfo(
         type_2, registration_name2, 80, 0, 0, desc, server_name2, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info2)
+    zc.registry.async_add(info2)
 
     ptr_record = info.dns_pointer()
 
@@ -809,12 +888,16 @@ async def test_qu_response_only_sends_additionals_if_sends_answer():
     assert question.unicast is True
     query.add_question(question)
 
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out is None
-    assert a_record in unicast_out.additionals
-    assert unicast_out.answers[0][0] == ptr_record
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+
+    additionals = set().union(*question_answers.ucast.values())
+    assert a_record in additionals
+    assert ptr_record in question_answers.ucast
 
     # Remove the 50% A record and add a 100% A record
     zc.cache.async_remove_records([a_record])
@@ -829,12 +912,15 @@ async def test_qu_response_only_sends_additionals_if_sends_answer():
     assert question.unicast is True
     query.add_question(question)
 
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out is None
-    assert a_record in unicast_out.additionals
-    assert unicast_out.answers[0][0] == ptr_record
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+    additionals = set().union(*question_answers.ucast.values())
+    assert a_record in additionals
+    assert ptr_record in question_answers.ucast
 
     # Remove the 100% PTR record and add a 50% PTR record
     zc.cache.async_remove_records([ptr_record])
@@ -849,15 +935,17 @@ async def test_qu_response_only_sends_additionals_if_sends_answer():
     assert question.unicast is True
     query.add_question(question)
 
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out.answers[0][0] == ptr_record
-    assert a_record in multicast_out.additionals
-    assert info.dns_text() in multicast_out.additionals
-    assert info.dns_service() in multicast_out.additionals
-
-    assert unicast_out is None
+    assert not question_answers.ucast
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+    additionals = set().union(*question_answers.mcast_now.values())
+    assert a_record in additionals
+    assert info.dns_text() in additionals
+    assert info.dns_service() in additionals
+    assert ptr_record in question_answers.mcast_now
 
     # Ask 2 QU questions, with info the PTR is at 50%, with info2 the PTR is at 100%
     # We should get back a unicast reply for info2, but info should be multicasted since its within 75% of its TTL
@@ -875,21 +963,26 @@ async def test_qu_response_only_sends_additionals_if_sends_answer():
     query.add_question(question)
     zc.cache.async_add_records([info2.dns_pointer()])  # Add 100% TTL for info2 to the cache
 
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in query.packets()], "1.2.3.4", const._MDNS_PORT
+    question_answers = zc.query_handler.async_response(
+        [r.DNSIncoming(packet) for packet in query.packets()], False
     )
-    assert multicast_out.answers[0][0] == info.dns_pointer()
-    assert info.dns_addresses()[0] in multicast_out.additionals
-    assert info.dns_text() in multicast_out.additionals
-    assert info.dns_service() in multicast_out.additionals
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
 
-    assert unicast_out.answers[0][0] == info2.dns_pointer()
-    assert info2.dns_addresses()[0] in unicast_out.additionals
-    assert info2.dns_text() in unicast_out.additionals
-    assert info2.dns_service() in unicast_out.additionals
+    mcast_now_additionals = set().union(*question_answers.mcast_now.values())
+    assert a_record in mcast_now_additionals
+    assert info.dns_text() in mcast_now_additionals
+    assert info.dns_addresses()[0] in mcast_now_additionals
+    assert info.dns_pointer() in question_answers.mcast_now
+
+    ucast_additionals = set().union(*question_answers.ucast.values())
+    assert info2.dns_pointer() in question_answers.ucast
+    assert info2.dns_text() in ucast_additionals
+    assert info2.dns_service() in ucast_additionals
+    assert info2.dns_addresses()[0] in ucast_additionals
 
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
     await aiozc.async_close()
 
 
@@ -904,7 +997,7 @@ async def test_cache_flush_bit():
 
     type_ = "_cacheflush._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "server-uu1.local."
     info = ServiceInfo(
@@ -992,7 +1085,7 @@ async def test_record_update_manager_add_listener_callsback_existing_records():
 
     type_ = "_cacheflush._tcp.local."
     name = "knownname"
-    registration_name = "%s.%s" % (name, type_)
+    registration_name = f"{name}.{type_}"
     desc = {'path': '/~paulsm/'}
     server_name = "server-uu1.local."
     info = ServiceInfo(
@@ -1013,11 +1106,11 @@ async def test_record_update_manager_add_listener_callsback_existing_records():
     )
     await asyncio.sleep(0)  # flush out the call_soon_threadsafe
 
-    assert set([record.new for record in updated]) == set([ptr_record, a_record])
+    assert {record.new for record in updated} == {ptr_record, a_record}
 
     # The old records should be None so we trigger Add events
     # in service browsers instead of Update events
-    assert set([record.old for record in updated]) == set([None])
+    assert {record.old for record in updated} == {None}
 
     await aiozc.async_close()
 
@@ -1039,12 +1132,12 @@ async def test_questions_query_handler_populates_the_question_history_from_qm_qu
     generated.add_answer_at_time(known_answer, 0)
     now = r.current_time_millis()
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is None
-    assert zc.question_history.suppresses(question, now, set([known_answer]))
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+    assert zc.question_history.suppresses(question, now, {known_answer})
 
     await aiozc.async_close()
 
@@ -1066,12 +1159,12 @@ async def test_questions_query_handler_does_not_put_qu_questions_in_history():
     generated.add_answer_at_time(known_answer, 0)
     now = r.current_time_millis()
     packets = generated.packets()
-    unicast_out, multicast_out = zc.query_handler.async_response(
-        [r.DNSIncoming(packet) for packet in packets], "1.2.3.4", const._MDNS_PORT
-    )
-    assert unicast_out is None
-    assert multicast_out is None
-    assert not zc.question_history.suppresses(question, now, set([known_answer]))
+    question_answers = zc.query_handler.async_response([r.DNSIncoming(packet) for packet in packets], False)
+    assert not question_answers.ucast
+    assert not question_answers.mcast_now
+    assert not question_answers.mcast_aggregate
+    assert not question_answers.mcast_aggregate_last_second
+    assert not zc.question_history.suppresses(question, now, {known_answer})
 
     await aiozc.async_close()
 
@@ -1123,3 +1216,325 @@ async def test_guard_against_low_ptr_ttl():
     assert incoming_answer_normal.ttl == const._DNS_OTHER_TTL
     assert zc.cache.async_get_unique(good_bye_answer) is None
     await aiozc.async_close()
+
+
+@pytest.mark.asyncio
+async def test_duplicate_goodbye_answers_in_packet():
+    """Ensure we do not throw an exception when there are duplicate goodbye records in a packet."""
+    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    zc = aiozc.zeroconf
+    answer_with_normal_ttl = r.DNSPointer(
+        "myservicelow_tcp._tcp.local.",
+        const._TYPE_PTR,
+        const._CLASS_IN | const._CLASS_UNIQUE,
+        const._DNS_OTHER_TTL,
+        'host.local.',
+    )
+    good_bye_answer = r.DNSPointer(
+        "myservicelow_tcp._tcp.local.",
+        const._TYPE_PTR,
+        const._CLASS_IN | const._CLASS_UNIQUE,
+        0,
+        'host.local.',
+    )
+    response = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
+    response.add_answer_at_time(answer_with_normal_ttl, 0)
+    incoming = r.DNSIncoming(response.packets()[0])
+    zc.record_manager.async_updates_from_response(incoming)
+
+    response = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
+    response.add_answer_at_time(good_bye_answer, 0)
+    response.add_answer_at_time(good_bye_answer, 0)
+    incoming = r.DNSIncoming(response.packets()[0])
+    zc.record_manager.async_updates_from_response(incoming)
+    await aiozc.async_close()
+
+
+@pytest.mark.asyncio
+async def test_response_aggregation_timings(run_isolated):
+    """Verify multicast respones are aggregated."""
+    type_ = "_mservice._tcp.local."
+    type_2 = "_mservice2._tcp.local."
+    type_3 = "_mservice3._tcp.local."
+
+    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    await aiozc.zeroconf.async_wait_for_start()
+
+    name = "xxxyyy"
+    registration_name = f"{name}.{type_}"
+    registration_name2 = f"{name}.{type_2}"
+    registration_name3 = f"{name}.{type_3}"
+
+    desc = {'path': '/~paulsm/'}
+    info = ServiceInfo(
+        type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    info2 = ServiceInfo(
+        type_2, registration_name2, 80, 0, 0, desc, "ash-4.local.", addresses=[socket.inet_aton("10.0.1.3")]
+    )
+    info3 = ServiceInfo(
+        type_3, registration_name3, 80, 0, 0, desc, "ash-4.local.", addresses=[socket.inet_aton("10.0.1.3")]
+    )
+    aiozc.zeroconf.registry.async_add(info)
+    aiozc.zeroconf.registry.async_add(info2)
+    aiozc.zeroconf.registry.async_add(info3)
+
+    query = r.DNSOutgoing(const._FLAGS_QR_QUERY, multicast=True)
+    question = r.DNSQuestion(info.type, const._TYPE_PTR, const._CLASS_IN)
+    query.add_question(question)
+
+    query2 = r.DNSOutgoing(const._FLAGS_QR_QUERY, multicast=True)
+    question2 = r.DNSQuestion(info2.type, const._TYPE_PTR, const._CLASS_IN)
+    query2.add_question(question2)
+
+    query3 = r.DNSOutgoing(const._FLAGS_QR_QUERY, multicast=True)
+    question3 = r.DNSQuestion(info3.type, const._TYPE_PTR, const._CLASS_IN)
+    query3.add_question(question3)
+
+    query4 = r.DNSOutgoing(const._FLAGS_QR_QUERY, multicast=True)
+    query4.add_question(question)
+    query4.add_question(question2)
+
+    zc = aiozc.zeroconf
+    protocol = zc.engine.protocols[0]
+
+    with unittest.mock.patch.object(aiozc.zeroconf, "async_send") as send_mock:
+        protocol.datagram_received(query.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        protocol.datagram_received(query2.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        protocol.datagram_received(query.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        await asyncio.sleep(0.7)
+
+        # Should aggregate into a single answer with up to a 500ms + 120ms delay
+        calls = send_mock.mock_calls
+        assert len(calls) == 1
+        outgoing = send_mock.call_args[0][0]
+        incoming = r.DNSIncoming(outgoing.packets()[0])
+        zc.handle_response(incoming)
+        assert info.dns_pointer() in incoming.answers
+        assert info2.dns_pointer() in incoming.answers
+        send_mock.reset_mock()
+
+        protocol.datagram_received(query3.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        await asyncio.sleep(0.3)
+
+        # Should send within 120ms since there are no other
+        # answers to aggregate with
+        calls = send_mock.mock_calls
+        assert len(calls) == 1
+        outgoing = send_mock.call_args[0][0]
+        incoming = r.DNSIncoming(outgoing.packets()[0])
+        zc.handle_response(incoming)
+        assert info3.dns_pointer() in incoming.answers
+        send_mock.reset_mock()
+
+        # Because the response was sent in the last second we need to make
+        # sure the next answer is delayed at least a second
+        aiozc.zeroconf.engine.protocols[0].datagram_received(
+            query4.packets()[0], ('127.0.0.1', const._MDNS_PORT)
+        )
+        await asyncio.sleep(0.5)
+
+        # After 0.5 seconds it should not have been sent
+        # Protect the network against excessive packet flooding
+        # https://datatracker.ietf.org/doc/html/rfc6762#section-14
+        calls = send_mock.mock_calls
+        assert len(calls) == 0
+        send_mock.reset_mock()
+
+        await asyncio.sleep(1.2)
+        calls = send_mock.mock_calls
+        assert len(calls) == 1
+        outgoing = send_mock.call_args[0][0]
+        incoming = r.DNSIncoming(outgoing.packets()[0])
+        assert info.dns_pointer() in incoming.answers
+
+    await aiozc.async_close()
+
+
+@pytest.mark.asyncio
+async def test_response_aggregation_timings_multiple(run_isolated):
+    """Verify multicast responses that are aggregated do not take longer than 620ms to send.
+
+    620ms is the maximum random delay of 120ms and 500ms additional for aggregation."""
+    type_2 = "_mservice2._tcp.local."
+
+    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    await aiozc.zeroconf.async_wait_for_start()
+
+    name = "xxxyyy"
+    registration_name2 = f"{name}.{type_2}"
+
+    desc = {'path': '/~paulsm/'}
+    info2 = ServiceInfo(
+        type_2, registration_name2, 80, 0, 0, desc, "ash-4.local.", addresses=[socket.inet_aton("10.0.1.3")]
+    )
+    aiozc.zeroconf.registry.async_add(info2)
+
+    query2 = r.DNSOutgoing(const._FLAGS_QR_QUERY, multicast=True)
+    question2 = r.DNSQuestion(info2.type, const._TYPE_PTR, const._CLASS_IN)
+    query2.add_question(question2)
+
+    zc = aiozc.zeroconf
+    protocol = zc.engine.protocols[0]
+
+    with unittest.mock.patch.object(aiozc.zeroconf, "async_send") as send_mock, unittest.mock.patch.object(
+        protocol, "suppress_duplicate_packet", return_value=False
+    ):
+        send_mock.reset_mock()
+        protocol.datagram_received(query2.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        await asyncio.sleep(0.2)
+        calls = send_mock.mock_calls
+        assert len(calls) == 1
+        outgoing = send_mock.call_args[0][0]
+        incoming = r.DNSIncoming(outgoing.packets()[0])
+        zc.handle_response(incoming)
+        assert info2.dns_pointer() in incoming.answers
+
+        send_mock.reset_mock()
+        protocol.datagram_received(query2.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        await asyncio.sleep(1.2)
+        calls = send_mock.mock_calls
+        assert len(calls) == 1
+        outgoing = send_mock.call_args[0][0]
+        incoming = r.DNSIncoming(outgoing.packets()[0])
+        zc.handle_response(incoming)
+        assert info2.dns_pointer() in incoming.answers
+
+        send_mock.reset_mock()
+        protocol.datagram_received(query2.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        protocol.datagram_received(query2.packets()[0], ('127.0.0.1', const._MDNS_PORT))
+        # The delay should increase with two packets and
+        # 900ms is beyond the maximum aggregation delay
+        # when there is no network protection delay
+        await asyncio.sleep(0.9)
+        calls = send_mock.mock_calls
+        assert len(calls) == 0
+
+        # 1000ms  (1s network protection delays)
+        # - 900ms (already slept)
+        # + 120ms (maximum random delay)
+        # + 200ms (maximum protected aggregation delay)
+        # +  20ms (execution time)
+        await asyncio.sleep(millis_to_seconds(1000 - 900 + 120 + 200 + 20))
+        calls = send_mock.mock_calls
+        assert len(calls) == 1
+        outgoing = send_mock.call_args[0][0]
+        incoming = r.DNSIncoming(outgoing.packets()[0])
+        zc.handle_response(incoming)
+        assert info2.dns_pointer() in incoming.answers
+
+
+@pytest.mark.asyncio
+async def test_response_aggregation_random_delay():
+    """Verify the random delay for outgoing multicast will coalesce into a single group
+
+    When the random delay is shorter than the last outgoing group,
+    the groups should be combined.
+    """
+    type_ = "_mservice._tcp.local."
+    type_2 = "_mservice2._tcp.local."
+    type_3 = "_mservice3._tcp.local."
+    type_4 = "_mservice4._tcp.local."
+    type_5 = "_mservice5._tcp.local."
+
+    name = "xxxyyy"
+    registration_name = f"{name}.{type_}"
+    registration_name2 = f"{name}.{type_2}"
+    registration_name3 = f"{name}.{type_3}"
+    registration_name4 = f"{name}.{type_4}"
+    registration_name5 = f"{name}.{type_5}"
+
+    desc = {'path': '/~paulsm/'}
+    info = ServiceInfo(
+        type_, registration_name, 80, 0, 0, desc, "ash-1.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    info2 = ServiceInfo(
+        type_2, registration_name2, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.3")]
+    )
+    info3 = ServiceInfo(
+        type_3, registration_name3, 80, 0, 0, desc, "ash-3.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    info4 = ServiceInfo(
+        type_4, registration_name4, 80, 0, 0, desc, "ash-4.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    info5 = ServiceInfo(
+        type_5, registration_name5, 80, 0, 0, desc, "ash-5.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    mocked_zc = unittest.mock.MagicMock()
+    outgoing_queue = MulticastOutgoingQueue(mocked_zc, 0, 500)
+
+    now = current_time_millis()
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (500, 600)):
+        outgoing_queue.async_add(now, {info.dns_pointer(): set()})
+
+    # The second group should always be coalesced into first group since it will always come before
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (300, 400)):
+        outgoing_queue.async_add(now, {info2.dns_pointer(): set()})
+
+    # The third group should always be coalesced into first group since it will always come before
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (100, 200)):
+        outgoing_queue.async_add(now, {info3.dns_pointer(): set(), info4.dns_pointer(): set()})
+
+    assert len(outgoing_queue.queue) == 1
+    assert info.dns_pointer() in outgoing_queue.queue[0].answers
+    assert info2.dns_pointer() in outgoing_queue.queue[0].answers
+    assert info3.dns_pointer() in outgoing_queue.queue[0].answers
+    assert info4.dns_pointer() in outgoing_queue.queue[0].answers
+
+    # The forth group should not be coalesced because its scheduled after the last group in the queue
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (700, 800)):
+        outgoing_queue.async_add(now, {info5.dns_pointer(): set()})
+
+    assert len(outgoing_queue.queue) == 2
+    assert info.dns_pointer() not in outgoing_queue.queue[1].answers
+    assert info2.dns_pointer() not in outgoing_queue.queue[1].answers
+    assert info3.dns_pointer() not in outgoing_queue.queue[1].answers
+    assert info4.dns_pointer() not in outgoing_queue.queue[1].answers
+    assert info5.dns_pointer() in outgoing_queue.queue[1].answers
+
+
+@pytest.mark.asyncio
+async def test_future_answers_are_removed_on_send():
+    """Verify any future answers scheduled to be sent are removed when we send."""
+    type_ = "_mservice._tcp.local."
+    type_2 = "_mservice2._tcp.local."
+    name = "xxxyyy"
+    registration_name = f"{name}.{type_}"
+    registration_name2 = f"{name}.{type_2}"
+
+    desc = {'path': '/~paulsm/'}
+    info = ServiceInfo(
+        type_, registration_name, 80, 0, 0, desc, "ash-1.local.", addresses=[socket.inet_aton("10.0.1.2")]
+    )
+    info2 = ServiceInfo(
+        type_2, registration_name2, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.3")]
+    )
+    mocked_zc = unittest.mock.MagicMock()
+    outgoing_queue = MulticastOutgoingQueue(mocked_zc, 0, 0)
+
+    now = current_time_millis()
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (1, 1)):
+        outgoing_queue.async_add(now, {info.dns_pointer(): set()})
+
+    assert len(outgoing_queue.queue) == 1
+
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (2, 2)):
+        outgoing_queue.async_add(now, {info.dns_pointer(): set()})
+
+    assert len(outgoing_queue.queue) == 2
+
+    with unittest.mock.patch.object(_handlers, "_MULTICAST_DELAY_RANDOM_INTERVAL", (1000, 1000)):
+        outgoing_queue.async_add(now, {info2.dns_pointer(): set()})
+        outgoing_queue.async_add(now, {info.dns_pointer(): set()})
+
+    assert len(outgoing_queue.queue) == 3
+
+    await asyncio.sleep(0.1)
+    outgoing_queue.async_ready()
+
+    assert len(outgoing_queue.queue) == 1
+    # The answer should get removed because we just sent it
+    assert info.dns_pointer() not in outgoing_queue.queue[0].answers
+
+    # But the one we have not sent yet shoudl still go out later
+    assert info2.dns_pointer() in outgoing_queue.queue[0].answers

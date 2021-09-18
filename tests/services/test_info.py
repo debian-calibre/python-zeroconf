@@ -187,12 +187,13 @@ class TestServiceInfo(unittest.TestCase):
             ttl,
             b'\x04ff=0\x04ci=3\x04sf=0\x0bsh=6fLM5A==',
         )
-        expired_record.created = 1000
-        expired_record._expiration_time = 1000
+        expired_record.set_created_ttl(1000, 1)
         info.update_record(zc, now, expired_record)
         assert info.properties[b"ci"] == b"2"
         zc.close()
 
+    @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
     def test_get_info_partial(self):
 
         zc = r.Zeroconf(interfaces=['127.0.0.1'])
@@ -577,6 +578,8 @@ async def test_multiple_a_addresses():
     await aiozc.async_close()
 
 
+@unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+@unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
 def test_filter_address_by_type_from_service_info():
     """Verify dns_addresses can filter by ipversion."""
     desc = {'path': '/~paulsm/'}
@@ -751,3 +754,26 @@ def test_request_timeout():
     # 3000ms for the default timeout
     # 1000ms for loaded systems + schedule overhead
     assert (end_time - start_time) < 3000 + 1000
+
+
+@pytest.mark.asyncio
+async def test_we_try_four_times_with_random_delay():
+    """Verify we try four times even with the random delay."""
+    type_ = "_typethatisnothere._tcp.local."
+    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+
+    # we are going to patch the zeroconf send to check query transmission
+    request_count = 0
+
+    def async_send(out, addr=const._MDNS_ADDR, port=const._MDNS_PORT):
+        """Sends an outgoing packet."""
+        nonlocal request_count
+        request_count += 1
+
+    # patch the zeroconf send
+    with patch.object(aiozc.zeroconf, "async_send", async_send):
+        await aiozc.async_get_service_info(f"willnotbefound.{type_}", type_)
+
+    await aiozc.async_close()
+
+    assert request_count == 4

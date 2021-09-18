@@ -75,8 +75,6 @@ IPv6 support is relatively new and currently limited, specifically:
 
 * `InterfaceChoice.All` is an alias for `InterfaceChoice.Default` on non-POSIX
   systems.
-* On Windows specific interfaces can only be requested as interface indexes,
-  not as IP addresses.
 * Dual-stack IPv6 sockets are used, which may not be supported everywhere (some
   BSD variants do not have them).
 * Listening on localhost (`::1`) does not work. Help with understanding why is
@@ -140,6 +138,187 @@ See examples directory for more.
 Changelog
 =========
 
+0.36.4
+======
+
+* Improved performance of constructing outgoing packets (#978) (#979) @bdraco
+* Defered parsing of incoming packets when it can be avoided (#983) @bdraco
+
+0.36.3
+======
+
+* Improved performance of parsing incoming packets (#975) @bdraco
+
+0.36.2
+======
+
+* Include NSEC records for non-existent types when responding with addresses (#972) (#971) @bdraco
+  Implements RFC6762 sec 6.2 (http://datatracker.ietf.org/doc/html/rfc6762#section-6.2)
+
+0.36.1
+======
+
+* Skip goodbye packets for addresses when there is another service registered with the same name (#968) @bdraco
+
+  If a ServiceInfo that used the same server name as another ServiceInfo
+  was unregistered, goodbye packets would be sent for the addresses and
+  would cause the other service to be seen as offline.
+* Fixed equality and hash for dns records with the unique bit (#969) @bdraco
+
+  These records should have the same hash and equality since
+  the unique bit (cache flush bit) is not considered when adding or removing
+  the records from the cache.
+
+0.36.0
+======
+
+Technically backwards incompatible:
+
+* Fill incomplete IPv6 tuples to avoid WinError on windows (#965) @lokesh2019
+
+  Fixed #932
+
+0.35.1
+======
+
+* Only reschedule types if the send next time changes (#958) @bdraco
+
+  When the PTR response was seen again, the timer was being canceled and
+  rescheduled even if the timer was for the same time. While this did
+  not cause any breakage, it is quite inefficient.
+* Cache DNS record and question hashes (#960) @bdraco
+
+  The hash was being recalculated every time the object
+  was being used in a set or dict. Since the hashes are
+  effectively immutable, we only calculate them once now.
+
+0.35.0
+======
+
+* Reduced chance of accidental synchronization of ServiceInfo requests (#955) @bdraco
+* Sort aggregated responses to increase chance of name compression (#954) @bdraco
+
+Technically backwards incompatible:
+
+* Send unicast replies on the same socket the query was received (#952) @bdraco
+
+  When replying to a QU question, we do not know if the sending host is reachable
+  from all of the sending sockets. We now avoid this problem by replying via
+  the receiving socket. This was the existing behavior when `InterfaceChoice.Default`
+  is set.
+
+  This change extends the unicast relay behavior to used with `InterfaceChoice.Default`
+  to apply when `InterfaceChoice.All` or interfaces are explicitly passed when
+  instantiating a `Zeroconf` instance.
+
+  Fixes #951
+
+0.34.3
+======
+
+* Fix sending immediate multicast responses (#949) @bdraco
+
+0.34.2
+======
+
+* Coalesce aggregated multicast answers (#945) @bdraco
+
+  When the random delay is shorter than the last scheduled response,
+  answers are now added to the same outgoing time group.
+
+  This reduces traffic when we already know we will be sending a group of answers
+  inside the random delay window described in
+  datatracker.ietf.org/doc/html/rfc6762#section-6.3
+* Ensure ServiceInfo requests can be answered inside the default timeout with network protection (#946) @bdraco
+
+  Adjust the time windows to ensure responses that have triggered the
+  protection against against excessive packet flooding due to
+  software bugs or malicious attack described in RFC6762 section 6
+  can respond in under 1350ms to ensure ServiceInfo can ask two
+  questions within the default timeout of 3000ms
+
+0.34.1
+======
+
+* Ensure multicast aggregation sends responses within 620ms (#942) @bdraco
+
+  Responses that trigger the protection against against excessive
+  packet flooding due to software bugs or malicious attack described
+  in RFC6762 section 6 could cause the multicast aggregation response
+  to be delayed longer than 620ms (The maximum random delay of 120ms
+  and 500ms additional for aggregation).
+
+  Only responses that trigger the protection are delayed longer than 620ms
+
+0.34.0
+======
+
+* Implemented Multicast Response Aggregation (#940) @bdraco
+
+  Responses are now aggregated when possible per rules in RFC6762
+  section 6.4
+
+  Responses that trigger the protection against against excessive
+  packet flooding due to software bugs or malicious attack described
+  in RFC6762 section 6 are delayed instead of discarding as it was
+  causing responders that implement Passive Observation Of Failures
+  (POOF) to evict the records.
+
+  Probe responses are now always sent immediately as there were cases
+  where they would fail to be answered in time to defend a name.
+
+0.33.4
+======
+
+* Ensure zeroconf can be loaded when the system disables IPv6 (#933) @che0
+
+0.33.3
+======
+
+* Added support for forward dns compression pointers (#934) @bdraco
+* Provide sockname when logging a protocol error (#935) @bdraco
+
+0.33.2
+======
+
+* Handle duplicate goodbye answers in the same packet (#928) @bdraco
+
+  Solves an exception being thrown when we tried to remove the known answer
+  from the cache when the second goodbye answer in the same packet was processed
+
+  Fixed #926
+* Skip ipv6 interfaces that return ENODEV (#930) @bdraco
+
+0.33.1
+======
+
+* Version number change only with less restrictive directory permissions
+
+  Fixed #923
+
+0.33.0
+======
+
+This release eliminates all threading locks as all non-threadsafe operations
+now happen in the event loop.
+
+* Let connection_lost close the underlying socket (#918) @bdraco
+
+  The socket was closed during shutdown before asyncio's connection_lost
+  handler had a chance to close it which resulted in a traceback on
+  windows.
+
+  Fixed #917
+
+Technically backwards incompatible:
+
+* Removed duplicate unregister_all_services code (#910) @bdraco
+
+  Calling Zeroconf.close from same asyncio event loop zeroconf is running in
+  will now skip unregister_all_services and log a warning as this a blocking
+  operation and is not async safe and never has been.
+
+  Use AsyncZeroconf instead, or for legacy code call async_unregister_all_services before Zeroconf.close
 
 0.32.1
 ======

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 """ Unit tests for zeroconf._dns. """
 
 import logging
+import os
 import socket
 import time
 import unittest
@@ -18,6 +18,8 @@ from zeroconf import (
     DNSText,
     ServiceInfo,
 )
+
+from . import has_working_ipv6
 
 log = logging.getLogger('zeroconf')
 original_logging_level = logging.NOTSET
@@ -53,6 +55,8 @@ class TestDunder(unittest.TestCase):
         pointer = r.DNSPointer('irrelevant', const._TYPE_PTR, const._CLASS_IN, const._DNS_OTHER_TTL, '123')
         repr(pointer)
 
+    @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
     def test_dns_address_repr(self):
         address = r.DNSAddress('irrelevant', const._TYPE_SOA, const._CLASS_IN, 1, b'a')
         assert repr(address).endswith("b'a'")
@@ -101,7 +105,7 @@ class TestDunder(unittest.TestCase):
     def test_service_info_dunder(self):
         type_ = "_test-srvc-type._tcp.local."
         name = "xxxyyy"
-        registration_name = "%s.%s" % (name, type_)
+        registration_name = f"{name}.{type_}"
         info = ServiceInfo(
             type_,
             registration_name,
@@ -119,7 +123,7 @@ class TestDunder(unittest.TestCase):
     def test_service_info_text_properties_not_given(self):
         type_ = "_test-srvc-type._tcp.local."
         name = "xxxyyy"
-        registration_name = "%s.%s" % (name, type_)
+        registration_name = f"{name}.{type_}"
         info = ServiceInfo(
             type_=type_,
             name=registration_name,
@@ -159,6 +163,33 @@ class TestDunder(unittest.TestCase):
         assert record.is_recent(now + (8 * 1000)) is False
 
 
+def test_dns_question_hashablity():
+    """Test DNSQuestions are hashable."""
+
+    record1 = r.DNSQuestion('irrelevant', const._TYPE_A, const._CLASS_IN)
+    record2 = r.DNSQuestion('irrelevant', const._TYPE_A, const._CLASS_IN)
+
+    record_set = {record1, record2}
+    assert len(record_set) == 1
+
+    record_set.add(record1)
+    assert len(record_set) == 1
+
+    record3_dupe = r.DNSQuestion('irrelevant', const._TYPE_A, const._CLASS_IN)
+    assert record2 == record3_dupe
+    assert record2.__hash__() == record3_dupe.__hash__()
+
+    record_set.add(record3_dupe)
+    assert len(record_set) == 1
+
+    record4_dupe = r.DNSQuestion('notsame', const._TYPE_A, const._CLASS_IN)
+    assert record2 != record4_dupe
+    assert record2.__hash__() != record4_dupe.__hash__()
+
+    record_set.add(record4_dupe)
+    assert len(record_set) == 2
+
+
 def test_dns_record_hashablity_does_not_consider_ttl():
     """Test DNSRecord are hashable."""
 
@@ -166,7 +197,7 @@ def test_dns_record_hashablity_does_not_consider_ttl():
     record1 = r.DNSAddress('irrelevant', const._TYPE_A, const._CLASS_IN, const._DNS_OTHER_TTL, b'same')
     record2 = r.DNSAddress('irrelevant', const._TYPE_A, const._CLASS_IN, const._DNS_HOST_TTL, b'same')
 
-    record_set = set([record1, record2])
+    record_set = {record1, record2}
     assert len(record_set) == 1
 
     record_set.add(record1)
@@ -180,6 +211,21 @@ def test_dns_record_hashablity_does_not_consider_ttl():
     assert len(record_set) == 1
 
 
+def test_dns_record_hashablity_does_not_consider_unique():
+    """Test DNSRecord are hashable and unique is ignored."""
+
+    # Verify the unique value is not considered in the hash
+    record1 = r.DNSAddress(
+        'irrelevant', const._TYPE_A, const._CLASS_IN | const._CLASS_UNIQUE, const._DNS_OTHER_TTL, b'same'
+    )
+    record2 = r.DNSAddress('irrelevant', const._TYPE_A, const._CLASS_IN, const._DNS_OTHER_TTL, b'same')
+
+    assert record1.class_ == record2.class_
+    assert record1.__hash__() == record2.__hash__()
+    record_set = {record1, record2}
+    assert len(record_set) == 1
+
+
 def test_dns_address_record_hashablity():
     """Test DNSAddress are hashable."""
     address1 = r.DNSAddress('irrelevant', const._TYPE_A, const._CLASS_IN, 1, b'a')
@@ -187,7 +233,7 @@ def test_dns_address_record_hashablity():
     address3 = r.DNSAddress('irrelevant', const._TYPE_A, const._CLASS_IN, 1, b'c')
     address4 = r.DNSAddress('irrelevant', const._TYPE_AAAA, const._CLASS_IN, 1, b'c')
 
-    record_set = set([address1, address2, address3, address4])
+    record_set = {address1, address2, address3, address4}
     assert len(record_set) == 4
 
     record_set.add(address1)
@@ -199,9 +245,9 @@ def test_dns_address_record_hashablity():
     assert len(record_set) == 4
 
     # Verify we can remove records
-    additional_set = set([address1, address2])
+    additional_set = {address1, address2}
     record_set -= additional_set
-    assert record_set == set([address3, address4])
+    assert record_set == {address3, address4}
 
 
 def test_dns_hinfo_record_hashablity():
@@ -209,7 +255,7 @@ def test_dns_hinfo_record_hashablity():
     hinfo1 = r.DNSHinfo('irrelevant', const._TYPE_HINFO, 0, 0, 'cpu1', 'os')
     hinfo2 = r.DNSHinfo('irrelevant', const._TYPE_HINFO, 0, 0, 'cpu2', 'os')
 
-    record_set = set([hinfo1, hinfo2])
+    record_set = {hinfo1, hinfo2}
     assert len(record_set) == 2
 
     record_set.add(hinfo1)
@@ -228,7 +274,7 @@ def test_dns_pointer_record_hashablity():
     ptr1 = r.DNSPointer('irrelevant', const._TYPE_PTR, const._CLASS_IN, const._DNS_OTHER_TTL, '123')
     ptr2 = r.DNSPointer('irrelevant', const._TYPE_PTR, const._CLASS_IN, const._DNS_OTHER_TTL, '456')
 
-    record_set = set([ptr1, ptr2])
+    record_set = {ptr1, ptr2}
     assert len(record_set) == 2
 
     record_set.add(ptr1)
@@ -249,7 +295,7 @@ def test_dns_text_record_hashablity():
     text3 = r.DNSText('irrelevant', 0, 1, const._DNS_OTHER_TTL, b'12345678901')
     text4 = r.DNSText('irrelevant', 0, 0, const._DNS_OTHER_TTL, b'ABCDEFGHIJK')
 
-    record_set = set([text1, text2, text3, text4])
+    record_set = {text1, text2, text3, text4}
 
     assert len(record_set) == 4
 
@@ -271,7 +317,7 @@ def test_dns_service_record_hashablity():
     srv3 = r.DNSService('irrelevant', const._TYPE_SRV, const._CLASS_IN, const._DNS_HOST_TTL, 0, 0, 81, 'a')
     srv4 = r.DNSService('irrelevant', const._TYPE_SRV, const._CLASS_IN, const._DNS_HOST_TTL, 0, 0, 80, 'ab')
 
-    record_set = set([srv1, srv2, srv3, srv4])
+    record_set = {srv1, srv2, srv3, srv4}
 
     assert len(record_set) == 4
 
@@ -286,6 +332,31 @@ def test_dns_service_record_hashablity():
 
     record_set.add(srv1_dupe)
     assert len(record_set) == 4
+
+
+def test_dns_nsec_record_hashablity():
+    """Test DNSNsec are hashable."""
+    nsec1 = r.DNSNsec(
+        'irrelevant', const._TYPE_PTR, const._CLASS_IN, const._DNS_OTHER_TTL, 'irrelevant', [1, 2, 3]
+    )
+    nsec2 = r.DNSNsec(
+        'irrelevant', const._TYPE_PTR, const._CLASS_IN, const._DNS_OTHER_TTL, 'irrelevant', [1, 2]
+    )
+
+    record_set = {nsec1, nsec2}
+    assert len(record_set) == 2
+
+    record_set.add(nsec1)
+    assert len(record_set) == 2
+
+    nsec2_dupe = r.DNSNsec(
+        'irrelevant', const._TYPE_PTR, const._CLASS_IN, const._DNS_OTHER_TTL, 'irrelevant', [1, 2]
+    )
+    assert nsec2 == nsec2_dupe
+    assert nsec2.__hash__() == nsec2_dupe.__hash__()
+
+    record_set.add(nsec2_dupe)
+    assert len(record_set) == 2
 
 
 def test_rrset_does_not_consider_ttl():

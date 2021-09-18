@@ -20,8 +20,8 @@
     USA
 """
 
-import asyncio
 import ipaddress
+import random
 import socket
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union, cast
 
@@ -29,15 +29,14 @@ from .._dns import DNSAddress, DNSPointer, DNSQuestionType, DNSRecord, DNSServic
 from .._exceptions import BadTypeInNameException
 from .._protocol import DNSOutgoing
 from .._updates import RecordUpdate, RecordUpdateListener
-from .._utils.asyncio import get_running_loop
+from .._utils.asyncio import get_running_loop, run_coro_with_timeout
 from .._utils.name import service_type_name
 from .._utils.net import (
     IPVersion,
     _encode_address,
     _is_v6_address,
 )
-from .._utils.struct import int2byte
-from .._utils.time import current_time_millis, millis_to_seconds
+from .._utils.time import current_time_millis
 from ..const import (
     _CLASS_IN,
     _CLASS_UNIQUE,
@@ -45,7 +44,6 @@ from ..const import (
     _DNS_OTHER_TTL,
     _FLAGS_QR_QUERY,
     _LISTENER_TIME,
-    _LOADED_SYSTEM_TIMEOUT,
     _TYPE_A,
     _TYPE_AAAA,
     _TYPE_PTR,
@@ -54,9 +52,18 @@ from ..const import (
 )
 
 
+# https://datatracker.ietf.org/doc/html/rfc6762#section-5.2
+# The most common case for calling ServiceInfo is from a
+# ServiceBrowser. After the first request we add a few random
+# milliseconds to the delay between requests to reduce the chance
+# that there are multiple ServiceBrowser callbacks running on
+# the network that are firing at the same time when they
+# see the same multicast response and decide to refresh
+# the A/AAAA/SRV records for a host.
+_AVOID_SYNC_DELAY_RANDOM_INTERVAL = (20, 120)
+
 if TYPE_CHECKING:
-    # https://github.com/PyCQA/pylint/issues/3525
-    from .._core import Zeroconf  # pylint: disable=cyclic-import
+    from .._core import Zeroconf
 
 
 def instance_name_from_service_info(info: "ServiceInfo") -> str:
@@ -231,7 +238,7 @@ class ServiceInfo(RecordUpdateListener):
                 record += b'=' + value
             list_.append(record)
         for item in list_:
-            result = b''.join((result, int2byte(len(item)), item))
+            result = b''.join((result, bytes((len(item),)), item))
         self.text = result
 
     def _set_text(self, text: bytes) -> None:
@@ -426,9 +433,7 @@ class ServiceInfo(RecordUpdateListener):
         assert zc.loop is not None and zc.loop.is_running()
         if zc.loop == get_running_loop():
             raise RuntimeError("Use AsyncServiceInfo.async_request from the event loop")
-        return asyncio.run_coroutine_threadsafe(
-            self.async_request(zc, timeout, question_type), zc.loop
-        ).result(millis_to_seconds(timeout) + _LOADED_SYSTEM_TIMEOUT)
+        return bool(run_coro_with_timeout(self.async_request(zc, timeout, question_type), zc.loop, timeout))
 
     async def async_request(
         self, zc: 'Zeroconf', timeout: float, question_type: Optional[DNSQuestionType] = None
@@ -460,6 +465,7 @@ class ServiceInfo(RecordUpdateListener):
                     zc.async_send(out)
                     next_ = now + delay
                     delay *= 2
+                    next_ += random.randint(*_AVOID_SYNC_DELAY_RANDOM_INTERVAL)
 
                 await zc.async_wait(min(next_, last) - now)
                 now = current_time_millis()
