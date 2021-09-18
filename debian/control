@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 12),
 Build-Depends-Indep:
  python3-ifaddr,
  python3-nose,
-Standards-Version: 4.5.0
+Standards-Version: 4.6.0
 X-Python-Version: all
 Homepage: https://github.com/jstasiak/python-zeroconf
 Vcs-Browser: https://salsa.debian.org/python-team/packages/python-zeroconf
