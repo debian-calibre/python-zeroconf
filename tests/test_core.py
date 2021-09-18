@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 """ Unit tests for zeroconf._core """
@@ -55,34 +54,51 @@ async def test_reaper():
         aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
         zeroconf = aiozc.zeroconf
         cache = zeroconf.cache
-        original_entries = list(itertools.chain(*[cache.entries_with_name(name) for name in cache.names()]))
+        original_entries = list(itertools.chain(*(cache.entries_with_name(name) for name in cache.names())))
         record_with_10s_ttl = r.DNSAddress('a', const._TYPE_SOA, const._CLASS_IN, 10, b'a')
         record_with_1s_ttl = r.DNSAddress('a', const._TYPE_SOA, const._CLASS_IN, 1, b'b')
         zeroconf.cache.async_add_records([record_with_10s_ttl, record_with_1s_ttl])
         question = r.DNSQuestion("_hap._tcp._local.", const._TYPE_PTR, const._CLASS_IN)
         now = r.current_time_millis()
-        other_known_answers = set(
-            [
-                r.DNSPointer(
-                    "_hap._tcp.local.",
-                    const._TYPE_PTR,
-                    const._CLASS_IN,
-                    10000,
-                    'known-to-other._hap._tcp.local.',
-                )
-            ]
-        )
+        other_known_answers = {
+            r.DNSPointer(
+                "_hap._tcp.local.",
+                const._TYPE_PTR,
+                const._CLASS_IN,
+                10000,
+                'known-to-other._hap._tcp.local.',
+            )
+        }
         zeroconf.question_history.add_question_at_time(question, now, other_known_answers)
         assert zeroconf.question_history.suppresses(question, now, other_known_answers)
-        entries_with_cache = list(itertools.chain(*[cache.entries_with_name(name) for name in cache.names()]))
+        entries_with_cache = list(itertools.chain(*(cache.entries_with_name(name) for name in cache.names())))
         await asyncio.sleep(1.2)
-        entries = list(itertools.chain(*[cache.entries_with_name(name) for name in cache.names()]))
+        entries = list(itertools.chain(*(cache.entries_with_name(name) for name in cache.names())))
+        assert zeroconf.cache.get(record_with_1s_ttl) is None
         await aiozc.async_close()
         assert not zeroconf.question_history.suppresses(question, now, other_known_answers)
         assert entries != original_entries
         assert entries_with_cache != original_entries
         assert record_with_10s_ttl in entries
         assert record_with_1s_ttl not in entries
+
+
+@pytest.mark.asyncio
+async def test_reaper_aborts_when_done():
+    """Ensure cache cleanup stops when zeroconf is done."""
+    with patch.object(_core, "_CACHE_CLEANUP_INTERVAL", 10):
+        assert _core._CACHE_CLEANUP_INTERVAL == 10
+        aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+        zeroconf = aiozc.zeroconf
+        record_with_10s_ttl = r.DNSAddress('a', const._TYPE_SOA, const._CLASS_IN, 10, b'a')
+        record_with_1s_ttl = r.DNSAddress('a', const._TYPE_SOA, const._CLASS_IN, 1, b'b')
+        zeroconf.cache.async_add_records([record_with_10s_ttl, record_with_1s_ttl])
+        assert zeroconf.cache.get(record_with_10s_ttl) is not None
+        assert zeroconf.cache.get(record_with_1s_ttl) is not None
+        await aiozc.async_close()
+        await asyncio.sleep(1.2)
+        assert zeroconf.cache.get(record_with_10s_ttl) is not None
+        assert zeroconf.cache.get(record_with_1s_ttl) is not None
 
 
 class Framework(unittest.TestCase):
@@ -338,11 +354,11 @@ def test_goodbye_all_services():
     info = r.ServiceInfo(
         type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
+    zc.registry.async_add(info)
     out = zc.generate_unregister_all_services()
     assert out is not None
     first_packet = out.packets()
-    zc.registry.add(info)
+    zc.registry.async_add(info)
     out2 = zc.generate_unregister_all_services()
     assert out2 is not None
     second_packet = out.packets()
@@ -351,7 +367,7 @@ def test_goodbye_all_services():
     # Verify the registery is empty
     out3 = zc.generate_unregister_all_services()
     assert out3 is None
-    assert zc.registry.get_service_infos() == []
+    assert zc.registry.async_get_service_infos() == []
 
     zc.close()
 
@@ -367,7 +383,7 @@ def test_register_service_with_custom_ttl():
     name = "MyTestHome"
     info_service = r.ServiceInfo(
         type_,
-        '%s.%s' % (name, type_),
+        f'{name}.{type_}',
         80,
         0,
         0,
@@ -423,9 +439,9 @@ def test_tc_bit_defers():
     name2 = "knownname2"
     name3 = "knownname3"
 
-    registration_name = "%s.%s" % (name, type_)
-    registration2_name = "%s.%s" % (name2, type_)
-    registration3_name = "%s.%s" % (name3, type_)
+    registration_name = f"{name}.{type_}"
+    registration2_name = f"{name2}.{type_}"
+    registration3_name = f"{name3}.{type_}"
 
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
@@ -441,9 +457,9 @@ def test_tc_bit_defers():
     info3 = r.ServiceInfo(
         type_, registration3_name, 80, 0, 0, desc, server_name3, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
-    zc.registry.add(info2)
-    zc.registry.add(info3)
+    zc.registry.async_add(info)
+    zc.registry.async_add(info2)
+    zc.registry.async_add(info3)
 
     protocol = zc.engine.protocols[0]
     now = r.current_time_millis()
@@ -464,28 +480,28 @@ def test_tc_bit_defers():
 
     next_packet = r.DNSIncoming(packets.pop(0))
     expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     assert source_ip in protocol._timers
 
     next_packet = r.DNSIncoming(packets.pop(0))
     expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     assert source_ip in protocol._timers
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
-    assert protocol._deferred[source_ip] == expected_deferred
-    assert source_ip in protocol._timers
-
-    next_packet = r.DNSIncoming(packets.pop(0))
-    expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     assert source_ip in protocol._timers
 
     next_packet = r.DNSIncoming(packets.pop(0))
     expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
+    assert protocol._deferred[source_ip] == expected_deferred
+    assert source_ip in protocol._timers
+
+    next_packet = r.DNSIncoming(packets.pop(0))
+    expected_deferred.append(next_packet)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert source_ip not in protocol._deferred
     assert source_ip not in protocol._timers
 
@@ -502,9 +518,9 @@ def test_tc_bit_defers_last_response_missing():
     name2 = "knownname2"
     name3 = "knownname3"
 
-    registration_name = "%s.%s" % (name, type_)
-    registration2_name = "%s.%s" % (name2, type_)
-    registration3_name = "%s.%s" % (name3, type_)
+    registration_name = f"{name}.{type_}"
+    registration2_name = f"{name2}.{type_}"
+    registration3_name = f"{name3}.{type_}"
 
     desc = {'path': '/~paulsm/'}
     server_name = "ash-2.local."
@@ -520,9 +536,9 @@ def test_tc_bit_defers_last_response_missing():
     info3 = r.ServiceInfo(
         type_, registration3_name, 80, 0, 0, desc, server_name3, addresses=[socket.inet_aton("10.0.1.2")]
     )
-    zc.registry.add(info)
-    zc.registry.add(info2)
-    zc.registry.add(info3)
+    zc.registry.async_add(info)
+    zc.registry.async_add(info2)
+    zc.registry.async_add(info3)
 
     protocol = zc.engine.protocols[0]
     now = r.current_time_millis()
@@ -543,13 +559,13 @@ def test_tc_bit_defers_last_response_missing():
 
     next_packet = r.DNSIncoming(packets.pop(0))
     expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     timer1 = protocol._timers[source_ip]
 
     next_packet = r.DNSIncoming(packets.pop(0))
     expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     timer2 = protocol._timers[source_ip]
     if sys.version_info >= (3, 7):
@@ -557,7 +573,7 @@ def test_tc_bit_defers_last_response_missing():
     assert timer2 != timer1
 
     # Send the same packet again to similar multi interfaces
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     assert source_ip in protocol._timers
     timer3 = protocol._timers[source_ip]
@@ -567,7 +583,7 @@ def test_tc_bit_defers_last_response_missing():
 
     next_packet = r.DNSIncoming(packets.pop(0))
     expected_deferred.append(next_packet)
-    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT)
+    threadsafe_query(zc, protocol, next_packet, source_ip, const._MDNS_PORT, None)
     assert protocol._deferred[source_ip] == expected_deferred
     assert source_ip in protocol._timers
     timer4 = protocol._timers[source_ip]
@@ -584,7 +600,7 @@ def test_tc_bit_defers_last_response_missing():
     assert source_ip not in protocol._timers
 
     # unregister
-    zc.registry.remove(info)
+    zc.registry.async_remove(info)
     zc.close()
 
 
@@ -680,10 +696,10 @@ def test_guard_against_oversized_packets():
     listener = _core.AsyncListener(zc)
     listener.transport = unittest.mock.MagicMock()
 
-    listener.datagram_received(ok_packet, ('127.0.0.1', 5353))
+    listener.datagram_received(ok_packet, ('127.0.0.1', const._MDNS_PORT))
     assert zc.cache.async_get_unique(okpacket_record) is not None
 
-    listener.datagram_received(over_sized_packet, ('127.0.0.1', 5353))
+    listener.datagram_received(over_sized_packet, ('127.0.0.1', const._MDNS_PORT))
     assert (
         zc.cache.async_get_unique(
             r.DNSText(
@@ -729,7 +745,7 @@ def test_shutdown_while_register_in_process():
     name = "MyTestHome"
     info_service = r.ServiceInfo(
         type_,
-        '%s.%s' % (name, type_),
+        f'{name}.{type_}',
         80,
         0,
         0,

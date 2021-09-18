@@ -23,10 +23,33 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
         registry = r.ServiceRegistry()
-        registry.add(info)
-        self.assertRaises(r.ServiceNameAlreadyRegistered, registry.add, info)
-        registry.remove(info)
-        registry.add(info)
+        registry.async_add(info)
+        self.assertRaises(r.ServiceNameAlreadyRegistered, registry.async_add, info)
+        registry.async_remove(info)
+        registry.async_add(info)
+
+    def test_register_same_server(self):
+        type_ = "_test-srvc-type._tcp.local."
+        name = "xxxyyy"
+        name2 = "xxxyyy2"
+        registration_name = "%s.%s" % (name, type_)
+        registration_name2 = "%s.%s" % (name2, type_)
+
+        desc = {'path': '/~paulsm/'}
+        info = ServiceInfo(
+            type_, registration_name, 80, 0, 0, desc, "same.local.", addresses=[socket.inet_aton("10.0.1.2")]
+        )
+        info2 = ServiceInfo(
+            type_, registration_name2, 80, 0, 0, desc, "same.local.", addresses=[socket.inet_aton("10.0.1.2")]
+        )
+        registry = r.ServiceRegistry()
+        registry.async_add(info)
+        registry.async_add(info2)
+        assert registry.async_get_infos_server("same.local.") == [info, info2]
+        registry.async_remove(info)
+        assert registry.async_get_infos_server("same.local.") == [info2]
+        registry.async_remove(info2)
+        assert registry.async_get_infos_server("same.local.") == []
 
     def test_unregister_multiple_times(self):
         """Verify we can unregister a service multiple times.
@@ -46,10 +69,10 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
         registry = r.ServiceRegistry()
-        registry.add(info)
-        self.assertRaises(r.ServiceNameAlreadyRegistered, registry.add, info)
-        registry.remove(info)
-        registry.remove(info)
+        registry.async_add(info)
+        self.assertRaises(r.ServiceNameAlreadyRegistered, registry.async_add, info)
+        registry.async_remove(info)
+        registry.async_remove(info)
 
     def test_lookups(self):
         type_ = "_test-srvc-type._tcp.local."
@@ -62,13 +85,13 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
         registry = r.ServiceRegistry()
-        registry.add(info)
+        registry.async_add(info)
 
-        assert registry.get_service_infos() == [info]
-        assert registry.get_info_name(registration_name) == info
-        assert registry.get_infos_type(type_) == [info]
-        assert registry.get_infos_server("ash-2.local.") == [info]
-        assert registry.get_types() == [type_]
+        assert registry.async_get_service_infos() == [info]
+        assert registry.async_get_info_name(registration_name) == info
+        assert registry.async_get_infos_type(type_) == [info]
+        assert registry.async_get_infos_server("ash-2.local.") == [info]
+        assert registry.async_get_types() == [type_]
 
     def test_lookups_upper_case_by_lower_case(self):
         type_ = "_test-SRVC-type._tcp.local."
@@ -81,13 +104,13 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
         registry = r.ServiceRegistry()
-        registry.add(info)
+        registry.async_add(info)
 
-        assert registry.get_service_infos() == [info]
-        assert registry.get_info_name(registration_name.lower()) == info
-        assert registry.get_infos_type(type_.lower()) == [info]
-        assert registry.get_infos_server("ash-2.local.") == [info]
-        assert registry.get_types() == [type_.lower()]
+        assert registry.async_get_service_infos() == [info]
+        assert registry.async_get_info_name(registration_name.lower()) == info
+        assert registry.async_get_infos_type(type_.lower()) == [info]
+        assert registry.async_get_infos_server("ash-2.local.") == [info]
+        assert registry.async_get_types() == [type_.lower()]
 
     def test_lookups_lower_case_by_upper_case(self):
         type_ = "_test-srvc-type._tcp.local."
@@ -100,10 +123,10 @@ class TestServiceRegistry(unittest.TestCase):
         )
 
         registry = r.ServiceRegistry()
-        registry.add(info)
+        registry.async_add(info)
 
-        assert registry.get_service_infos() == [info]
-        assert registry.get_info_name(registration_name.upper()) == info
-        assert registry.get_infos_type(type_.upper()) == [info]
-        assert registry.get_infos_server("ASH-2.local.") == [info]
-        assert registry.get_types() == [type_]
+        assert registry.async_get_service_infos() == [info]
+        assert registry.async_get_info_name(registration_name.upper()) == info
+        assert registry.async_get_infos_type(type_.upper()) == [info]
+        assert registry.async_get_infos_server("ASH-2.local.") == [info]
+        assert registry.async_get_types() == [type_]

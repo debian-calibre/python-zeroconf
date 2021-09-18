@@ -20,7 +20,6 @@
     USA
 """
 
-import contextlib
 import re
 import socket
 
@@ -35,6 +34,8 @@ _DUPLICATE_QUESTION_INTERVAL = _BROWSER_TIME - 1  # ms
 _BROWSER_BACKOFF_LIMIT = 3600  # s
 _CACHE_CLEANUP_INTERVAL = 10000  # ms
 _LOADED_SYSTEM_TIMEOUT = 10  # s
+_ONE_SECOND = 1000  # ms
+
 # If the system is loaded or the event
 # loop was blocked by another task that was doing I/O in the loop
 # (shouldn't happen but it does in practice) we need to give
@@ -44,10 +45,7 @@ _LOADED_SYSTEM_TIMEOUT = 10  # s
 # Some DNS constants
 
 _MDNS_ADDR = '224.0.0.251'
-_MDNS_ADDR_BYTES = socket.inet_aton(_MDNS_ADDR)
 _MDNS_ADDR6 = 'ff02::fb'
-with contextlib.suppress(OSError):  # can't use AF_INET6, IPv6 is disabled
-    _MDNS_ADDR6_BYTES = socket.inet_pton(socket.AF_INET6, _MDNS_ADDR6)
 _MDNS_PORT = 5353
 _DNS_PORT = 53
 _DNS_HOST_TTL = 120  # two minute for host records (A, SRV etc) as-per RFC6762
@@ -103,6 +101,7 @@ _TYPE_MX = 15
 _TYPE_TXT = 16
 _TYPE_AAAA = 28
 _TYPE_SRV = 33
+_TYPE_NSEC = 47
 _TYPE_ANY = 255
 
 # Mapping constants to names
@@ -136,6 +135,7 @@ _TYPES = {
     _TYPE_AAAA: "quada",
     _TYPE_SRV: "srv",
     _TYPE_ANY: "any",
+    _TYPE_NSEC: "nsec",
 }
 
 _HAS_A_TO_Z = re.compile(r'[A-Za-z]')
@@ -143,10 +143,7 @@ _HAS_ONLY_A_TO_Z_NUM_HYPHEN = re.compile(r'^[A-Za-z0-9\-]+$')
 _HAS_ONLY_A_TO_Z_NUM_HYPHEN_UNDERSCORE = re.compile(r'^[A-Za-z0-9\-\_]+$')
 _HAS_ASCII_CONTROL_CHARS = re.compile(r'[\x00-\x1f\x7f]')
 
-_EXPIRE_FULL_TIME_PERCENT = 100
-_EXPIRE_STALE_TIME_PERCENT = 50
 _EXPIRE_REFRESH_TIME_PERCENT = 75
-_RECENT_TIME_PERCENT = 25
 
 _LOCAL_TRAILER = '.local.'
 _TCP_PROTOCOL_LOCAL_TRAILER = '._tcp.local.'

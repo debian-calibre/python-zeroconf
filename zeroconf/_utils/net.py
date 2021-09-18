@@ -31,7 +31,7 @@ from typing import Any, List, Optional, Tuple, Union, cast
 import ifaddr
 
 from .._logger import log
-from ..const import _IPPROTO_IPV6, _MDNS_ADDR6_BYTES, _MDNS_ADDR_BYTES, _MDNS_PORT
+from ..const import _IPPROTO_IPV6, _MDNS_ADDR, _MDNS_ADDR6, _MDNS_PORT
 
 
 @enum.unique
@@ -211,7 +211,7 @@ def set_mdns_port_socket_options_for_ip_version(
         s.setsockopt(_IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, True)
 
 
-def new_socket(  # pylint: disable=too-many-branches
+def new_socket(
     bind_addr: Union[Tuple[str], Tuple[str, int, int]],
     port: int = _MDNS_PORT,
     ip_version: IPVersion = IPVersion.V4Only,
@@ -259,11 +259,20 @@ def add_multicast_member(
     log.debug('Adding %r (socket %d) to multicast group', interface, listen_socket.fileno())
     try:
         if is_v6:
+            try:
+                mdns_addr6_bytes = socket.inet_pton(socket.AF_INET6, _MDNS_ADDR6)
+            except OSError:
+                log.info(
+                    'Unable to translate IPv6 address when adding %s to multicast group, '
+                    'this can happen if IPv6 is disabled on the system',
+                    interface,
+                )
+                return False
             iface_bin = struct.pack('@I', cast(int, interface[1]))
-            _value = _MDNS_ADDR6_BYTES + iface_bin
+            _value = mdns_addr6_bytes + iface_bin
             listen_socket.setsockopt(_IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, _value)
         else:
-            _value = _MDNS_ADDR_BYTES + socket.inet_aton(cast(str, interface))
+            _value = socket.inet_aton(_MDNS_ADDR) + socket.inet_aton(cast(str, interface))
             listen_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, _value)
     except socket.error as e:
         _errno = get_errno(e)
@@ -288,6 +297,13 @@ def add_multicast_member(
             log.info(
                 'Failed to set socket option on %s, this can happen if '
                 'the network adapter is in a disconnected state',
+                interface,
+            )
+            return False
+        if is_v6 and _errno == errno.ENODEV:
+            log.info(
+                'Address in use when adding %s to multicast group, '
+                'it is expected to happen when the device does not have ipv6',
                 interface,
             )
             return False
