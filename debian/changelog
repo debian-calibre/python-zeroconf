@@ -1,5 +1,8 @@
 python-zeroconf (0.36.4-1) unstable; urgency=medium
 
+  * Team upload.
+
+  [ YOKOTA Hiroshi ]
   * New upstream version 0.36.4
   * Upgrade Debian standards version
 
