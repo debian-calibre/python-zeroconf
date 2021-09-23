@@ -18,8 +18,9 @@ from typing import cast
 from unittest.mock import patch
 
 import zeroconf as r
-from zeroconf import _core, _protocol, const, Zeroconf, current_time_millis
+from zeroconf import _core, const, Zeroconf, current_time_millis
 from zeroconf.asyncio import AsyncZeroconf
+from zeroconf._protocol import outgoing
 
 from . import has_working_ipv6, _clear_cache, _inject_response, _wait_for_start
 
@@ -397,6 +398,40 @@ def test_register_service_with_custom_ttl():
     zc.close()
 
 
+def test_logging_packets(caplog):
+    """Test packets are only logged with debug logging."""
+
+    # instantiate a zeroconf instance
+    zc = Zeroconf(interfaces=['127.0.0.1'])
+
+    # start a browser
+    type_ = "_logging._tcp.local."
+    name = "TLD"
+    info_service = r.ServiceInfo(
+        type_,
+        f'{name}.{type_}',
+        80,
+        0,
+        0,
+        {'path': '/~paulsm/'},
+        "ash-90.local.",
+        addresses=[socket.inet_aton("10.0.1.2")],
+    )
+
+    logging.getLogger('zeroconf').setLevel(logging.DEBUG)
+    caplog.clear()
+    zc.register_service(info_service, ttl=3000)
+    assert "Sending to" in caplog.text
+    assert zc.cache.get(info_service.dns_pointer()).ttl == 3000
+    logging.getLogger('zeroconf').setLevel(logging.INFO)
+    caplog.clear()
+    zc.unregister_service(info_service)
+    assert "Sending to" not in caplog.text
+    logging.getLogger('zeroconf').setLevel(logging.DEBUG)
+
+    zc.close()
+
+
 def test_get_service_info_failure_path():
     """Verify get_service_info return None when the underlying call returns False."""
     zc = Zeroconf(interfaces=['127.0.0.1'])
@@ -670,8 +705,8 @@ def test_guard_against_oversized_packets():
         )
 
     # We are patching to generate an oversized packet
-    with patch.object(_protocol, "_MAX_MSG_ABSOLUTE", 100000), patch.object(
-        _protocol, "_MAX_MSG_TYPICAL", 100000
+    with patch.object(outgoing, "_MAX_MSG_ABSOLUTE", 100000), patch.object(
+        outgoing, "_MAX_MSG_TYPICAL", 100000
     ):
         over_sized_packet = generated.packets()[0]
         assert len(over_sized_packet) > const._MAX_MSG_ABSOLUTE

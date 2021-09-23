@@ -138,11 +138,27 @@ See examples directory for more.
 Changelog
 =========
 
+0.36.7
+======
+
+* Improved performance of responding to queries (#994) (#996) (#997) @bdraco
+* Improved log message when receiving an invalid or corrupt packet (#998) @bdraco
+
+0.36.6
+======
+
+* Improved performance of sending outgoing packets (#990) @bdraco
+
+0.36.5
+======
+
+* Reduced memory usage for incoming and outgoing packets (#987) @bdraco
+
 0.36.4
 ======
 
 * Improved performance of constructing outgoing packets (#978) (#979) @bdraco
-* Defered parsing of incoming packets when it can be avoided (#983) @bdraco
+* Deferred parsing of incoming packets when it can be avoided (#983) @bdraco
 
 0.36.3
 ======
