@@ -1,6 +1,0 @@
-Since python-zeroconf has dropped support for Python2 upstream while there are
-still Debian reverse dependencies for the Python2 version, the source for
-zeroconf 0.19.1 is included in debian/python2_old. This is a temporary solution
-until #894806 gets closed.
-
-
