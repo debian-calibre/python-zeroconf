@@ -1,18 +1,18 @@
 python-zeroconf (0.36.8-1) UNRELEASED; urgency=medium
 
-  * New upstream version 0.36.7
-  * Drop Python 2 code
-  * New upstream version 0.36.8
-
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Tue, 19 Oct 2021 20:39:26 +0900
-
-python-zeroconf (0.36.4-2) UNRELEASED; urgency=medium
-
+  [ Debian Janitor ]
   * Bump debhelper from old 12 to 13.
     + Drop check for DEB_BUILD_OPTIONS containing "nocheck", since debhelper now
       does this.
 
- -- Debian Janitor <janitor@jelmer.uk>  Sat, 18 Sep 2021 09:31:39 -0000
+  [ YOKOTA Hiroshi ]
+  * New upstream version 0.36.7
+  * Drop Python 2 code
+  * Update changelog for 0.36.7-1 release
+  * New upstream version 0.36.8
+  * Update changelog for 0.36.8-1 release
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 20 Oct 2021 00:01:09 +0900
 
 python-zeroconf (0.36.4-1) unstable; urgency=medium
 
