@@ -22,7 +22,7 @@ Rules-Requires-Root: no
 
 Package: python3-zeroconf
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-ifaddr
+Depends: ${python3:Depends}, ${misc:Depends}
 Breaks: python3-pychromecast (<< 4.2.0~)
 Description: Pure Python implementation of multicast DNS service discovery (Python3)
  This is an implementation of the multicast DNS Service Discover Library
