@@ -13,8 +13,12 @@ python-zeroconf (0.36.9-1) UNRELEASED; urgency=medium
   * Lintian fix: silent-on-rules-requiring-root
   * Lintian fix: package-does-not-install-examples
   * Add myself to copyright file
+  * Rename "docs" file to longer name as described in dh_installdocs(1)
+  * Remove duplicated section
+  * Add used module to Build-Depends list
+  * Add more pytest plugins that described in "requirements-dev.txt"
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 24 Oct 2021 08:05:55 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 24 Oct 2021 08:45:24 +0900
 
 python-zeroconf (0.36.8-1) unstable; urgency=medium
 
