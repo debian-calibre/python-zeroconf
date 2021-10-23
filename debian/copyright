@@ -11,11 +11,6 @@ Files: debian/*
 Copyright: 2015-2018 Ruben Undheim <ruben.undheim@gmail.com>
 License: LGPL-2.1+
 
-Files: debian/python2_old/*
-Copyright: 2003 Paul Scott-Murphy
-           2014 William McBrine
-License: LGPL-2.1+
-
 
 License: LGPL-2.1+
  This library is free software; you can redistribute it and/or
