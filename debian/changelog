@@ -9,8 +9,12 @@ python-zeroconf (0.36.9-1) UNRELEASED; urgency=medium
   * Remove obsolete file
   * Remove obsolete line from ignore list
   * New upstream version 0.36.9
+  * Lintian fix: superfluous-file-pattern
+  * Lintian fix: silent-on-rules-requiring-root
+  * Lintian fix: package-does-not-install-examples
+  * Add myself to copyright file
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 24 Oct 2021 03:50:34 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 24 Oct 2021 08:05:55 +0900
 
 python-zeroconf (0.36.8-1) unstable; urgency=medium
 
