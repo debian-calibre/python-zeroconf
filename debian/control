@@ -7,15 +7,14 @@ Uploaders: Ruben Undheim <ruben.undheim@gmail.com>,
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
-               python3-ifaddr,
-               python3-pytest,
-               python3-pytest-asyncio,
-               python3-pytest-cov,
-               python3-pytest-timeout,
                python3-setuptools
 Build-Depends-Indep:
  python3-ifaddr,
  python3-nose,
+ python3-pytest,
+ python3-pytest-asyncio,
+ python3-pytest-cov,
+ python3-pytest-timeout
 Standards-Version: 4.6.0
 X-Python-Version: all
 Homepage: https://github.com/jstasiak/python-zeroconf
