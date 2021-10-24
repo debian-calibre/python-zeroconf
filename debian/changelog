@@ -17,8 +17,10 @@ python-zeroconf (0.36.9-1) UNRELEASED; urgency=medium
   * Remove duplicated section
   * Add used module to Build-Depends list
   * Add more pytest plugins that described in "requirements-dev.txt"
+  * Move architecture independent module to "Build-Depends-Indep" section
+  * Remove unused module that not in "requirements-dev.txt"
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 24 Oct 2021 08:45:24 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 24 Oct 2021 09:06:54 +0900
 
 python-zeroconf (0.36.8-1) unstable; urgency=medium
 
