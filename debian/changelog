@@ -1,4 +1,4 @@
-python-zeroconf (0.36.9-1) UNRELEASED; urgency=medium
+python-zeroconf (0.36.9-1) unstable; urgency=medium
 
   * Add test module for async test
   * Break build if test is fail
