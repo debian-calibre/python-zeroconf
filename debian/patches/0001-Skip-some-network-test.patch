@@ -1,0 +1,68 @@
+From: YOKOTA Hiroshi <yokota.hgml@gmail.com>
+Date: Sun, 24 Oct 2021 15:45:35 +0900
+Subject: Skip some network test
+
+Forwarded: not-needed
+
+Skip some tests because of Debian "sbuild" works on restricted network,
+and its network connection is not so reliable.
+---
+ tests/services/test_types.py | 1 +
+ tests/test_core.py           | 5 +++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/tests/services/test_types.py b/tests/services/test_types.py
+index b1c312d..c68ab09 100644
+--- a/tests/services/test_types.py
++++ b/tests/services/test_types.py
+@@ -105,6 +105,7 @@ class ServiceTypesQuery(unittest.TestCase):
+ 
+     @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
+     @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
++    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
+     def test_integration_with_listener_ipv6(self):
+ 
+         type_ = "_test-listenv6ip-type._tcp.local."
+diff --git a/tests/test_core.py b/tests/test_core.py
+index eab769b..6aedb8d 100644
+--- a/tests/test_core.py
++++ b/tests/test_core.py
+@@ -103,12 +103,14 @@ async def test_reaper_aborts_when_done():
+ 
+ 
+ class Framework(unittest.TestCase):
++    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
+     def test_launch_and_close(self):
+         rv = r.Zeroconf(interfaces=r.InterfaceChoice.All)
+         rv.close()
+         rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
+         rv.close()
+ 
++    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
+     def test_launch_and_close_context_manager(self):
+         with r.Zeroconf(interfaces=r.InterfaceChoice.All) as rv:
+             assert rv.done is False
+@@ -124,6 +126,7 @@ class Framework(unittest.TestCase):
+         rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default, unicast=True)
+         rv.close()
+ 
++    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
+     def test_close_multiple_times(self):
+         rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
+         rv.close()
+@@ -131,6 +134,7 @@ class Framework(unittest.TestCase):
+ 
+     @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+     @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
++    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
+     def test_launch_and_close_v4_v6(self):
+         rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.All)
+         rv.close()
+@@ -139,6 +143,7 @@ class Framework(unittest.TestCase):
+ 
+     @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
+     @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
++    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
+     def test_launch_and_close_v6_only(self):
+         rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.V6Only)
+         rv.close()
