@@ -10,7 +10,6 @@ Build-Depends: debhelper-compat (= 13),
                python3-setuptools
 Build-Depends-Indep:
  python3-ifaddr,
- python3-nose,
  python3-pytest,
  python3-pytest-asyncio,
  python3-pytest-cov,
