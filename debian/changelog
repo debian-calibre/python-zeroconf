@@ -1,9 +1,9 @@
-python-zeroconf (0.36.11-1) UNRELEASED; urgency=medium
+python-zeroconf (0.36.11-1) unstable; urgency=medium
 
   * New upstream version 0.36.11
   * Also disable tests for other Debian builders
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 03 Nov 2021 09:57:19 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 03 Nov 2021 11:19:26 +0900
 
 python-zeroconf (0.36.9-1) unstable; urgency=medium
 
