@@ -4,7 +4,7 @@ Subject: Skip some network test
 
 Forwarded: not-needed
 
-Skip some tests because of Debian "sbuild" works on restricted network,
+Skip some tests because of Debian builder works on restricted network,
 and its network connection is not so reliable.
 ---
  tests/services/test_types.py | 1 +
@@ -12,33 +12,33 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index b1c312d..c68ab09 100644
+index b1c312d..8d0a78d 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
 @@ -105,6 +105,7 @@ class ServiceTypesQuery(unittest.TestCase):
  
      @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
      @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
++    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
      def test_integration_with_listener_ipv6(self):
  
          type_ = "_test-listenv6ip-type._tcp.local."
 diff --git a/tests/test_core.py b/tests/test_core.py
-index eab769b..6aedb8d 100644
+index eab769b..4efc2bd 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
 @@ -103,12 +103,14 @@ async def test_reaper_aborts_when_done():
  
  
  class Framework(unittest.TestCase):
-+    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
++    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
      def test_launch_and_close(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All)
          rv.close()
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
          rv.close()
  
-+    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
++    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
      def test_launch_and_close_context_manager(self):
          with r.Zeroconf(interfaces=r.InterfaceChoice.All) as rv:
              assert rv.done is False
@@ -46,7 +46,7 @@ index eab769b..6aedb8d 100644
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default, unicast=True)
          rv.close()
  
-+    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
++    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
      def test_close_multiple_times(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
          rv.close()
@@ -54,7 +54,7 @@ index eab769b..6aedb8d 100644
  
      @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
      @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
++    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
      def test_launch_and_close_v4_v6(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.All)
          rv.close()
@@ -62,7 +62,7 @@ index eab769b..6aedb8d 100644
  
      @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
      @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+    @unittest.skipIf(os.environ.get('SCHROOT_USER'), 'disabled by sbuild')
++    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
      def test_launch_and_close_v6_only(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.V6Only)
          rv.close()
