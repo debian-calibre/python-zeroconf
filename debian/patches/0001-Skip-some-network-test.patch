@@ -12,10 +12,10 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index b1c312d..8d0a78d 100644
+index 3394043..258f5f6 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
-@@ -105,6 +105,7 @@ class ServiceTypesQuery(unittest.TestCase):
+@@ -104,6 +104,7 @@ class ServiceTypesQuery(unittest.TestCase):
  
      @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
      @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
