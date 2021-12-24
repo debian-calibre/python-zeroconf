@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 """ Unit tests for zeroconf._services.browser. """
@@ -682,7 +681,7 @@ def test_legacy_record_update_listener():
 
     info_service = ServiceInfo(
         type_,
-        '%s.%s' % (name, type_),
+        f'{name}.{type_}',
         80,
         0,
         0,
@@ -902,7 +901,7 @@ def test_group_ptr_queries_with_known_answers():
     now = current_time_millis()
     for i in range(120):
         name = f"_hap{i}._tcp._local."
-        questions_with_known_answers[DNSQuestion(name, const._TYPE_PTR, const._CLASS_IN)] = set(
+        questions_with_known_answers[DNSQuestion(name, const._TYPE_PTR, const._CLASS_IN)] = {
             DNSPointer(
                 name,
                 const._TYPE_PTR,
@@ -911,7 +910,7 @@ def test_group_ptr_queries_with_known_answers():
                 f"zoo{counter}.{name}",
             )
             for counter in range(i)
-        )
+        }
     outs = _services_browser._group_ptr_queries_with_known_answers(now, True, questions_with_known_answers)
     for out in outs:
         packets = out.packets()
@@ -937,7 +936,7 @@ async def test_generate_service_query_suppress_duplicate_questions():
         10000,
         f'known-to-other.{name}',
     )
-    other_known_answers = set([answer])
+    other_known_answers = {answer}
     zc.question_history.add_question_at_time(question, now, other_known_answers)
     assert zc.question_history.suppresses(question, now, other_known_answers)
 
@@ -976,7 +975,7 @@ async def test_generate_service_query_suppress_duplicate_questions():
 @pytest.mark.asyncio
 async def test_query_scheduler():
     delay = const._BROWSER_TIME
-    types_ = set(["_hap._tcp.local.", "_http._tcp.local."])
+    types_ = {"_hap._tcp.local.", "_http._tcp.local."}
     query_scheduler = _services_browser.QueryScheduler(types_, delay, (0, 0))
 
     now = current_time_millis()
@@ -984,8 +983,8 @@ async def test_query_scheduler():
 
     # Test query interval is increasing
     assert query_scheduler.millis_to_wait(now - 1) == 1
-    assert query_scheduler.millis_to_wait(now) is 0
-    assert query_scheduler.millis_to_wait(now + 1) is 0
+    assert query_scheduler.millis_to_wait(now) == 0
+    assert query_scheduler.millis_to_wait(now + 1) == 0
 
     assert set(query_scheduler.process_ready_types(now)) == types_
     assert set(query_scheduler.process_ready_types(now)) == set()
@@ -1013,8 +1012,91 @@ async def test_query_scheduler():
     assert set(query_scheduler.process_ready_types(now + delay * 15)) == set()
 
     # Test if we reschedule 1 second later... and its ready for processing
-    assert set(query_scheduler.process_ready_types(now + delay * 16)) == set(["_hap._tcp.local."])
+    assert set(query_scheduler.process_ready_types(now + delay * 16)) == {"_hap._tcp.local."}
     assert query_scheduler.millis_to_wait(now) == pytest.approx(delay * 31, 0.00001)
     assert set(query_scheduler.process_ready_types(now + delay * 20)) == set()
 
-    assert set(query_scheduler.process_ready_types(now + delay * 31)) == set(["_http._tcp.local."])
+    assert set(query_scheduler.process_ready_types(now + delay * 31)) == {"_http._tcp.local."}
+
+
+def test_service_browser_matching():
+    """Test that the ServiceBrowser matching does not match partial names."""
+
+    # instantiate a zeroconf instance
+    zc = Zeroconf(interfaces=['127.0.0.1'])
+    # start a browser
+    type_ = "_http._tcp.local."
+    registration_name = "xxxyyy.%s" % type_
+    not_match_type_ = "_asustor-looksgood_http._tcp.local."
+    not_match_registration_name = "xxxyyy.%s" % not_match_type_
+    callbacks = []
+
+    class MyServiceListener(r.ServiceListener):
+        def add_service(self, zc, type_, name) -> None:
+            nonlocal callbacks
+            if name == registration_name:
+                callbacks.append(("add", type_, name))
+
+        def remove_service(self, zc, type_, name) -> None:
+            nonlocal callbacks
+            if name == registration_name:
+                callbacks.append(("remove", type_, name))
+
+        def update_service(self, zc, type_, name) -> None:
+            nonlocal callbacks
+            if name == registration_name:
+                callbacks.append(("update", type_, name))
+
+    listener = MyServiceListener()
+
+    browser = r.ServiceBrowser(zc, type_, None, listener)
+
+    desc = {'path': '/~paulsm/'}
+    address_parsed = "10.0.1.2"
+    address = socket.inet_aton(address_parsed)
+    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address])
+    should_not_match = ServiceInfo(
+        not_match_type_, not_match_registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address]
+    )
+
+    def mock_incoming_msg(records) -> r.DNSIncoming:
+        generated = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
+        for record in records:
+            generated.add_answer_at_time(record, 0)
+        return r.DNSIncoming(generated.packets()[0])
+
+    _inject_response(
+        zc,
+        mock_incoming_msg([info.dns_pointer(), info.dns_service(), info.dns_text(), *info.dns_addresses()]),
+    )
+    _inject_response(
+        zc,
+        mock_incoming_msg(
+            [
+                should_not_match.dns_pointer(),
+                should_not_match.dns_service(),
+                should_not_match.dns_text(),
+                *should_not_match.dns_addresses(),
+            ]
+        ),
+    )
+    time.sleep(0.2)
+    info.port = 400
+    _inject_response(
+        zc,
+        mock_incoming_msg([info.dns_service()]),
+    )
+    should_not_match.port = 400
+    _inject_response(
+        zc,
+        mock_incoming_msg([should_not_match.dns_service()]),
+    )
+    time.sleep(0.2)
+
+    assert callbacks == [
+        ('add', type_, registration_name),
+        ('update', type_, registration_name),
+    ]
+    browser.cancel()
+
+    zc.close()
