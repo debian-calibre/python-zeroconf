@@ -44,8 +44,8 @@ Compared to some other Zeroconf/Bonjour/Avahi Python packages, python-zeroconf:
 Python compatibility
 --------------------
 
-* CPython 3.6+
-* PyPy3 7.2+
+* CPython 3.7+
+* PyPy3.7 7.3+
 
 Versioning
 ----------
@@ -137,6 +137,21 @@ See examples directory for more.
 
 Changelog
 =========
+
+0.38.1
+======
+
+* Improve performance of query scheduler (#1043) @bdraco
+* Avoid linear type searches in ServiceBrowsers (#1044) @bdraco
+
+0.38.0
+======
+
+* Handle Service types that end with another service type (#1041) @apworks1
+
+Backwards incompatible:
+
+* Dropped Python 3.6 support (#1009) @bdraco
 
 0.37.0
 ======
