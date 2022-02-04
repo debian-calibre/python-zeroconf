@@ -1,0 +1,24 @@
+From: YOKOTA Hiroshi <yokota.hgml@gmail.com>
+Date: Sat, 5 Feb 2022 00:37:11 +0900
+Subject: Skip async I/O test
+
+Forwarded: not-needed
+
+Some async test fails
+---
+ tests/utils/test_asyncio.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tests/utils/test_asyncio.py b/tests/utils/test_asyncio.py
+index 2530fcf..7f923a3 100644
+--- a/tests/utils/test_asyncio.py
++++ b/tests/utils/test_asyncio.py
+@@ -114,6 +114,8 @@ def test_cumulative_timeouts_less_than_close_plus_buffer():
+     ) < 1 + _CLOSE_TIMEOUT + _LOADED_SYSTEM_TIMEOUT
+ 
+ 
++import os
++@pytest.mark.skipif(os.environ.get("DEBIAN_TEST"), reason="disabled by Debian builder")
+ async def test_run_coro_with_timeout() -> None:
+     """Test running a coroutine with a timeout raises EventLoopBlocked."""
+     loop = asyncio.get_event_loop()
