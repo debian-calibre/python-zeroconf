@@ -1,10 +1,10 @@
-python-zeroconf (0.38.3-1) UNRELEASED; urgency=medium
+python-zeroconf (0.38.3-1) unstable; urgency=medium
 
   * New upstream version 0.38.3
   * Add pytest plugins for build time test
   * Skip async I/O test
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 05 Feb 2022 01:07:43 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 05 Feb 2022 01:08:39 +0900
 
 python-zeroconf (0.38.1-1) unstable; urgency=medium
 
