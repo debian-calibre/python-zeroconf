@@ -15,8 +15,7 @@ Build-Depends-Indep:
  python3-pytest-asyncio,
  python3-pytest-cov,
  python3-pytest-timeout,
- python3-pytest-tornasync,
- python3-pytest-twisted
+ python3-pytest-tornasync
 Standards-Version: 4.6.0
 X-Python-Version: all
 Homepage: https://github.com/jstasiak/python-zeroconf
