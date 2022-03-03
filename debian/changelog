@@ -1,3 +1,9 @@
+python-zeroconf (0.38.4-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.38.4
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 03 Mar 2022 20:27:53 +0900
+
 python-zeroconf (0.38.3-2) unstable; urgency=medium
 
   * Drop unneeded packages for build time test
