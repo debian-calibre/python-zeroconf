@@ -1,3 +1,12 @@
+python-zeroconf (0.38.5-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.38.5
+  * Rediff patches
+  * Skip fragile network test
+  * Reorder patches
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 04 May 2022 14:06:43 +0900
+
 python-zeroconf (0.38.4-3) unstable; urgency=medium
 
   * Use auto mode to avoid warning
