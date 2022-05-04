@@ -99,17 +99,20 @@ Here's an example of browsing for a service:
 
 .. code-block:: python
 
-    from zeroconf import ServiceBrowser, Zeroconf
+    from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
     
     
-    class MyListener:
+    class MyListener(ServiceListener):
     
-        def remove_service(self, zeroconf, type, name):
-            print("Service %s removed" % (name,))
+        def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+            print(f"Service {name} updated")
     
-        def add_service(self, zeroconf, type, name):
-            info = zeroconf.get_service_info(type, name)
-            print("Service %s added, service info: %s" % (name, info))
+        def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+            print(f"Service {name} removed")
+    
+        def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+            info = zc.get_service_info(type_, name)
+            print(f"Service {name} added, service info: {info}")
     
     
     zeroconf = Zeroconf()
@@ -137,6 +140,17 @@ See examples directory for more.
 
 Changelog
 =========
+
+0.38.5
+======
+
+* Fix ServiceBrowsers not getting ServiceStateChange.Removed callbacks on PTR record expire (#1064) @bdraco
+
+  ServiceBrowsers were only getting a `ServiceStateChange.Removed` callback
+  when the record was sent with a TTL of 0. ServiceBrowsers now correctly
+  get a `ServiceStateChange.Removed` callback when the record expires as well.
+* Fix missing minimum version of python 3.7 (#1060) @stevencrader
+
 
 0.38.4
 ======
