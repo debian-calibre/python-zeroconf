@@ -24,7 +24,7 @@ index 3394043..258f5f6 100644
  
          type_ = "_test-listenv6ip-type._tcp.local."
 diff --git a/tests/test_core.py b/tests/test_core.py
-index eab769b..4efc2bd 100644
+index af1b71d..06895fc 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
 @@ -103,12 +103,14 @@ async def test_reaper_aborts_when_done():
