@@ -1,4 +1,3 @@
 0001-Skip-some-network-test.patch
-0002-Skip-fragile-network-test.patch
 0003-Skip-async-I-O-test.patch
 0004-Use-auto-mode-to-avoid-warning.patch
