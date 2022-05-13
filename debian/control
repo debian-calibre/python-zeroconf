@@ -15,7 +15,7 @@ Build-Depends-Indep:
  python3-pytest-cov,
  python3-pytest-timeout,
  python3-pytest-tornasync
-Standards-Version: 4.6.0
+Standards-Version: 4.6.1
 X-Python-Version: all
 Homepage: https://github.com/jstasiak/python-zeroconf
 Vcs-Browser: https://salsa.debian.org/python-team/packages/python-zeroconf
