@@ -1,3 +1,14 @@
+python-zeroconf (0.39.0-1) UNRELEASED; urgency=medium
+
+  * Add module name to upstream tarball
+  * New upstream version 0.39.0
+  * Update dependency list
+  * Rediff patches
+  * Requires "ifaddr" >= 0.1.7 by "setup.py" file
+  * Renumber patches
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Tue, 09 Aug 2022 22:04:57 +0900
+
 python-zeroconf (0.38.7-1) unstable; urgency=medium
 
   * New upstream version 0.38.7
