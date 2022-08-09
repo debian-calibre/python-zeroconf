@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-setuptools
 Build-Depends-Indep:
  python3-async-timeout (>= 4.0.1),
- python3-ifaddr,
+ python3-ifaddr (>= 0.1.7),
  python3-pytest,
  python3-pytest-asyncio,
  python3-pytest-cov,
