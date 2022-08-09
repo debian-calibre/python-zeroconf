@@ -1,2 +1,5 @@
+# -*- mode: conf -*-
 version=4
+
+opts="filenamemangle=s!/archive/refs/tags/(\d+\.\d+\.\d+\.tar\.(?:bz2|gz|xz))$!-github-$1!" \
 https://github.com/jstasiak/python-zeroconf/releases /jstasiak/python-zeroconf/archive/refs/tags/(\d\S+)\.tar\.(?:bz2|gz|xz)
