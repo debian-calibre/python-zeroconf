@@ -8,7 +8,7 @@ This fix avoids some deprecation warnings from pytest-asyncio.
  1 file changed, 1 insertion(+)
 
 diff --git a/setup.cfg b/setup.cfg
-index d4b4829..932495c 100644
+index 82988aa..62df5f7 100644
 --- a/setup.cfg
 +++ b/setup.cfg
 @@ -10,6 +10,7 @@ replace = __version__ = '{new_version}'
