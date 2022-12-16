@@ -1,7 +1,7 @@
 # -*- mode: conf -*-
 version=4
 
-opts="downloadurlmangle=s!/jstasiak/python-zeroconf/releases/tag/(\d+\.\d+\.\d+)!/jstasiak/python-zeroconf/archive/refs/tags/$1.tar.gz!, \
+opts="downloadurlmangle=s!/python-zeroconf/python-zeroconf/releases/tag/(\d+\.\d+\.\d+)!/python-zeroconf/python-zeroconf/archive/refs/tags/$1.tar.gz!, \
       filenamemangle=s!(\d+\.\d+\.\d+)$!python-zeroconf-github-$1.tar.gz!" \
-  https://github.com/jstasiak/python-zeroconf/releases \
-  /jstasiak/python-zeroconf/releases/tag/(\d+\.\d+\.\d+)
+  https://github.com/python-zeroconf/python-zeroconf/releases \
+  /python-zeroconf/python-zeroconf/releases/tag/(\d+\.\d+\.\d+)
