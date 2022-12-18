@@ -1,8 +1,8 @@
-python-zeroconf (0.39.4-3) UNRELEASED; urgency=medium
+python-zeroconf (0.39.4-3) unstable; urgency=medium
 
   * Upgrade Debian standards
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 18 Dec 2022 20:34:28 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 18 Dec 2022 20:44:25 +0900
 
 python-zeroconf (0.39.4-2) unstable; urgency=medium
 
