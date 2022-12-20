@@ -23,13 +23,17 @@
 import asyncio
 import concurrent.futures
 import contextlib
+import sys
 from typing import Any, Awaitable, Coroutine, Optional, Set
 
-import async_timeout
+if sys.version_info[:2] < (3, 11):
+    from async_timeout import timeout as asyncio_timeout
+else:
+    from asyncio import timeout as asyncio_timeout
 
-from .time import millis_to_seconds
 from .._exceptions import EventLoopBlocked
 from ..const import _LOADED_SYSTEM_TIMEOUT
+from .time import millis_to_seconds
 
 # The combined timeouts should be lower than _CLOSE_TIMEOUT + _WAIT_FOR_LOOP_TASKS_TIMEOUT
 _TASK_AWAIT_TIMEOUT = 1
@@ -40,7 +44,7 @@ _WAIT_FOR_LOOP_TASKS_TIMEOUT = 3  # Must be larger than _TASK_AWAIT_TIMEOUT
 async def wait_event_or_timeout(event: asyncio.Event, timeout: float) -> None:
     """Wait for an event or timeout."""
     with contextlib.suppress(asyncio.TimeoutError):
-        async with async_timeout.timeout(timeout):
+        async with asyncio_timeout(timeout):
             await event.wait()
 
 
