@@ -8,6 +8,7 @@ Build-Depends: debhelper-compat (= 13),
                dh-python,
                pybuild-plugin-pyproject,
                python3-all,
+               python3-poetry,
                python3-setuptools
 Build-Depends-Indep:
  python3-async-timeout (>= 4.0.1),
