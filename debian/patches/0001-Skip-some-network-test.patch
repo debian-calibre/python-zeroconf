@@ -12,7 +12,7 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index 3394043..258f5f6 100644
+index e1062b8..9429ac1 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
 @@ -104,6 +104,7 @@ class ServiceTypesQuery(unittest.TestCase):
@@ -24,10 +24,10 @@ index 3394043..258f5f6 100644
  
          type_ = "_test-listenv6ip-type._tcp.local."
 diff --git a/tests/test_core.py b/tests/test_core.py
-index 1fa2c76..ae65d2d 100644
+index 2927374..c6bc1e4 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
-@@ -103,12 +103,14 @@ async def test_reaper_aborts_when_done():
+@@ -104,12 +104,14 @@ async def test_reaper_aborts_when_done():
  
  
  class Framework(unittest.TestCase):
@@ -42,7 +42,7 @@ index 1fa2c76..ae65d2d 100644
      def test_launch_and_close_context_manager(self):
          with r.Zeroconf(interfaces=r.InterfaceChoice.All) as rv:
              assert rv.done is False
-@@ -124,6 +126,7 @@ class Framework(unittest.TestCase):
+@@ -125,6 +127,7 @@ class Framework(unittest.TestCase):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default, unicast=True)
          rv.close()
  
@@ -50,7 +50,7 @@ index 1fa2c76..ae65d2d 100644
      def test_close_multiple_times(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
          rv.close()
-@@ -131,6 +134,7 @@ class Framework(unittest.TestCase):
+@@ -132,6 +135,7 @@ class Framework(unittest.TestCase):
  
      @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
      @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
@@ -58,7 +58,7 @@ index 1fa2c76..ae65d2d 100644
      def test_launch_and_close_v4_v6(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.All)
          rv.close()
-@@ -139,6 +143,7 @@ class Framework(unittest.TestCase):
+@@ -140,6 +144,7 @@ class Framework(unittest.TestCase):
  
      @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
      @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
