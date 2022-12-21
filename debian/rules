@@ -3,4 +3,4 @@
 export DH_ALWAYS_EXCLUDE=dist-packages/.coverage
 
 %:
-	DEBIAN_TEST=1 dh $@ --with python3 --buildsystem=pybuild
+	DEBIAN_TEST=1 SKIP_CYTHON=True dh $@ --with python3 --buildsystem=pybuild
