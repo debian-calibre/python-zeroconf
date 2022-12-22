@@ -1,4 +1,4 @@
-python-zeroconf (0.45.0-1~exp1) UNRELEASED; urgency=medium
+python-zeroconf (0.45.0-1~exp1) experimental; urgency=medium
 
   * New upstream version 0.44.0
   * Rediff patches
@@ -14,7 +14,7 @@ python-zeroconf (0.45.0-1~exp1) UNRELEASED; urgency=medium
   * Use hook target instead of override target
   * Rediff patches
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 22 Dec 2022 13:24:34 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 22 Dec 2022 14:24:28 +0900
 
 python-zeroconf (0.39.4-3) unstable; urgency=medium
 
