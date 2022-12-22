@@ -1,3 +1,21 @@
+python-zeroconf (0.45.0-1~exp1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.44.0
+  * Rediff patches
+  * New upstream version 0.45.0
+  * Upstream was moved to PEP517 (pyproject.toml) based build
+  * Add PEP517 build system
+  * Do not install coverage test results data
+  * Omit binary extension
+  * Tell module name to pybuild
+  * Remove unwanted test files from instration tree
+  * Minimize build dependency
+  * Update ignore list
+  * Use hook target instead of override target
+  * Rediff patches
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 22 Dec 2022 13:24:34 +0900
+
 python-zeroconf (0.39.4-3) unstable; urgency=medium
 
   * Upgrade Debian standards
