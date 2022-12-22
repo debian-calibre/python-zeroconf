@@ -1,3 +1,9 @@
+python-zeroconf (0.47.0-1) unstable; urgency=medium
+
+  * Upload to unstable
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 22 Dec 2022 19:34:17 +0900
+
 python-zeroconf (0.47.0-1~exp1) experimental; urgency=medium
 
   * New upstream version 0.47.0
