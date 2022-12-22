@@ -1,3 +1,11 @@
+python-zeroconf (0.47.0-1~exp1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.47.0
+  * Add build tools
+  * Cosmetic fix
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 22 Dec 2022 16:10:13 +0900
+
 python-zeroconf (0.45.0-1~exp1) experimental; urgency=medium
 
   * New upstream version 0.44.0
