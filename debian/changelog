@@ -1,3 +1,10 @@
+python-zeroconf (0.47.1-2) UNRELEASED; urgency=medium
+
+  [ Corey Bryant ]
+  * d/control: Add explicit dependency on python3-async-timeout.
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 15 Jan 2023 20:58:32 +0900
+
 python-zeroconf (0.47.1-1) unstable; urgency=medium
 
   * New upstream version 0.47.1
