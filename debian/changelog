@@ -1,4 +1,4 @@
-python-zeroconf (0.47.1-2) UNRELEASED; urgency=medium
+python-zeroconf (0.47.1-2) unstable; urgency=medium
 
   [ Corey Bryant ]
   * d/control: Add explicit dependency on python3-async-timeout. (Closes: #1028606)
@@ -6,7 +6,7 @@ python-zeroconf (0.47.1-2) UNRELEASED; urgency=medium
       Explicit "python3-async-timeout" dependency is still required for
       Python 3.10 while Python 3.10 is supported by "python3-all" package.
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 15 Jan 2023 20:58:32 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 15 Jan 2023 21:35:56 +0900
 
 python-zeroconf (0.47.1-1) unstable; urgency=medium
 
