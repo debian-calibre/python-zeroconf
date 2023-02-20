@@ -1,9 +1,9 @@
-python-zeroconf (0.47.3-1) UNRELEASED; urgency=medium
+python-zeroconf (0.47.3-1) unstable; urgency=medium
 
   * Lintian fix
   * New upstream version 0.47.3
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Mon, 20 Feb 2023 10:17:42 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Mon, 20 Feb 2023 10:49:36 +0900
 
 python-zeroconf (0.47.1-2) unstable; urgency=medium
 
