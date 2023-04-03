@@ -22,8 +22,8 @@
 
 import ipaddress
 import random
-import socket
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union, cast
+from functools import lru_cache
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union, cast
 
 from .._dns import (
     DNSAddress,
@@ -39,7 +39,7 @@ from .._protocol.outgoing import DNSOutgoing
 from .._updates import RecordUpdate, RecordUpdateListener
 from .._utils.asyncio import get_running_loop, run_coro_with_timeout
 from .._utils.name import service_type_name
-from .._utils.net import IPVersion, _encode_address, _is_v6_address
+from .._utils.net import IPVersion, _encode_address
 from .._utils.time import current_time_millis
 from ..const import (
     _CLASS_IN,
@@ -77,6 +77,9 @@ def instance_name_from_service_info(info: "ServiceInfo") -> str:
     if not info.type.endswith(service_name):
         raise BadTypeInNameException
     return info.name[: -len(service_name) - 1]
+
+
+_cached_ip_addresses = lru_cache(maxsize=256)(ipaddress.ip_address)
 
 
 class ServiceInfo(RecordUpdateListener):
@@ -196,7 +199,7 @@ class ServiceInfo(RecordUpdateListener):
 
         for address in value:
             try:
-                addr = ipaddress.ip_address(address)
+                addr = _cached_ip_addresses(address)
             except ValueError:
                 raise TypeError(
                     "Addresses must either be IPv4 or IPv6 strings, bytes, or integers;"
@@ -219,7 +222,14 @@ class ServiceInfo(RecordUpdateListener):
         return self._properties
 
     def addresses_by_version(self, version: IPVersion) -> List[bytes]:
-        """List addresses matching IP version."""
+        """List addresses matching IP version.
+
+        Addresses are guaranteed to be returned in LIFO (last in, first out)
+        order with IPv4 addresses first and IPv6 addresses second.
+
+        This means the first address will always be the most recently added
+        address of the given IP version.
+        """
         if version == IPVersion.V4Only:
             return [addr.packed for addr in self._ipv4_addresses]
         if version == IPVersion.V6Only:
@@ -229,28 +239,50 @@ class ServiceInfo(RecordUpdateListener):
             *(addr.packed for addr in self._ipv6_addresses),
         ]
 
+    def ip_addresses_by_version(
+        self, version: IPVersion
+    ) -> Union[List[ipaddress.IPv4Address], List[ipaddress.IPv6Address], List[ipaddress._BaseAddress]]:
+        """List ip_address objects matching IP version.
+
+        Addresses are guaranteed to be returned in LIFO (last in, first out)
+        order with IPv4 addresses first and IPv6 addresses second.
+
+        This means the first address will always be the most recently added
+        address of the given IP version.
+        """
+        if version == IPVersion.V4Only:
+            return self._ipv4_addresses
+        if version == IPVersion.V6Only:
+            return self._ipv6_addresses
+        return [*self._ipv4_addresses, *self._ipv6_addresses]
+
     def parsed_addresses(self, version: IPVersion = IPVersion.All) -> List[str]:
-        """List addresses in their parsed string form."""
-        result = self.addresses_by_version(version)
-        return [
-            socket.inet_ntop(socket.AF_INET6 if _is_v6_address(addr) else socket.AF_INET, addr)
-            for addr in result
-        ]
+        """List addresses in their parsed string form.
+
+        Addresses are guaranteed to be returned in LIFO (last in, first out)
+        order with IPv4 addresses first and IPv6 addresses second.
+
+        This means the first address will always be the most recently added
+        address of the given IP version.
+        """
+        return [str(addr) for addr in self.ip_addresses_by_version(version)]
 
     def parsed_scoped_addresses(self, version: IPVersion = IPVersion.All) -> List[str]:
         """Equivalent to parsed_addresses, with the exception that IPv6 Link-Local
         addresses are qualified with %<interface_index> when available
+
+        Addresses are guaranteed to be returned in LIFO (last in, first out)
+        order with IPv4 addresses first and IPv6 addresses second.
+
+        This means the first address will always be the most recently added
+        address of the given IP version.
         """
         if self.interface_index is None:
             return self.parsed_addresses(version)
-
-        def is_link_local(addr_str: str) -> Any:
-            addr = ipaddress.ip_address(addr_str)
-            return addr.version == 6 and addr.is_link_local
-
-        ll_addrs = list(filter(is_link_local, self.parsed_addresses(version)))
-        other_addrs = list(filter(lambda addr: not is_link_local(addr), self.parsed_addresses(version)))
-        return [f"{addr}%{self.interface_index}" for addr in ll_addrs] + other_addrs
+        return [
+            f"{addr}%{self.interface_index}" if addr.version == 6 and addr.is_link_local else str(addr)
+            for addr in self.ip_addresses_by_version(version)
+        ]
 
     def _set_properties(self, properties: Dict) -> None:
         """Sets properties and text of this info from a dictionary"""
@@ -346,7 +378,7 @@ class ServiceInfo(RecordUpdateListener):
             if record.key != self.server_key:
                 return
             try:
-                ip_addr = ipaddress.ip_address(record.address)
+                ip_addr = _cached_ip_addresses(record.address)
             except ValueError as ex:
                 log.warning("Encountered invalid address while processing %s: %s", record, ex)
                 return
@@ -385,13 +417,13 @@ class ServiceInfo(RecordUpdateListener):
         return [
             DNSAddress(
                 self.server,
-                _TYPE_AAAA if _is_v6_address(address) else _TYPE_A,
+                _TYPE_AAAA if address.version == 6 else _TYPE_A,
                 _CLASS_IN | _CLASS_UNIQUE,
                 override_ttl if override_ttl is not None else self.host_ttl,
-                address,
+                address.packed,
                 created=created,
             )
-            for address in self.addresses_by_version(version)
+            for address in self.ip_addresses_by_version(version)
         ]
 
     def dns_pointer(self, override_ttl: Optional[int] = None, created: Optional[float] = None) -> DNSPointer:
