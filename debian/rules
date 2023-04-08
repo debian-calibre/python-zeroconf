@@ -6,5 +6,5 @@ export PYBUILD_NAME=zeroconf
 
 # remove coverage test file from installation tree
 execute_after_dh_auto_install:
-	rm -f  debian/python3-zeroconf/usr/lib/python3*/dist-packages/.coverage
-	rm -rf debian/python3-zeroconf/usr/lib/python3*/dist-packages/.benchmarks/
+	rm -fv  debian/python3-zeroconf/usr/lib/python3*/dist-packages/.coverage
+	rm -rfv debian/python3-zeroconf/usr/lib/python3*/dist-packages/.benchmarks/
