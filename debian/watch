@@ -1,7 +1,4 @@
 # -*- mode: conf -*-
 version=4
-
-opts="downloadurlmangle=s!/python-zeroconf/python-zeroconf/releases/tag/(\d+\.\d+\.\d+)!/python-zeroconf/python-zeroconf/archive/refs/tags/$1.tar.gz!, \
-      filenamemangle=s!(\d+\.\d+\.\d+)$!python-zeroconf-github-$1.tar.gz!" \
-  https://github.com/python-zeroconf/python-zeroconf/releases \
-  /python-zeroconf/python-zeroconf/releases/tag/(\d+\.\d+\.\d+)
+opts=uversionmangle=s/(rc|a|b|c)/~$1/ \
+https://pypi.debian.net/zeroconf/zeroconf-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
