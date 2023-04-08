@@ -90,10 +90,6 @@ class AnswerGroup(NamedTuple):
     answers: _AnswerWithAdditionalsType
 
 
-def _message_is_probe(msg: DNSIncoming) -> bool:
-    return msg.num_authorities > 0
-
-
 def construct_nsec_record(name: str, types: List[int], now: float) -> DNSNsec:
     """Construct an NSEC record for name and a list of dns types.
 
@@ -137,29 +133,12 @@ def _add_answers_additionals(out: DNSOutgoing, answers: _AnswerWithAdditionalsTy
                 sending.add(additional)
 
 
-def sanitize_incoming_record(record: DNSRecord) -> None:
-    """Protect zeroconf from records that can cause denial of service.
-
-    We enforce a minimum TTL for PTR records to avoid
-    ServiceBrowsers generating excessive queries refresh queries.
-    Apple uses a 15s minimum TTL, however we do not have the same
-    level of rate limit and safe guards so we use 1/4 of the recommended value.
-    """
-    if record.ttl and record.ttl < _DNS_PTR_MIN_TTL and isinstance(record, DNSPointer):
-        log.debug(
-            "Increasing effective ttl of %s to minimum of %s to protect against excessive refreshes.",
-            record,
-            _DNS_PTR_MIN_TTL,
-        )
-        record.set_created_ttl(record.created, _DNS_PTR_MIN_TTL)
-
-
 class _QueryResponse:
     """A pair for unicast and multicast DNSOutgoing responses."""
 
     def __init__(self, cache: DNSCache, msgs: List[DNSIncoming]) -> None:
         """Build a query response."""
-        self._is_probe = any(_message_is_probe(msg) for msg in msgs)
+        self._is_probe = any(msg.is_probe for msg in msgs)
         self._msg = msgs[0]
         self._now = self._msg.now
         self._cache = cache
@@ -363,9 +342,7 @@ class QueryHandler:
         This function must be run in the event loop as it is not
         threadsafe.
         """
-        known_answers = DNSRRSet(
-            itertools.chain.from_iterable(msg.answers for msg in msgs if not _message_is_probe(msg))
-        )
+        known_answers = DNSRRSet(msg.answers for msg in msgs if not msg.is_probe)
         query_res = _QueryResponse(self.cache, msgs)
 
         for msg in msgs:
@@ -426,14 +403,26 @@ class RecordManager:
         threadsafe.
         """
         updates: List[RecordUpdate] = []
-        address_adds: List[DNSAddress] = []
+        address_adds: List[DNSRecord] = []
         other_adds: List[DNSRecord] = []
         removes: Set[DNSRecord] = set()
         now = msg.now
         unique_types: Set[Tuple[str, int, int]] = set()
 
         for record in msg.answers:
-            sanitize_incoming_record(record)
+            # Protect zeroconf from records that can cause denial of service.
+            #
+            # We enforce a minimum TTL for PTR records to avoid
+            # ServiceBrowsers generating excessive queries refresh queries.
+            # Apple uses a 15s minimum TTL, however we do not have the same
+            # level of rate limit and safe guards so we use 1/4 of the recommended value.
+            if record.ttl and record.type == _TYPE_PTR and record.ttl < _DNS_PTR_MIN_TTL:
+                log.debug(
+                    "Increasing effective ttl of %s to minimum of %s to protect against excessive refreshes.",
+                    record,
+                    _DNS_PTR_MIN_TTL,
+                )
+                record.set_created_ttl(record.created, _DNS_PTR_MIN_TTL)
 
             if record.unique:  # https://tools.ietf.org/html/rfc6762#section-10.2
                 unique_types.add((record.name, record.type, record.class_))
@@ -443,7 +432,7 @@ class RecordManager:
                 if maybe_entry is not None:
                     maybe_entry.reset_ttl(record)
                 else:
-                    if isinstance(record, DNSAddress):
+                    if record.type in _ADDRESS_RECORD_TYPES:
                         address_adds.append(record)
                     else:
                         other_adds.append(record)
