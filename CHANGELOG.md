@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.58.0 (2023-04-23)
+### Feature
+* Speed up incoming parser ([#1163](https://github.com/python-zeroconf/python-zeroconf/issues/1163)) ([`4626399`](https://github.com/python-zeroconf/python-zeroconf/commit/46263999c0c7ea5176885f1eadd2c8498834b70e))
+
+## v0.57.0 (2023-04-23)
+### Feature
+* Speed up incoming data parser ([#1161](https://github.com/python-zeroconf/python-zeroconf/issues/1161)) ([`cb4c3b2`](https://github.com/python-zeroconf/python-zeroconf/commit/cb4c3b2b80ca3b88b8de6e87062a45e03e8805a6))
+
 ## v0.56.0 (2023-04-07)
 ### Feature
 * Reduce denial of service protection overhead ([#1157](https://github.com/python-zeroconf/python-zeroconf/issues/1157)) ([`2c2f26a`](https://github.com/python-zeroconf/python-zeroconf/commit/2c2f26a87d0aac81a77205b06bc9ba499caa2321))
@@ -24,6 +32,9 @@
 
 ### Fix
 * Make parsed_scoped_addresses return addresses in the same order as all other methods ([#1150](https://github.com/python-zeroconf/python-zeroconf/issues/1150)) ([`9b6adcf`](https://github.com/python-zeroconf/python-zeroconf/commit/9b6adcf5c04a469632ee866c32f5898c5cbf810a))
+
+### Technically breaking change
+* IP Addresses returned from `ServiceInfo.parsed_addresses` are now stringified using the python `ipaddress` library which may format them differently than `socket.inet_ntop` depending on the operating system. It is recommended to use `ServiceInfo.ip_addresses_by_version` instead going forward as it offers a stronger guarantee since it returns `ipaddress` objects.
 
 ## v0.52.0 (2023-04-02)
 ### Feature
