@@ -7,6 +7,7 @@ cdef cython.uint MAX_DNS_LABELS
 cdef cython.uint DNS_COMPRESSION_POINTER_LEN
 cdef cython.uint MAX_NAME_LENGTH
 
+cdef object current_time_millis
 
 cdef cython.uint _TYPE_A
 cdef cython.uint _TYPE_CNAME
@@ -31,14 +32,26 @@ cdef object DECODE_EXCEPTIONS
 
 cdef object IncomingDecodeError
 
+from .._dns cimport (
+    DNSAddress,
+    DNSEntry,
+    DNSHinfo,
+    DNSNsec,
+    DNSPointer,
+    DNSRecord,
+    DNSService,
+    DNSText,
+)
+
+
 cdef class DNSIncoming:
 
     cdef bint _did_read_others
     cdef public unsigned int flags
-    cdef unsigned int offset
+    cdef object offset
     cdef public bytes data
     cdef unsigned int _data_len
-    cdef public object name_cache
+    cdef public cython.dict name_cache
     cdef public object questions
     cdef object _answers
     cdef public object id
@@ -55,13 +68,16 @@ cdef class DNSIncoming:
         off=cython.uint,
         label_idx=cython.uint,
         length=cython.uint,
-        link=cython.uint
+        link=cython.uint,
+        link_data=cython.uint
     )
-    cdef _decode_labels_at_offset(self, unsigned int off, cython.list labels, object seen_pointers)
+    cdef _decode_labels_at_offset(self, unsigned int off, cython.list labels, cython.set seen_pointers)
 
     cdef _read_header(self)
 
     cdef _initial_parse(self)
+
+    cdef _unpack(self, object unpacker, object length)
 
     @cython.locals(
         end=cython.uint,
