@@ -2,6 +2,22 @@
 
 <!--next-version-placeholder-->
 
+## v0.62.0 (2023-05-04)
+### Feature
+* Improve performance of ServiceBrowser outgoing query scheduler ([#1170](https://github.com/python-zeroconf/python-zeroconf/issues/1170)) ([`963d022`](https://github.com/python-zeroconf/python-zeroconf/commit/963d022ef82b615540fa7521d164a98a6c6f5209))
+
+## v0.61.0 (2023-05-03)
+### Feature
+* Speed up parsing NSEC records ([#1169](https://github.com/python-zeroconf/python-zeroconf/issues/1169)) ([`06fa94d`](https://github.com/python-zeroconf/python-zeroconf/commit/06fa94d87b4f0451cb475a921ce1d8e9562e0f26))
+
+## v0.60.0 (2023-05-01)
+### Feature
+* Speed up processing incoming data ([#1167](https://github.com/python-zeroconf/python-zeroconf/issues/1167)) ([`fbaaf7b`](https://github.com/python-zeroconf/python-zeroconf/commit/fbaaf7bb6ff985bdabb85feb6cba144f12d4f1d6))
+
+## v0.59.0 (2023-05-01)
+### Feature
+* Speed up decoding dns questions when processing incoming data ([#1168](https://github.com/python-zeroconf/python-zeroconf/issues/1168)) ([`f927190`](https://github.com/python-zeroconf/python-zeroconf/commit/f927190cb24f70fd7c825c6e12151fcc0daf3973))
+
 ## v0.58.2 (2023-04-26)
 ### Fix
 * Re-release to rebuild failed wheels ([#1165](https://github.com/python-zeroconf/python-zeroconf/issues/1165)) ([`4986271`](https://github.com/python-zeroconf/python-zeroconf/commit/498627166a4976f1d9d8cd1f3654b0d50272d266))
