@@ -11,10 +11,10 @@ Python 3.10 in reproducible build tester (build2) failed.
  1 file changed, 1 insertion(+)
 
 diff --git a/tests/services/test_browser.py b/tests/services/test_browser.py
-index 33cc7ed..a72edb7 100644
+index 72e550c..c71705e 100644
 --- a/tests/services/test_browser.py
 +++ b/tests/services/test_browser.py
-@@ -1119,6 +1119,7 @@ def test_service_browser_matching():
+@@ -1117,6 +1117,7 @@ def test_service_browser_matching():
      zc.close()
  
  

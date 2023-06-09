@@ -12,19 +12,19 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index e1062b8..9429ac1 100644
+index a8b36b8..3ab1576 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
-@@ -104,6 +104,7 @@ class ServiceTypesQuery(unittest.TestCase):
+@@ -94,6 +94,7 @@ def test_integration_with_listener_v6_records(disable_duplicate_packet_suppressi
  
-     @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
-     @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
-     def test_integration_with_listener_ipv6(self):
- 
-         type_ = "_test-listenv6ip-type._tcp.local."
+ @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
+ @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
++@unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
+ def test_integration_with_listener_ipv6(disable_duplicate_packet_suppression):
+     type_ = "_test-listenv6ip-type._tcp.local."
+     name = "xxxyyy"
 diff --git a/tests/test_core.py b/tests/test_core.py
-index 9e87dba..4388f76 100644
+index 93e07b0..da9eb98 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
 @@ -102,12 +102,14 @@ async def test_reaper_aborts_when_done():
