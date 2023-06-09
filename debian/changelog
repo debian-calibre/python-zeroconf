@@ -1,3 +1,10 @@
+python-zeroconf (0.64.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.64.1
+  * Rediff patches
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Fri, 09 Jun 2023 17:04:47 +0900
+
 python-zeroconf (0.63.0-1) unstable; urgency=medium
 
   * New upstream version 0.63.0
