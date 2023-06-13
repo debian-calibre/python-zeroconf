@@ -1,3 +1,9 @@
+python-zeroconf (0.66.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.66.0
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Tue, 13 Jun 2023 10:32:52 +0900
+
 python-zeroconf (0.64.1-1) unstable; urgency=medium
 
   * New upstream version 0.64.1
