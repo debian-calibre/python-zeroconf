@@ -2,6 +2,31 @@
 
 <!--next-version-placeholder-->
 
+## v0.69.0 (2023-06-18)
+
+### Feature
+
+* Cython3 support ([#1190](https://github.com/python-zeroconf/python-zeroconf/issues/1190)) ([`8ae8ba1`](https://github.com/python-zeroconf/python-zeroconf/commit/8ae8ba1af324b0c8c2da3bd12c264a5c0f3dcc3d))
+* Reorder incoming data handler to reduce overhead ([#1189](https://github.com/python-zeroconf/python-zeroconf/issues/1189)) ([`32756ff`](https://github.com/python-zeroconf/python-zeroconf/commit/32756ff113f675b7a9cf16d3c0ab840ba733e5e4))
+
+## v0.68.1 (2023-06-18)
+
+### Fix
+
+* Reduce debug logging overhead by adding missing checks to datagram_received ([#1188](https://github.com/python-zeroconf/python-zeroconf/issues/1188)) ([`ac5c50a`](https://github.com/python-zeroconf/python-zeroconf/commit/ac5c50afc70aaa33fcd20bf02222ff4f0c596fa3))
+
+## v0.68.0 (2023-06-17)
+
+### Feature
+
+* Reduce overhead to handle queries and responses ([#1184](https://github.com/python-zeroconf/python-zeroconf/issues/1184)) ([`81126b7`](https://github.com/python-zeroconf/python-zeroconf/commit/81126b7600f94848ef8c58b70bac0c6ab993c6ae))
+
+## v0.67.0 (2023-06-17)
+
+### Feature
+
+* Speed up answering incoming questions ([#1186](https://github.com/python-zeroconf/python-zeroconf/issues/1186)) ([`8f37665`](https://github.com/python-zeroconf/python-zeroconf/commit/8f376658d2a3bef0353646e6fddfda15626b73a9))
+
 ## v0.66.0 (2023-06-13)
 ### Feature
 * Optimize construction of outgoing dns records ([#1182](https://github.com/python-zeroconf/python-zeroconf/issues/1182)) ([`fc0341f`](https://github.com/python-zeroconf/python-zeroconf/commit/fc0341f281cdb71428c0f1cf90c12d34cbb4acae))
