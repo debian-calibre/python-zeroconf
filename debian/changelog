@@ -1,8 +1,8 @@
-python-zeroconf (0.71.0-1) UNRELEASED; urgency=medium
+python-zeroconf (0.71.0-1) unstable; urgency=medium
 
   * New upstream version 0.71.0
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 12 Jul 2023 00:11:25 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 12 Jul 2023 00:34:32 +0900
 
 python-zeroconf (0.70.0-1) unstable; urgency=medium
 
