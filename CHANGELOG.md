@@ -2,6 +2,30 @@
 
 <!--next-version-placeholder-->
 
+## v0.71.4 (2023-07-24)
+
+### Fix
+
+* Cleanup naming from previous refactoring in ServiceInfo ([#1202](https://github.com/python-zeroconf/python-zeroconf/issues/1202)) ([`b272d75`](https://github.com/python-zeroconf/python-zeroconf/commit/b272d75abd982f3be1f4b20f683cac38011cc6f4))
+
+## v0.71.3 (2023-07-23)
+
+### Fix
+
+* Pin python-semantic-release to fix release process ([#1200](https://github.com/python-zeroconf/python-zeroconf/issues/1200)) ([`c145a23`](https://github.com/python-zeroconf/python-zeroconf/commit/c145a238d768aa17c3aebe120c20a46bfbec6b99))
+
+## v0.71.2 (2023-07-23)
+
+### Fix
+
+* No change re-release to fix wheel builds ([#1199](https://github.com/python-zeroconf/python-zeroconf/issues/1199)) ([`8c3a4c8`](https://github.com/python-zeroconf/python-zeroconf/commit/8c3a4c80c221bea7401c12e1c6a525e75b7ffea2))
+
+## v0.71.1 (2023-07-23)
+
+### Fix
+
+* Add missing if TYPE_CHECKING guard to generate_service_query ([#1198](https://github.com/python-zeroconf/python-zeroconf/issues/1198)) ([`ac53adf`](https://github.com/python-zeroconf/python-zeroconf/commit/ac53adf7e71db14c1a0f9adbfd1d74033df36898))
+
 ## v0.71.0 (2023-07-08)
 
 ### Feature
