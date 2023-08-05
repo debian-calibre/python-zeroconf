@@ -2,6 +2,52 @@
 
 <!--next-version-placeholder-->
 
+## v0.74.0 (2023-08-04)
+
+### Feature
+
+* Speed up unpacking text records in ServiceInfo ([#1212](https://github.com/python-zeroconf/python-zeroconf/issues/1212)) ([`99a6f98`](https://github.com/python-zeroconf/python-zeroconf/commit/99a6f98e44a1287ba537eabb852b1b69923402f0))
+
+### Fix
+
+* Remove typing on reset_ttl for cython compat ([#1213](https://github.com/python-zeroconf/python-zeroconf/issues/1213)) ([`0094e26`](https://github.com/python-zeroconf/python-zeroconf/commit/0094e2684344c6b7edd7948924f093f1b4c19901))
+
+## v0.73.0 (2023-08-03)
+
+### Feature
+
+* Add a cache to service_type_name ([#1211](https://github.com/python-zeroconf/python-zeroconf/issues/1211)) ([`53a694f`](https://github.com/python-zeroconf/python-zeroconf/commit/53a694f60e675ae0560e727be6b721b401c2b68f))
+
+## v0.72.3 (2023-08-03)
+
+### Fix
+
+* Revert adding typing to DNSRecord.suppressed_by ([#1210](https://github.com/python-zeroconf/python-zeroconf/issues/1210)) ([`3dba5ae`](https://github.com/python-zeroconf/python-zeroconf/commit/3dba5ae0c0e9473b7b20fd6fc79fa1a3b298dc5a))
+
+## v0.72.2 (2023-08-03)
+
+### Fix
+
+* Revert DNSIncoming cimport in _dns.pxd ([#1209](https://github.com/python-zeroconf/python-zeroconf/issues/1209)) ([`5f14b6d`](https://github.com/python-zeroconf/python-zeroconf/commit/5f14b6dc687b3a0716d0ca7f61ccf1e93dfe5fa1))
+
+## v0.72.1 (2023-08-03)
+
+### Fix
+
+* Race with InvalidStateError when async_request times out ([#1208](https://github.com/python-zeroconf/python-zeroconf/issues/1208)) ([`2233b6b`](https://github.com/python-zeroconf/python-zeroconf/commit/2233b6bc4ceeee5524d2ee88ecae8234173feb5f))
+
+## v0.72.0 (2023-08-02)
+
+### Feature
+
+* Speed up processing incoming records ([#1206](https://github.com/python-zeroconf/python-zeroconf/issues/1206)) ([`126849c`](https://github.com/python-zeroconf/python-zeroconf/commit/126849c92be8cec9253fba9faa591029d992fcc3))
+
+## v0.71.5 (2023-08-02)
+
+### Fix
+
+* Improve performance of ServiceInfo.async_request ([#1205](https://github.com/python-zeroconf/python-zeroconf/issues/1205)) ([`8019a73`](https://github.com/python-zeroconf/python-zeroconf/commit/8019a73c952f2fc4c88d849aab970fafedb316d8))
+
 ## v0.71.4 (2023-07-24)
 
 ### Fix
