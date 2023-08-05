@@ -35,7 +35,9 @@ Depends:
  python3-async-timeout (>= 4.0.1),
  ${misc:Depends},
  ${python3:Depends},
-Breaks: python3-pychromecast (<< 4.2.0~)
+Breaks:
+    python3-pychromecast (<< 4.2.0~),
+    calibre (<< 6.24.0-2~)
 Description: Pure Python implementation of multicast DNS service discovery (Python3)
  This is an implementation of the multicast DNS Service Discover Library
  zeroconf in pure Python.
