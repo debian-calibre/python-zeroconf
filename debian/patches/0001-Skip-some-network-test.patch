@@ -12,10 +12,10 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index a8b36b8..3ab1576 100644
+index 1afe6d5..fb1b003 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
-@@ -94,6 +94,7 @@ def test_integration_with_listener_v6_records(disable_duplicate_packet_suppressi
+@@ -92,6 +92,7 @@ def test_integration_with_listener_v6_records(disable_duplicate_packet_suppressi
  
  @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
  @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
