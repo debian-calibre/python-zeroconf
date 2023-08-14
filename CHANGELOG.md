@@ -2,6 +2,19 @@
 
 <!--next-version-placeholder-->
 
+## v0.76.0 (2023-08-14)
+
+### Feature
+
+* Improve performance responding to queries ([#1217](https://github.com/python-zeroconf/python-zeroconf/issues/1217)) ([`69b33be`](https://github.com/python-zeroconf/python-zeroconf/commit/69b33be3b2f9d4a27ef5154cae94afca048efffa))
+
+## v0.75.0 (2023-08-13)
+
+### Feature
+
+* Expose flag to disable strict name checking in service registration ([#1215](https://github.com/python-zeroconf/python-zeroconf/issues/1215)) ([`5df8a57`](https://github.com/python-zeroconf/python-zeroconf/commit/5df8a57a14d59687a3c22ea8ee063e265031e278))
+* Speed up processing incoming records ([#1216](https://github.com/python-zeroconf/python-zeroconf/issues/1216)) ([`aff625d`](https://github.com/python-zeroconf/python-zeroconf/commit/aff625dc6a5e816dad519644c4adac4f96980c04))
+
 ## v0.74.0 (2023-08-04)
 
 ### Feature
