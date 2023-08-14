@@ -1,3 +1,9 @@
+python-zeroconf (0.76.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.76.0
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Mon, 14 Aug 2023 15:08:27 +0900
+
 python-zeroconf (0.74.0-2) unstable; urgency=medium
 
   * python3-zeroconf 0.74.0 breaks older calibre
