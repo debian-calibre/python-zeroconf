@@ -1,9 +1,9 @@
-python-zeroconf (0.80.0-1) UNRELEASED; urgency=medium
+python-zeroconf (0.80.0-1) unstable; urgency=medium
 
   * New upstream version 0.80.0
   * Rediff patches
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Fri, 18 Aug 2023 16:26:51 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 19 Aug 2023 00:33:40 +0900
 
 python-zeroconf (0.76.0-1) unstable; urgency=medium
 
