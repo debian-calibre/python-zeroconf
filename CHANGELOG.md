@@ -2,6 +2,30 @@
 
 <!--next-version-placeholder-->
 
+## v0.80.0 (2023-08-15)
+
+### Feature
+
+* Optimize unpacking properties in ServiceInfo ([#1225](https://github.com/python-zeroconf/python-zeroconf/issues/1225)) ([`1492e41`](https://github.com/python-zeroconf/python-zeroconf/commit/1492e41b3d5cba5598cc9dd6bd2bc7d238f13555))
+
+## v0.79.0 (2023-08-14)
+
+### Feature
+
+* Refactor notify implementation to reduce overhead of adding and removing listeners ([#1224](https://github.com/python-zeroconf/python-zeroconf/issues/1224)) ([`ceb92cf`](https://github.com/python-zeroconf/python-zeroconf/commit/ceb92cfe42d885dbb38cee7aaeebf685d97627a9))
+
+## v0.78.0 (2023-08-14)
+
+### Feature
+
+* Add cython pxd file for _listener.py to improve incoming message processing performance ([#1221](https://github.com/python-zeroconf/python-zeroconf/issues/1221)) ([`f459856`](https://github.com/python-zeroconf/python-zeroconf/commit/f459856a0a61b8afa8a541926d7e15d51f8e4aea))
+
+## v0.77.0 (2023-08-14)
+
+### Feature
+
+* Cythonize _listener.py to improve incoming message processing performance ([#1220](https://github.com/python-zeroconf/python-zeroconf/issues/1220)) ([`9efde8c`](https://github.com/python-zeroconf/python-zeroconf/commit/9efde8c8c1ed14c5d3c162f185b49212fcfcb5c9))
+
 ## v0.76.0 (2023-08-14)
 
 ### Feature
