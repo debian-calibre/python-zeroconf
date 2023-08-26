@@ -2,6 +2,25 @@
 
 <!--next-version-placeholder-->
 
+## v0.82.1 (2023-08-22)
+
+### Fix
+
+* Build failures with older cython 0.29 series ([#1232](https://github.com/python-zeroconf/python-zeroconf/issues/1232)) ([`30c3ad9`](https://github.com/python-zeroconf/python-zeroconf/commit/30c3ad9d1bc6b589e1ca6675fea21907ebcd1ced))
+
+## v0.82.0 (2023-08-22)
+
+### Feature
+
+* Optimize processing of records in RecordUpdateListener subclasses ([#1231](https://github.com/python-zeroconf/python-zeroconf/issues/1231)) ([`3e89294`](https://github.com/python-zeroconf/python-zeroconf/commit/3e89294ea0ecee1122e1c1ffdc78925add8ca40e))
+
+## v0.81.0 (2023-08-22)
+
+### Feature
+
+* Speed up the service registry with a cython pxd ([#1226](https://github.com/python-zeroconf/python-zeroconf/issues/1226)) ([`47d3c7a`](https://github.com/python-zeroconf/python-zeroconf/commit/47d3c7ad4bc5f2247631c3ad5e6b6156d45a0a4e))
+* Optimizing sending answers to questions ([#1227](https://github.com/python-zeroconf/python-zeroconf/issues/1227)) ([`cd7b56b`](https://github.com/python-zeroconf/python-zeroconf/commit/cd7b56b2aa0c8ee429da430e9a36abd515512011))
+
 ## v0.80.0 (2023-08-15)
 
 ### Feature
