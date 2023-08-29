@@ -3,13 +3,14 @@
 
 """ Unit tests for zeroconf._services.browser. """
 
+import asyncio
 import logging
 import os
 import socket
 import time
 import unittest
 from threading import Event
-from typing import Iterable, Set
+from typing import Iterable, Set, cast
 from unittest.mock import patch
 
 import pytest
@@ -21,17 +22,22 @@ from zeroconf import (
     DNSQuestion,
     Zeroconf,
     _engine,
-    _handlers,
     const,
     current_time_millis,
     millis_to_seconds,
 )
+from zeroconf._handlers import record_manager
 from zeroconf._services import ServiceStateChange
 from zeroconf._services.browser import ServiceBrowser
 from zeroconf._services.info import ServiceInfo
 from zeroconf.asyncio import AsyncZeroconf
 
-from .. import _inject_response, _wait_for_start, has_working_ipv6
+from .. import (
+    QuestionHistoryWithoutSuppression,
+    _inject_response,
+    _wait_for_start,
+    has_working_ipv6,
+)
 
 log = logging.getLogger('zeroconf')
 original_logging_level = logging.NOTSET
@@ -66,6 +72,35 @@ def test_service_browser_cancel_multiple_times():
     browser.cancel()
     browser.cancel()
     browser.cancel()
+
+    zc.close()
+
+
+def test_service_browser_cancel_context_manager():
+    """Test we can cancel a ServiceBrowser with it being used as a context manager."""
+
+    # instantiate a zeroconf instance
+    zc = Zeroconf(interfaces=['127.0.0.1'])
+    # start a browser
+    type_ = "_hap._tcp.local."
+
+    class MyServiceListener(r.ServiceListener):
+        pass
+
+    listener = MyServiceListener()
+
+    browser = r.ServiceBrowser(zc, type_, None, listener)
+
+    assert cast(bool, browser.done) is False
+
+    with browser:
+        pass
+
+    # ensure call_soon_threadsafe in ServiceBrowser.cancel is run
+    assert zc.loop is not None
+    asyncio.run_coroutine_threadsafe(asyncio.sleep(0), zc.loop).result()
+
+    assert cast(bool, browser.done) is True
 
     zc.close()
 
@@ -444,6 +479,7 @@ def test_backoff():
     type_ = "_http._tcp.local."
     zeroconf_browser = Zeroconf(interfaces=['127.0.0.1'])
     _wait_for_start(zeroconf_browser)
+    zeroconf_browser.question_history = QuestionHistoryWithoutSuppression()
 
     # we are going to patch the zeroconf send to check query transmission
     old_send = zeroconf_browser.async_send
@@ -465,10 +501,8 @@ def test_backoff():
     # patch the zeroconf current_time_millis
     # patch the backoff limit to prevent test running forever
     with patch.object(zeroconf_browser, "async_send", send), patch.object(
-        zeroconf_browser.question_history, "suppresses", return_value=False
-    ), patch.object(_services_browser, "current_time_millis", current_time_millis), patch.object(
-        _services_browser, "_BROWSER_BACKOFF_LIMIT", 10
-    ), patch.object(
+        _services_browser, "current_time_millis", current_time_millis
+    ), patch.object(_services_browser, "_BROWSER_BACKOFF_LIMIT", 10), patch.object(
         _services_browser, "_FIRST_QUERY_DELAY_RANDOM_INTERVAL", (0, 0)
     ):
         # dummy service callback
@@ -1117,7 +1151,7 @@ def test_service_browser_matching():
     zc.close()
 
 
-@patch.object(_handlers, '_DNS_PTR_MIN_TTL', 1)
+@patch.object(record_manager, '_DNS_PTR_MIN_TTL', 1)
 @patch.object(_engine, "_CACHE_CLEANUP_INTERVAL", 0.01)
 def test_service_browser_expire_callbacks():
     """Test that the ServiceBrowser matching does not match partial names."""

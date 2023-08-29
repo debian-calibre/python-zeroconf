@@ -345,31 +345,27 @@ class ServiceInfo(RecordUpdateListener):
     def _unpack_text_into_properties(self) -> None:
         """Unpacks the text field into properties"""
         text = self.text
-        end = len(text)
-        if end == 0:
+        if not text:
             # Properties should be set atomically
             # in case another thread is reading them
             self._properties = {}
             return
 
-        result: Dict[Union[str, bytes], Optional[Union[str, bytes]]] = {}
         index = 0
-        strs: List[bytes] = []
+        pairs: List[bytes] = []
+        end = len(text)
         while index < end:
             length = text[index]
             index += 1
-            strs.append(text[index : index + length])
+            pairs.append(text[index : index + length])
             index += length
 
-        for s in strs:
-            key, _, value = s.partition(b'=')
-            # Only update non-existent properties
-            if key and key not in result:
-                result[key] = value or None
-
-        # Properties should be set atomically
-        # in case another thread is reading them
-        self._properties = result
+        # Reverse the list so that the first item in the list
+        # is the last item in the text field. This is important
+        # to preserve backwards compatibility where the first
+        # key always wins if the key is seen multiple times.
+        pairs.reverse()
+        self._properties = {key: value or None for key, _, value in (pair.partition(b'=') for pair in pairs)}
 
     def get_name(self) -> str:
         """Name accessor"""
@@ -476,7 +472,7 @@ class ServiceInfo(RecordUpdateListener):
             old_server_key = self.server_key
             self.name = record.name
             self.server = record.server
-            self.server_key = record.server.lower()
+            self.server_key = record.server_key
             self.port = record.port
             self.weight = record.weight
             self.priority = record.priority
@@ -590,7 +586,7 @@ class ServiceInfo(RecordUpdateListener):
         """
         if self.server is None:
             self.server = self._name
-            self.server_key = self.server.lower()
+            self.server_key = self.key
 
     def load_from_cache(self, zc: 'Zeroconf', now: Optional[float] = None) -> bool:
         """Populate the service info from the cache.
