@@ -11,14 +11,14 @@ Python 3.10 in reproducible build tester (build2) failed.
  1 file changed, 1 insertion(+)
 
 diff --git a/tests/services/test_browser.py b/tests/services/test_browser.py
-index d13701e..1dd04ce 100644
+index d269f85..fbd58fb 100644
 --- a/tests/services/test_browser.py
 +++ b/tests/services/test_browser.py
-@@ -1117,6 +1117,7 @@ def test_service_browser_matching():
+@@ -1151,6 +1151,7 @@ def test_service_browser_matching():
      zc.close()
  
  
 +@pytest.mark.skipif(os.environ.get("DEBIAN_TEST"), reason="disabled by Debian builder")
- @patch.object(_handlers, '_DNS_PTR_MIN_TTL', 1)
+ @patch.object(record_manager, '_DNS_PTR_MIN_TTL', 1)
  @patch.object(_engine, "_CACHE_CLEANUP_INTERVAL", 0.01)
  def test_service_browser_expire_callbacks():
