@@ -23,11 +23,17 @@
 import asyncio
 import socket
 from functools import lru_cache
-from typing import List
+from typing import List, Set
 
 import ifaddr
 
-from zeroconf import DNSIncoming, Zeroconf
+from zeroconf import DNSIncoming, DNSQuestion, DNSRecord, Zeroconf
+from zeroconf._history import QuestionHistory
+
+
+class QuestionHistoryWithoutSuppression(QuestionHistory):
+    def suppresses(self, question: DNSQuestion, now: float, known_answers: Set[DNSRecord]) -> bool:
+        return False
 
 
 def _inject_responses(zc: Zeroconf, msgs: List[DNSIncoming]) -> None:
@@ -75,6 +81,6 @@ def has_working_ipv6():
     return False
 
 
-def _clear_cache(zc):
+def _clear_cache(zc: Zeroconf) -> None:
     zc.cache.cache.clear()
-    zc.question_history._history.clear()
+    zc.question_history.clear()

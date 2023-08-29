@@ -31,13 +31,13 @@ from ._cache import DNSCache
 from ._dns import DNSQuestion, DNSQuestionType
 from ._engine import AsyncEngine
 from ._exceptions import NonUniqueNameException, NotRunningException
-from ._handlers import (
-    MulticastOutgoingQueue,
-    QueryHandler,
-    RecordManager,
+from ._handlers.answers import (
     construct_outgoing_multicast_answers,
     construct_outgoing_unicast_answers,
 )
+from ._handlers.multicast_outgoing_queue import MulticastOutgoingQueue
+from ._handlers.query_handler import QueryHandler
+from ._handlers.record_manager import RecordManager
 from ._history import QuestionHistory
 from ._logger import QuietLogger, log
 from ._protocol.incoming import DNSIncoming
@@ -440,8 +440,8 @@ class Zeroconf(QuietLogger):
         # If another server uses the same addresses, we do not want to send
         # goodbye packets for the address records
 
-        assert info.server is not None
-        entries = self.registry.async_get_infos_server(info.server.lower())
+        assert info.server_key is not None
+        entries = self.registry.async_get_infos_server(info.server_key)
         broadcast_addresses = not bool(entries)
         return asyncio.ensure_future(
             self._async_broadcast_service(info, _UNREGISTER_TIME, 0, broadcast_addresses)

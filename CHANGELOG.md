@@ -2,6 +2,49 @@
 
 <!--next-version-placeholder-->
 
+## v0.88.0 (2023-08-29)
+
+### Feature
+
+* Speed up RecordManager with additional cython defs ([#1242](https://github.com/python-zeroconf/python-zeroconf/issues/1242)) ([`5a76fc5`](https://github.com/python-zeroconf/python-zeroconf/commit/5a76fc5ff74f2941ffbf7570e45390f35e0b7e01))
+
+## v0.87.0 (2023-08-29)
+
+### Feature
+
+* Improve performance by adding cython pxd for RecordManager ([#1241](https://github.com/python-zeroconf/python-zeroconf/issues/1241)) ([`a7dad3d`](https://github.com/python-zeroconf/python-zeroconf/commit/a7dad3d9743586f352e21eea1e129c6875f9a713))
+
+## v0.86.0 (2023-08-28)
+
+### Feature
+
+* Build wheels for cpython 3.12 ([#1239](https://github.com/python-zeroconf/python-zeroconf/issues/1239)) ([`58bc154`](https://github.com/python-zeroconf/python-zeroconf/commit/58bc154f55b06b4ddfc4a141592488abe76f062a))
+* Use server_key when processing DNSService records ([#1238](https://github.com/python-zeroconf/python-zeroconf/issues/1238)) ([`cc8feb1`](https://github.com/python-zeroconf/python-zeroconf/commit/cc8feb110fefc3fb714fd482a52f16e2b620e8c4))
+
+## v0.85.0 (2023-08-27)
+
+### Feature
+
+* Simplify code to unpack properties ([#1237](https://github.com/python-zeroconf/python-zeroconf/issues/1237)) ([`68d9998`](https://github.com/python-zeroconf/python-zeroconf/commit/68d99985a0e9d2c72ff670b2e2af92271a6fe934))
+
+## v0.84.0 (2023-08-27)
+
+### Feature
+
+* Context managers in ServiceBrowser and AsyncServiceBrowser ([#1233](https://github.com/python-zeroconf/python-zeroconf/issues/1233)) ([`bd8d846`](https://github.com/python-zeroconf/python-zeroconf/commit/bd8d8467dec2a39a0b525043ea1051259100fded))
+
+## v0.83.1 (2023-08-27)
+
+### Fix
+
+* Rebuild wheels with cython 3.0.2 ([#1236](https://github.com/python-zeroconf/python-zeroconf/issues/1236)) ([`dd637fb`](https://github.com/python-zeroconf/python-zeroconf/commit/dd637fb2e5a87ba283750e69d116e124bef54e7c))
+
+## v0.83.0 (2023-08-26)
+
+### Feature
+
+* Speed up question and answer history with a cython pxd ([#1234](https://github.com/python-zeroconf/python-zeroconf/issues/1234)) ([`703ecb2`](https://github.com/python-zeroconf/python-zeroconf/commit/703ecb2901b2150fb72fac3deed61d7302561298))
+
 ## v0.82.1 (2023-08-22)
 
 ### Fix
