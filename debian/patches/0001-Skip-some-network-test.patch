@@ -24,7 +24,7 @@ index 1afe6d5..fb1b003 100644
      type_ = "_test-listenv6ip-type._tcp.local."
      name = "xxxyyy"
 diff --git a/tests/test_core.py b/tests/test_core.py
-index 303e28e..1cce25d 100644
+index 4bce6db..3440632 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
 @@ -53,12 +53,14 @@ def threadsafe_query(zc, protocol, *args):
