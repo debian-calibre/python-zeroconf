@@ -2,6 +2,48 @@
 
 <!--next-version-placeholder-->
 
+## v0.97.0 (2023-09-03)
+
+### Feature
+
+* Speed up answering queries ([#1255](https://github.com/python-zeroconf/python-zeroconf/issues/1255)) ([`2d3aed3`](https://github.com/python-zeroconf/python-zeroconf/commit/2d3aed36e24c73013fcf4acc90803fc1737d0917))
+
+## v0.96.0 (2023-09-03)
+
+### Feature
+
+* Optimize DNSCache.get_by_details ([#1254](https://github.com/python-zeroconf/python-zeroconf/issues/1254)) ([`ce59787`](https://github.com/python-zeroconf/python-zeroconf/commit/ce59787a170781ffdaa22425018d288b395ac081))
+
+## v0.95.0 (2023-09-03)
+
+### Feature
+
+* Speed up adding and removing RecordUpdateListeners ([#1253](https://github.com/python-zeroconf/python-zeroconf/issues/1253)) ([`22e4a29`](https://github.com/python-zeroconf/python-zeroconf/commit/22e4a296d440b3038c0ff5ed6fc8878304ec4937))
+
+## v0.94.0 (2023-09-03)
+
+### Feature
+
+* Optimize cache implementation ([#1252](https://github.com/python-zeroconf/python-zeroconf/issues/1252)) ([`8d3ec79`](https://github.com/python-zeroconf/python-zeroconf/commit/8d3ec792277aaf7ef790318b5b35ab00839ca3b3))
+
+## v0.93.1 (2023-09-03)
+
+### Fix
+
+* No change re-release due to unrecoverable failed CI run ([#1251](https://github.com/python-zeroconf/python-zeroconf/issues/1251)) ([`730921b`](https://github.com/python-zeroconf/python-zeroconf/commit/730921b155dfb9c62251c8c643b1302e807aff3b))
+
+## v0.93.0 (2023-09-02)
+
+### Feature
+
+* Reduce overhead to answer questions ([#1250](https://github.com/python-zeroconf/python-zeroconf/issues/1250)) ([`7cb8da0`](https://github.com/python-zeroconf/python-zeroconf/commit/7cb8da0c6c5c944588009fe36012c1197c422668))
+
+## v0.92.0 (2023-09-02)
+
+### Feature
+
+* Cache construction of records used to answer queries from the service registry ([#1243](https://github.com/python-zeroconf/python-zeroconf/issues/1243)) ([`0890f62`](https://github.com/python-zeroconf/python-zeroconf/commit/0890f628dbbd577fb77d3e6f2e267052b2b2b515))
+
 ## v0.91.1 (2023-09-02)
 
 ### Fix

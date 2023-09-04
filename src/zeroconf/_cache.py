@@ -20,7 +20,6 @@
     USA
 """
 
-import itertools
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 from ._dns import (
@@ -115,12 +114,12 @@ class DNSCache:
         for entry in entries:
             self._async_remove(entry)
 
-    def async_expire(self, now: float) -> List[DNSRecord]:
+    def async_expire(self, now: _float) -> List[DNSRecord]:
         """Purge expired entries from the cache.
 
         This function must be run in from event loop.
         """
-        expired = [record for record in itertools.chain(*self.cache.values()) if record.is_expired(now)]
+        expired = [record for records in self.cache.values() for record in records if record.is_expired(now)]
         self.async_remove_records(expired)
         return expired
 
@@ -136,15 +135,7 @@ class DNSCache:
             return None
         return store.get(entry)
 
-    def async_all_by_details(self, name: _str, type_: int, class_: int) -> Iterable[DNSRecord]:
-        """Gets all matching entries by details.
-
-        This function is not thread-safe and must be called from
-        the event loop.
-        """
-        return self._async_all_by_details(name, type_, class_)
-
-    def _async_all_by_details(self, name: _str, type_: _int, class_: _int) -> List[DNSRecord]:
+    def async_all_by_details(self, name: _str, type_: _int, class_: _int) -> List[DNSRecord]:
         """Gets all matching entries by details.
 
         This function is not thread-safe and must be called from
@@ -156,7 +147,7 @@ class DNSCache:
         if records is None:
             return matches
         for record in records:
-            if _dns_record_matches(record, key, type_, class_):
+            if type_ == record.type and class_ == record.class_:
                 matches.append(record)
         return matches
 
@@ -190,7 +181,7 @@ class DNSCache:
                 return cached_entry
         return None
 
-    def get_by_details(self, name: str, type_: int, class_: int) -> Optional[DNSRecord]:
+    def get_by_details(self, name: str, type_: _int, class_: _int) -> Optional[DNSRecord]:
         """Gets the first matching entry by details. Returns None if no entries match.
 
         Calling this function is not recommended as it will only
@@ -203,17 +194,21 @@ class DNSCache:
         Use get_all_by_details instead.
         """
         key = name.lower()
-        for cached_entry in reversed(list(self.cache.get(key, []))):
-            if _dns_record_matches(cached_entry, key, type_, class_):
+        records = self.cache.get(key)
+        if records is None:
+            return None
+        for cached_entry in reversed(list(records)):
+            if type_ == cached_entry.type and class_ == cached_entry.class_:
                 return cached_entry
         return None
 
-    def get_all_by_details(self, name: str, type_: int, class_: int) -> List[DNSRecord]:
+    def get_all_by_details(self, name: str, type_: _int, class_: _int) -> List[DNSRecord]:
         """Gets all matching entries by details."""
         key = name.lower()
-        return [
-            entry for entry in list(self.cache.get(key, [])) if _dns_record_matches(entry, key, type_, class_)
-        ]
+        records = self.cache.get(key)
+        if records is None:
+            return []
+        return [entry for entry in list(records) if type_ == entry.type and class_ == entry.class_]
 
     def entries_with_server(self, server: str) -> List[DNSRecord]:
         """Returns a list of entries whose server matches the name."""
@@ -241,22 +236,14 @@ class DNSCache:
     def async_mark_unique_records_older_than_1s_to_expire(
         self, unique_types: Set[Tuple[_str, _int, _int]], answers: Iterable[DNSRecord], now: _float
     ) -> None:
-        self._async_mark_unique_records_older_than_1s_to_expire(unique_types, answers, now)
-
-    def _async_mark_unique_records_older_than_1s_to_expire(
-        self, unique_types: Set[Tuple[_str, _int, _int]], answers: Iterable[DNSRecord], now: _float
-    ) -> None:
         # rfc6762#section-10.2 para 2
         # Since unique is set, all old records with that name, rrtype,
         # and rrclass that were received more than one second ago are declared
         # invalid, and marked to expire from the cache in one second.
         answers_rrset = set(answers)
         for name, type_, class_ in unique_types:
-            for record in self._async_all_by_details(name, type_, class_):
-                if (now - record.created > _ONE_SECOND) and record not in answers_rrset:
+            for record in self.async_all_by_details(name, type_, class_):
+                created_float = record.created
+                if (now - created_float > _ONE_SECOND) and record not in answers_rrset:
                     # Expire in 1s
                     record.set_created_ttl(now, 1)
-
-
-def _dns_record_matches(record: _DNSRecord, key: _str, type_: _int, class_: _int) -> bool:
-    return key == record.key and type_ == record.type and class_ == record.class_
