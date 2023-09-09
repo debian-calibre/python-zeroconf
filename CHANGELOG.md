@@ -2,6 +2,36 @@
 
 <!--next-version-placeholder-->
 
+## v0.102.0 (2023-09-07)
+
+### Feature
+
+* Significantly speed up writing outgoing dns records ([#1260](https://github.com/python-zeroconf/python-zeroconf/issues/1260)) ([`bf2f366`](https://github.com/python-zeroconf/python-zeroconf/commit/bf2f3660a1f341e50ab0ae586dfbacbc5ddcc077))
+
+## v0.101.0 (2023-09-07)
+
+### Feature
+
+* Speed up writing outgoing dns records ([#1259](https://github.com/python-zeroconf/python-zeroconf/issues/1259)) ([`248655f`](https://github.com/python-zeroconf/python-zeroconf/commit/248655f0276223b089373c70ec13a0385dfaa4d6))
+
+## v0.100.0 (2023-09-07)
+
+### Feature
+
+* Small speed up to writing outgoing dns records ([#1258](https://github.com/python-zeroconf/python-zeroconf/issues/1258)) ([`1ed6bd2`](https://github.com/python-zeroconf/python-zeroconf/commit/1ed6bd2ec4db0612b71384f923ffff1efd3ce878))
+
+## v0.99.0 (2023-09-06)
+
+### Feature
+
+* Reduce IP Address parsing overhead in ServiceInfo ([#1257](https://github.com/python-zeroconf/python-zeroconf/issues/1257)) ([`83d0b7f`](https://github.com/python-zeroconf/python-zeroconf/commit/83d0b7fda2eb09c9c6e18b85f329d1ddc701e3fb))
+
+## v0.98.0 (2023-09-06)
+
+### Feature
+
+* Speed up decoding incoming packets ([#1256](https://github.com/python-zeroconf/python-zeroconf/issues/1256)) ([`ac081cf`](https://github.com/python-zeroconf/python-zeroconf/commit/ac081cf00addde1ceea2c076f73905fdb293de3a))
+
 ## v0.97.0 (2023-09-03)
 
 ### Feature
