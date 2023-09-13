@@ -2,6 +2,42 @@
 
 <!--next-version-placeholder-->
 
+## v0.108.0 (2023-09-11)
+
+### Feature
+
+* Improve performance of constructing outgoing queries ([#1267](https://github.com/python-zeroconf/python-zeroconf/issues/1267)) ([`00c439a`](https://github.com/python-zeroconf/python-zeroconf/commit/00c439a6400b7850ef9fdd75bc8d82d4e64b1da0))
+
+## v0.107.0 (2023-09-11)
+
+### Feature
+
+* Speed up responding to queries ([#1266](https://github.com/python-zeroconf/python-zeroconf/issues/1266)) ([`24a0a00`](https://github.com/python-zeroconf/python-zeroconf/commit/24a0a00b3e457979e279a2eeadc8fad2ab09e125))
+
+## v0.106.0 (2023-09-11)
+
+### Feature
+
+* Speed up answering questions ([#1265](https://github.com/python-zeroconf/python-zeroconf/issues/1265)) ([`37bfaf2`](https://github.com/python-zeroconf/python-zeroconf/commit/37bfaf2f630358e8c68652f3b3120931a6f94910))
+
+## v0.105.0 (2023-09-10)
+
+### Feature
+
+* Speed up ServiceInfo with a cython pxd ([#1264](https://github.com/python-zeroconf/python-zeroconf/issues/1264)) ([`7ca690a`](https://github.com/python-zeroconf/python-zeroconf/commit/7ca690ac3fa75e7474d3412944bbd5056cb313dd))
+
+## v0.104.0 (2023-09-10)
+
+### Feature
+
+* Speed up generating answers ([#1262](https://github.com/python-zeroconf/python-zeroconf/issues/1262)) ([`50a8f06`](https://github.com/python-zeroconf/python-zeroconf/commit/50a8f066b6ab90bc9e3300f81cf9332550b720df))
+
+## v0.103.0 (2023-09-09)
+
+### Feature
+
+* Avoid calling get_running_loop when resolving ServiceInfo ([#1261](https://github.com/python-zeroconf/python-zeroconf/issues/1261)) ([`33a2714`](https://github.com/python-zeroconf/python-zeroconf/commit/33a2714cadff96edf016b869cc63b0661d16ef2c))
+
 ## v0.102.0 (2023-09-07)
 
 ### Feature

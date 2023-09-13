@@ -29,9 +29,12 @@ def build(setup_kwargs: Any) -> None:
                         "src/zeroconf/_listener.py",
                         "src/zeroconf/_protocol/incoming.py",
                         "src/zeroconf/_protocol/outgoing.py",
+                        "src/zeroconf/_handlers/answers.py",
                         "src/zeroconf/_handlers/record_manager.py",
                         "src/zeroconf/_handlers/query_handler.py",
+                        "src/zeroconf/_services/info.py",
                         "src/zeroconf/_services/registry.py",
+                        "src/zeroconf/_updates.py",
                         "src/zeroconf/_utils/time.py",
                     ],
                     compiler_directives={"language_level": "3"},  # Python 3
