@@ -2,6 +2,24 @@
 
 <!--next-version-placeholder-->
 
+## v0.111.0 (2023-09-14)
+
+### Feature
+
+* Speed up question and answer internals ([#1272](https://github.com/python-zeroconf/python-zeroconf/issues/1272)) ([`d24722b`](https://github.com/python-zeroconf/python-zeroconf/commit/d24722bfa4201d48ab482d35b0ef004f070ada80))
+
+## v0.110.0 (2023-09-14)
+
+### Feature
+
+* Small speed ups to ServiceBrowser ([#1271](https://github.com/python-zeroconf/python-zeroconf/issues/1271)) ([`22c433d`](https://github.com/python-zeroconf/python-zeroconf/commit/22c433ddaea3049ac49933325ba938fd87a529c0))
+
+## v0.109.0 (2023-09-14)
+
+### Feature
+
+* Speed up ServiceBrowsers with a cython pxd ([#1270](https://github.com/python-zeroconf/python-zeroconf/issues/1270)) ([`4837876`](https://github.com/python-zeroconf/python-zeroconf/commit/48378769c3887b5746ca00de30067a4c0851765c))
+
 ## v0.108.0 (2023-09-11)
 
 ### Feature
