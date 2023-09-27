@@ -106,8 +106,8 @@ cdef class DNSService(DNSRecord):
     cdef public object priority
     cdef public object weight
     cdef public object port
-    cdef public object server
-    cdef public object server_key
+    cdef public str server
+    cdef public str server_key
 
     cdef _eq(self, DNSService other)
 
@@ -125,7 +125,7 @@ cdef class DNSNsec(DNSRecord):
 
 cdef class DNSRRSet:
 
-    cdef cython.list _record_sets
+    cdef cython.list _records
     cdef cython.dict _lookup
 
     @cython.locals(other=DNSRecord)

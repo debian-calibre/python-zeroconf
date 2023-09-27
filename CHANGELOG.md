@@ -2,6 +2,24 @@
 
 <!--next-version-placeholder-->
 
+## v0.115.0 (2023-09-26)
+
+### Feature
+
+* Speed up outgoing multicast queue ([#1277](https://github.com/python-zeroconf/python-zeroconf/issues/1277)) ([`a13fd49`](https://github.com/python-zeroconf/python-zeroconf/commit/a13fd49d77474fd5858de809e48cbab1ccf89173))
+
+## v0.114.0 (2023-09-25)
+
+### Feature
+
+* Speed up responding to queries ([#1275](https://github.com/python-zeroconf/python-zeroconf/issues/1275)) ([`3c6b18c`](https://github.com/python-zeroconf/python-zeroconf/commit/3c6b18cdf4c94773ad6f4497df98feb337939ee9))
+
+## v0.113.0 (2023-09-24)
+
+### Feature
+
+* Improve performance of loading records from cache in ServiceInfo ([#1274](https://github.com/python-zeroconf/python-zeroconf/issues/1274)) ([`6257d49`](https://github.com/python-zeroconf/python-zeroconf/commit/6257d49952e02107f800f4ad4894716508edfcda))
+
 ## v0.112.0 (2023-09-14)
 
 ### Feature
