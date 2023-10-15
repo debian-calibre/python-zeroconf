@@ -2,6 +2,24 @@
 
 <!--next-version-placeholder-->
 
+## v0.118.0 (2023-10-14)
+
+### Feature
+
+* Small improvements to ServiceBrowser performance ([#1283](https://github.com/python-zeroconf/python-zeroconf/issues/1283)) ([`0fc031b`](https://github.com/python-zeroconf/python-zeroconf/commit/0fc031b1e7bf1766d5a1d39d70d300b86e36715e))
+
+## v0.117.0 (2023-10-14)
+
+### Feature
+
+* Small cleanups to incoming data handlers ([#1282](https://github.com/python-zeroconf/python-zeroconf/issues/1282)) ([`4f4bd9f`](https://github.com/python-zeroconf/python-zeroconf/commit/4f4bd9ff7c1e575046e5ea213d9b8c91ac7a24a9))
+
+## v0.116.0 (2023-10-13)
+
+### Feature
+
+* Reduce type checking overhead at run time ([#1281](https://github.com/python-zeroconf/python-zeroconf/issues/1281)) ([`8f30099`](https://github.com/python-zeroconf/python-zeroconf/commit/8f300996e5bd4316b2237f0502791dd0d6a855fe))
+
 ## v0.115.2 (2023-10-05)
 
 ### Fix
