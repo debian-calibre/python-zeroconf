@@ -11,14 +11,14 @@ Python 3.10 in reproducible build tester (build2) failed.
  1 file changed, 1 insertion(+)
 
 diff --git a/tests/services/test_browser.py b/tests/services/test_browser.py
-index aa13761..a7e252d 100644
+index 268a9b2..03d3143 100644
 --- a/tests/services/test_browser.py
 +++ b/tests/services/test_browser.py
-@@ -1159,6 +1159,7 @@ def test_service_browser_matching():
+@@ -1173,6 +1173,7 @@ def test_service_browser_matching():
      zc.close()
  
  
 +@pytest.mark.skipif(os.environ.get("DEBIAN_TEST"), reason="disabled by Debian builder")
- @patch.object(record_manager, '_DNS_PTR_MIN_TTL', 1)
  @patch.object(_engine, "_CACHE_CLEANUP_INTERVAL", 0.01)
  def test_service_browser_expire_callbacks():
+     """Test that the ServiceBrowser matching does not match partial names."""
