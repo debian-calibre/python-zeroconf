@@ -2,6 +2,18 @@
 
 <!--next-version-placeholder-->
 
+## v0.122.0 (2023-11-08)
+
+### Feature
+
+* Build aarch64 wheels ([#1302](https://github.com/python-zeroconf/python-zeroconf/issues/1302)) ([`4fe58e2`](https://github.com/python-zeroconf/python-zeroconf/commit/4fe58e2edc6da64a8ece0e2b16ec9ebfc5b3cd83))
+
+## v0.121.0 (2023-11-08)
+
+### Feature
+
+* Speed up record updates ([#1301](https://github.com/python-zeroconf/python-zeroconf/issues/1301)) ([`d2af6a0`](https://github.com/python-zeroconf/python-zeroconf/commit/d2af6a0978f5abe4f8bb70d3e29d9836d0fd77c4))
+
 ## v0.120.0 (2023-11-05)
 
 ### Feature
