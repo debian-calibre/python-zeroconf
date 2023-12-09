@@ -1,3 +1,19 @@
+python-zeroconf (0.128.0-2) UNRELEASED; urgency=medium
+
+  * Rebuild to Lintian fix
+    - source: python-zeroconf
+      version: 0.128.0-1
+      package: python3-zeroconf
+      package_version: 0.128.0-1
+      architectures:
+      - all
+      tag_type: warning
+      tag: python-module-in-wrong-location
+      information: 'usr/lib/python3.12/dist-packages/zeroconf-0.128.0.dist-info
+        -> usr/lib/python3/dist-packages/zeroconf-0.128.0.dist-info'
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 09 Dec 2023 23:14:04 +0900
+
 python-zeroconf (0.128.0-1) unstable; urgency=medium
 
   * New upstream version 0.128.0
