@@ -2,6 +2,31 @@
 
 <!--next-version-placeholder-->
 
+## v0.128.4 (2023-12-10)
+
+### Fix
+
+* Re-expose ServiceInfo._set_properties for backwards compat ([#1327](https://github.com/python-zeroconf/python-zeroconf/issues/1327)) ([`39c4005`](https://github.com/python-zeroconf/python-zeroconf/commit/39c40051d7a63bdc63a3e2dfa20bd944fee4e761))
+
+## v0.128.3 (2023-12-10)
+
+### Fix
+
+* Correct nsec record writing ([#1326](https://github.com/python-zeroconf/python-zeroconf/issues/1326)) ([`cd7a16a`](https://github.com/python-zeroconf/python-zeroconf/commit/cd7a16a32c37b2f7a2e90d3c749525a5393bad57))
+
+## v0.128.2 (2023-12-10)
+
+### Fix
+
+* Timestamps missing double precision ([#1324](https://github.com/python-zeroconf/python-zeroconf/issues/1324)) ([`ecea4e4`](https://github.com/python-zeroconf/python-zeroconf/commit/ecea4e4217892ca8cf763074ac3e5d1b898acd21))
+* Match cython version for dev deps to build deps ([#1325](https://github.com/python-zeroconf/python-zeroconf/issues/1325)) ([`a0dac46`](https://github.com/python-zeroconf/python-zeroconf/commit/a0dac46c01202b3d5a0823ac1928fc1d75332522))
+
+## v0.128.1 (2023-12-10)
+
+### Fix
+
+* Correct handling of IPv6 addresses with scope_id in ServiceInfo ([#1322](https://github.com/python-zeroconf/python-zeroconf/issues/1322)) ([`1682991`](https://github.com/python-zeroconf/python-zeroconf/commit/1682991b985b1f7b2bf0cff1a7eb7793070e7cb1))
+
 ## v0.128.0 (2023-12-02)
 
 ### Feature
