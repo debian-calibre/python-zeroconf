@@ -2,6 +2,20 @@
 
 <!--next-version-placeholder-->
 
+## v0.129.0 (2023-12-13)
+
+### Feature
+
+* Add decoded_properties method to ServiceInfo ([#1332](https://github.com/python-zeroconf/python-zeroconf/issues/1332)) ([`9b595a1`](https://github.com/python-zeroconf/python-zeroconf/commit/9b595a1dcacf109c699953219d70fe36296c7318))
+* Ensure ServiceInfo.properties always returns bytes ([#1333](https://github.com/python-zeroconf/python-zeroconf/issues/1333)) ([`d29553a`](https://github.com/python-zeroconf/python-zeroconf/commit/d29553ab7de6b7af70769ddb804fe2aaf492f320))
+* Cache is_unspecified for zeroconf ip address objects ([#1331](https://github.com/python-zeroconf/python-zeroconf/issues/1331)) ([`a1c84dc`](https://github.com/python-zeroconf/python-zeroconf/commit/a1c84dc6adeebd155faec1a647c0f70d70de2945))
+
+## v0.128.5 (2023-12-13)
+
+### Fix
+
+* Performance regression with ServiceInfo IPv6Addresses ([#1330](https://github.com/python-zeroconf/python-zeroconf/issues/1330)) ([`e2f9f81`](https://github.com/python-zeroconf/python-zeroconf/commit/e2f9f81dbc54c3dd527eeb3298897d63f99d33f4))
+
 ## v0.128.4 (2023-12-10)
 
 ### Fix
