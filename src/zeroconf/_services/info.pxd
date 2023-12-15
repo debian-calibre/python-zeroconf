@@ -6,11 +6,15 @@ from .._dns cimport DNSAddress, DNSNsec, DNSPointer, DNSRecord, DNSService, DNST
 from .._protocol.outgoing cimport DNSOutgoing
 from .._record_update cimport RecordUpdate
 from .._updates cimport RecordUpdateListener
+from .._utils.ipaddress cimport (
+    get_ip_address_object_from_record,
+    ip_bytes_and_scope_to_address,
+    str_without_scope_id,
+)
 from .._utils.time cimport current_time_millis
 
 
 cdef object _resolve_all_futures_to_none
-cdef object _cached_ip_addresses_wrapper
 
 cdef object _TYPE_SRV
 cdef object _TYPE_TXT
@@ -33,13 +37,7 @@ cdef cython.set _ADDRESS_RECORD_TYPES
 
 cdef bint TYPE_CHECKING
 cdef bint IPADDRESS_SUPPORTS_SCOPE_ID
-
-cdef _get_ip_address_object_from_record(DNSAddress record)
-
-@cython.locals(address_str=str)
-cdef _str_without_scope_id(object addr)
-
-cdef _ip_bytes_and_scope_to_address(object addr, object scope_id)
+cdef object cached_ip_addresses
 
 cdef class ServiceInfo(RecordUpdateListener):
 
@@ -55,6 +53,7 @@ cdef class ServiceInfo(RecordUpdateListener):
     cdef public str server
     cdef public str server_key
     cdef public cython.dict _properties
+    cdef public cython.dict _decoded_properties
     cdef public object host_ttl
     cdef public object other_ttl
     cdef public object interface_index
@@ -74,6 +73,10 @@ cdef class ServiceInfo(RecordUpdateListener):
     @cython.locals(length="unsigned char", index="unsigned int", key_value=bytes, key_sep_value=tuple)
     cdef void _unpack_text_into_properties(self)
 
+    @cython.locals(k=bytes, v=bytes)
+    cdef void _generate_decoded_properties(self)
+
+    @cython.locals(properties_contain_str=bint)
     cpdef _set_properties(self, cython.dict properties)
 
     cdef _set_text(self, cython.bytes text)
