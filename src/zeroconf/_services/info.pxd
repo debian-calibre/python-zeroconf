@@ -2,7 +2,16 @@
 import cython
 
 from .._cache cimport DNSCache
-from .._dns cimport DNSAddress, DNSNsec, DNSPointer, DNSRecord, DNSService, DNSText
+from .._dns cimport (
+    DNSAddress,
+    DNSNsec,
+    DNSPointer,
+    DNSQuestion,
+    DNSRecord,
+    DNSService,
+    DNSText,
+)
+from .._history cimport QuestionHistory
 from .._protocol.outgoing cimport DNSOutgoing
 from .._record_update cimport RecordUpdate
 from .._updates cimport RecordUpdateListener
@@ -27,17 +36,21 @@ cdef object _FLAGS_QR_QUERY
 
 cdef object service_type_name
 
-cdef object DNS_QUESTION_TYPE_QU
-cdef object DNS_QUESTION_TYPE_QM
+cdef object QU_QUESTION
+cdef object QM_QUESTION
 
 cdef object _IPVersion_All_value
 cdef object _IPVersion_V4Only_value
 
 cdef cython.set _ADDRESS_RECORD_TYPES
 
+cdef unsigned int _DUPLICATE_QUESTION_INTERVAL
+
 cdef bint TYPE_CHECKING
 cdef bint IPADDRESS_SUPPORTS_SCOPE_ID
 cdef object cached_ip_addresses
+
+cdef object randint
 
 cdef class ServiceInfo(RecordUpdateListener):
 
@@ -65,7 +78,7 @@ cdef class ServiceInfo(RecordUpdateListener):
     cdef public cython.set _get_address_and_nsec_records_cache
 
     @cython.locals(record_update=RecordUpdate, update=bint, cache=DNSCache)
-    cpdef async_update_records(self, object zc, double now, cython.list records)
+    cpdef void async_update_records(self, object zc, double now, cython.list records)
 
     @cython.locals(cache=DNSCache)
     cpdef bint _load_from_cache(self, object zc, double now)
@@ -77,9 +90,9 @@ cdef class ServiceInfo(RecordUpdateListener):
     cdef void _generate_decoded_properties(self)
 
     @cython.locals(properties_contain_str=bint)
-    cpdef _set_properties(self, cython.dict properties)
+    cpdef void _set_properties(self, cython.dict properties)
 
-    cdef _set_text(self, cython.bytes text)
+    cdef void _set_text(self, cython.bytes text)
 
     @cython.locals(record=DNSAddress)
     cdef _get_ip_addresses_from_cache_lifo(self, object zc, double now, object type)
@@ -94,9 +107,9 @@ cdef class ServiceInfo(RecordUpdateListener):
     @cython.locals(cache=DNSCache)
     cdef cython.list _get_address_records_from_cache_by_type(self, object zc, object _type)
 
-    cdef _set_ipv4_addresses_from_cache(self, object zc, double now)
+    cdef void _set_ipv4_addresses_from_cache(self, object zc, double now)
 
-    cdef _set_ipv6_addresses_from_cache(self, object zc, double now)
+    cdef void _set_ipv6_addresses_from_cache(self, object zc, double now)
 
     cdef cython.list _ip_addresses_by_version_value(self, object version_value)
 
@@ -121,7 +134,25 @@ cdef class ServiceInfo(RecordUpdateListener):
     @cython.locals(cacheable=cython.bint)
     cdef cython.set _get_address_and_nsec_records(self, object override_ttl)
 
-    cpdef async_clear_cache(self)
+    cpdef void async_clear_cache(self)
 
-    @cython.locals(cache=DNSCache)
-    cdef _generate_request_query(self, object zc, object now, object question_type)
+    @cython.locals(cache=DNSCache, history=QuestionHistory, out=DNSOutgoing, qu_question=bint)
+    cdef DNSOutgoing _generate_request_query(self, object zc, double now, object question_type)
+
+    @cython.locals(question=DNSQuestion, answer=DNSRecord)
+    cdef void _add_question_with_known_answers(
+        self,
+        DNSOutgoing out,
+        bint qu_question,
+        QuestionHistory question_history,
+        DNSCache cache,
+        double now,
+        str name,
+        object type_,
+        object class_,
+        bint skip_if_known_answers
+    )
+
+    cdef double _get_initial_delay(self)
+
+    cdef double _get_random_delay(self)
