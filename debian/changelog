@@ -1,8 +1,8 @@
-python-zeroconf (0.132.0-1) UNRELEASED; urgency=medium
+python-zeroconf (0.132.0-1) unstable; urgency=medium
 
   * New upstream version 0.132.0
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Fri, 05 Apr 2024 20:59:59 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Fri, 05 Apr 2024 21:21:49 +0900
 
 python-zeroconf (0.131.0-1) unstable; urgency=medium
 
