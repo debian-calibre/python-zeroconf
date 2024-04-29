@@ -2,7 +2,7 @@
 export PYBUILD_NAME=zeroconf
 
 %:
-	DEBIAN_TEST=1 SKIP_CYTHON=True dh $@ --with python3 --buildsystem=pybuild
+	DEBIAN_TEST=1 SKIP_CYTHON=True dh $@ --buildsystem=pybuild
 
 # remove coverage test file from installation tree
 execute_after_dh_auto_install:
