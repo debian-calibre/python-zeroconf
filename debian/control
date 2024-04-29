@@ -1,30 +1,29 @@
 Source: python-zeroconf
-Section: python
-Priority: optional
 Maintainer: Debian Python Team <team+python@tracker.debian.org>
 Uploaders: Ruben Undheim <ruben.undheim@gmail.com>,
            YOKOTA Hiroshi <yokota.hgml@gmail.com>
-Build-Depends:
-    debhelper-compat (= 13),
-    dh-sequence-python3,
-    pybuild-plugin-pyproject,
-    python3-all,
-    python3-poetry-core,
-    python3-setuptools
-Build-Depends-Indep:
-    python3-async-timeout (>= 4.0.1),
-    python3-ifaddr (>= 0.1.7),
-    python3-pytest,
-    python3-pytest-asyncio,
-    python3-pytest-cov,
-    python3-pytest-timeout,
-    python3-pytest-tornasync
+Section: python
+Testsuite: autopkgtest-pkg-python
+Priority: optional
+Build-Depends: debhelper-compat (= 13),
+               dh-sequence-python3,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-poetry-core,
+               python3-setuptools
+Build-Depends-Indep: python3-async-timeout (>= 4.0.1),
+                     python3-ifaddr,
+                     python3-pytest,
+                     python3-pytest-asyncio,
+                     python3-pytest-cov,
+                     python3-pytest-timeout,
+                     python3-pytest-tornasync
 Standards-Version: 4.7.0
-X-Python-Version: all
-Homepage: https://github.com/python-zeroconf/python-zeroconf
 Vcs-Browser: https://salsa.debian.org/python-team/packages/python-zeroconf
 Vcs-Git: https://salsa.debian.org/python-team/packages/python-zeroconf.git
+Homepage: https://github.com/python-zeroconf/python-zeroconf
 Rules-Requires-Root: no
+X-Python-Version: all
 
 Package: python3-zeroconf
 Architecture: all
@@ -32,12 +31,10 @@ Depends:
 # Internal "async-timeout" support is available from Python 3.11.
 # Explicit "python3-async-timeout" dependency is required for Python 3.10
 # while Python 3.10 is supported by "python3-all" package.
- python3-async-timeout (>= 4.0.1),
- ${misc:Depends},
- ${python3:Depends},
-Breaks:
-    python3-pychromecast (<< 4.2.0~),
-    calibre (<< 6.24.0-2~)
+         python3-async-timeout (>= 4.0.1),
+         ${misc:Depends},
+         ${python3:Depends}
+Breaks: calibre (<< 6.24.0-2~)
 Description: Pure Python implementation of multicast DNS service discovery (Python3)
  This is an implementation of the multicast DNS Service Discover Library
  zeroconf in pure Python.
