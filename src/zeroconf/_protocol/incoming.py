@@ -1,23 +1,23 @@
-""" Multicast DNS Service Discovery for Python, v0.14-wmcbrine
-    Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
+"""Multicast DNS Service Discovery for Python, v0.14-wmcbrine
+Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
 
-    This module provides a framework for the use of DNS Service Discovery
-    using IP multicast.
+This module provides a framework for the use of DNS Service Discovery
+using IP multicast.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-    USA
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
 """
 
 import struct
@@ -71,24 +71,24 @@ class DNSIncoming:
 
     __slots__ = (
         "_did_read_others",
-        'flags',
-        'offset',
-        'data',
-        'view',
-        '_data_len',
-        '_name_cache',
-        '_questions',
-        '_answers',
-        'id',
-        '_num_questions',
-        '_num_answers',
-        '_num_authorities',
-        '_num_additionals',
-        'valid',
-        'now',
-        'scope_id',
-        'source',
-        '_has_qu_question',
+        "flags",
+        "offset",
+        "data",
+        "view",
+        "_data_len",
+        "_name_cache",
+        "_questions",
+        "_answers",
+        "id",
+        "_num_questions",
+        "_num_answers",
+        "_num_authorities",
+        "_num_additionals",
+        "valid",
+        "now",
+        "scope_id",
+        "source",
+        "_has_qu_question",
     )
 
     def __init__(
@@ -122,7 +122,7 @@ class DNSIncoming:
             self._initial_parse()
         except DECODE_EXCEPTIONS:
             self._log_exception_debug(
-                'Received invalid packet from %s at offset %d while unpacking %r',
+                "Received invalid packet from %s at offset %d while unpacking %r",
                 self.source,
                 self.offset,
                 self.data,
@@ -187,7 +187,7 @@ class DNSIncoming:
             # log the trace only on the first time
             _seen_logs[exc_str] = exc_info
             log_exc_info = True
-        log.debug(*(logger_data or ['Exception occurred']), exc_info=log_exc_info)
+        log.debug(*(logger_data or ["Exception occurred"]), exc_info=log_exc_info)
 
     def answers(self) -> List[DNSRecord]:
         """Answers in the packet."""
@@ -196,7 +196,7 @@ class DNSIncoming:
                 self._read_others()
             except DECODE_EXCEPTIONS:
                 self._log_exception_debug(
-                    'Received invalid packet from %s at offset %d while unpacking %r',
+                    "Received invalid packet from %s at offset %d while unpacking %r",
                     self.source,
                     self.offset,
                     self.data,
@@ -208,17 +208,17 @@ class DNSIncoming:
         return self._num_authorities > 0
 
     def __repr__(self) -> str:
-        return '<DNSIncoming:{%s}>' % ', '.join(
+        return "<DNSIncoming:{%s}>" % ", ".join(
             [
-                'id=%s' % self.id,
-                'flags=%s' % self.flags,
-                'truncated=%s' % self.truncated,
-                'n_q=%s' % self._num_questions,
-                'n_ans=%s' % self._num_answers,
-                'n_auth=%s' % self._num_authorities,
-                'n_add=%s' % self._num_additionals,
-                'questions=%s' % self._questions,
-                'answers=%s' % self.answers(),
+                "id=%s" % self.id,
+                "flags=%s" % self.flags,
+                "truncated=%s" % self.truncated,
+                "n_q=%s" % self._num_questions,
+                "n_ans=%s" % self._num_answers,
+                "n_auth=%s" % self._num_authorities,
+                "n_add=%s" % self._num_additionals,
+                "questions=%s" % self._questions,
+                "answers=%s" % self.answers(),
             ]
         )
 
@@ -255,7 +255,7 @@ class DNSIncoming:
         """Reads a character string from the packet"""
         length = self.view[self.offset]
         self.offset += 1
-        info = self.data[self.offset : self.offset + length].decode('utf-8', 'replace')
+        info = self.data[self.offset : self.offset + length].decode("utf-8", "replace")
         self.offset += length
         return info
 
@@ -291,7 +291,7 @@ class DNSIncoming:
                 # above would fail and hit the exception catch in read_others
                 self.offset = end
                 log.debug(
-                    'Unable to parse; skipping record for %s with type %s at offset %d while unpacking %r',
+                    "Unable to parse; skipping record for %s with type %s at offset %d while unpacking %r",
                     domain,
                     _TYPES.get(type_, type_),
                     self.offset,
@@ -341,7 +341,15 @@ class DNSIncoming:
                 self.now,
             )
         if type_ == _TYPE_AAAA:
-            return DNSAddress(domain, type_, class_, ttl, self._read_string(16), self.scope_id, self.now)
+            return DNSAddress(
+                domain,
+                type_,
+                class_,
+                ttl,
+                self._read_string(16),
+                self.scope_id,
+                self.now,
+            )
         if type_ == _TYPE_NSEC:
             name_start = self.offset
             return DNSNsec(
@@ -401,7 +409,7 @@ class DNSIncoming:
 
             if length < 0x40:
                 label_idx = off + DNS_COMPRESSION_HEADER_LEN
-                labels.append(self.data[label_idx : label_idx + length].decode('utf-8', 'replace'))
+                labels.append(self.data[label_idx : label_idx + length].decode("utf-8", "replace"))
                 off += DNS_COMPRESSION_HEADER_LEN + length
                 continue
 

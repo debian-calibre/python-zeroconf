@@ -1,23 +1,23 @@
-""" Multicast DNS Service Discovery for Python, v0.14-wmcbrine
-    Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
+"""Multicast DNS Service Discovery for Python, v0.14-wmcbrine
+Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
 
-    This module provides a framework for the use of DNS Service Discovery
-    using IP multicast.
+This module provides a framework for the use of DNS Service Discovery
+using IP multicast.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-    USA
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
 """
 
 from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union, cast
@@ -71,7 +71,6 @@ if TYPE_CHECKING:
 
 
 class _AnswerStrategy:
-
     __slots__ = ("question", "strategy_type", "types", "services")
 
     def __init__(
@@ -191,9 +190,16 @@ class _QueryResponse:
 class QueryHandler:
     """Query the ServiceRegistry."""
 
-    __slots__ = ("zc", "registry", "cache", "question_history", "out_queue", "out_delay_queue")
+    __slots__ = (
+        "zc",
+        "registry",
+        "cache",
+        "question_history",
+        "out_queue",
+        "out_delay_queue",
+    )
 
-    def __init__(self, zc: 'Zeroconf') -> None:
+    def __init__(self, zc: "Zeroconf") -> None:
         """Init the query handler."""
         self.zc = zc
         self.registry = zc.registry
@@ -203,7 +209,10 @@ class QueryHandler:
         self.out_delay_queue = zc.out_delay_queue
 
     def _add_service_type_enumeration_query_answers(
-        self, types: List[str], answer_set: _AnswerWithAdditionalsType, known_answers: DNSRRSet
+        self,
+        types: List[str],
+        answer_set: _AnswerWithAdditionalsType,
+        known_answers: DNSRRSet,
     ) -> None:
         """Provide an answer to a service type enumeration query.
 
@@ -211,13 +220,21 @@ class QueryHandler:
         """
         for stype in types:
             dns_pointer = DNSPointer(
-                _SERVICE_TYPE_ENUMERATION_NAME, _TYPE_PTR, _CLASS_IN, _DNS_OTHER_TTL, stype, 0.0
+                _SERVICE_TYPE_ENUMERATION_NAME,
+                _TYPE_PTR,
+                _CLASS_IN,
+                _DNS_OTHER_TTL,
+                stype,
+                0.0,
             )
             if not known_answers.suppresses(dns_pointer):
                 answer_set[dns_pointer] = set()
 
     def _add_pointer_answers(
-        self, services: List[ServiceInfo], answer_set: _AnswerWithAdditionalsType, known_answers: DNSRRSet
+        self,
+        services: List[ServiceInfo],
+        answer_set: _AnswerWithAdditionalsType,
+        known_answers: DNSRRSet,
     ) -> None:
         """Answer PTR/ANY question."""
         for service in services:
@@ -336,7 +353,11 @@ class QueryHandler:
                     known_answers_set = known_answers.lookup_set()
                 self.question_history.add_question_at_time(question, now, known_answers_set)
             answer_set = self._answer_question(
-                question, strategy.strategy_type, strategy.types, strategy.services, known_answers
+                question,
+                strategy.strategy_type,
+                strategy.types,
+                strategy.services,
+                known_answers,
             )
             if not ucast_source and is_unicast:
                 query_res.add_qu_question_response(answer_set)
@@ -364,7 +385,10 @@ class QueryHandler:
             if types:
                 strategies.append(
                     _AnswerStrategy(
-                        question, _ANSWER_STRATEGY_SERVICE_TYPE_ENUMERATION, types, _EMPTY_SERVICES_LIST
+                        question,
+                        _ANSWER_STRATEGY_SERVICE_TYPE_ENUMERATION,
+                        types,
+                        _EMPTY_SERVICES_LIST,
                     )
                 )
             return strategies
@@ -388,11 +412,21 @@ class QueryHandler:
             if service is not None:
                 if type_ in (_TYPE_SRV, _TYPE_ANY):
                     strategies.append(
-                        _AnswerStrategy(question, _ANSWER_STRATEGY_SERVICE, _EMPTY_TYPES_LIST, [service])
+                        _AnswerStrategy(
+                            question,
+                            _ANSWER_STRATEGY_SERVICE,
+                            _EMPTY_TYPES_LIST,
+                            [service],
+                        )
                     )
                 if type_ in (_TYPE_TXT, _TYPE_ANY):
                     strategies.append(
-                        _AnswerStrategy(question, _ANSWER_STRATEGY_TEXT, _EMPTY_TYPES_LIST, [service])
+                        _AnswerStrategy(
+                            question,
+                            _ANSWER_STRATEGY_TEXT,
+                            _EMPTY_TYPES_LIST,
+                            [service],
+                        )
                     )
 
         return strategies

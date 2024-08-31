@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-""" Unit tests for zeroconf._services.browser. """
+"""Unit tests for zeroconf._services.browser."""
 
 import asyncio
 import logging
@@ -39,7 +39,7 @@ from .. import (
     time_changed_millis,
 )
 
-log = logging.getLogger('zeroconf')
+log = logging.getLogger("zeroconf")
 original_logging_level = logging.NOTSET
 
 
@@ -65,7 +65,7 @@ def test_service_browser_cancel_multiple_times():
     """Test we can cancel a ServiceBrowser multiple times before close."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
 
@@ -87,7 +87,7 @@ def test_service_browser_cancel_context_manager():
     """Test we can cancel a ServiceBrowser with it being used as a context manager."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
 
@@ -116,7 +116,7 @@ def test_service_browser_cancel_multiple_times_after_close():
     """Test we can cancel a ServiceBrowser multiple times after close."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
 
@@ -137,7 +137,7 @@ def test_service_browser_cancel_multiple_times_after_close():
 def test_service_browser_started_after_zeroconf_closed():
     """Test starting a ServiceBrowser after close raises RuntimeError."""
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
 
@@ -155,9 +155,9 @@ def test_multiple_instances_running_close():
     """Test we can shutdown multiple instances."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
-    zc2 = Zeroconf(interfaces=['127.0.0.1'])
-    zc3 = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
+    zc2 = Zeroconf(interfaces=["127.0.0.1"])
+    zc3 = Zeroconf(interfaces=["127.0.0.1"])
 
     assert zc.loop != zc2.loop
     assert zc.loop != zc3.loop
@@ -177,13 +177,13 @@ def test_multiple_instances_running_close():
 
 class TestServiceBrowser(unittest.TestCase):
     def test_update_record(self):
-        enable_ipv6 = has_working_ipv6() and not os.environ.get('SKIP_IPV6')
+        enable_ipv6 = has_working_ipv6() and not os.environ.get("SKIP_IPV6")
 
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
-        service_text = b'path=/~matt1/'
-        service_address = '10.0.1.2'
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
+        service_text = b"path=/~matt1/"
+        service_address = "10.0.1.2"
         service_v6_address = "2001:db8::1"
         service_v6_second_address = "6001:db8::1"
 
@@ -221,7 +221,9 @@ class TestServiceBrowser(unittest.TestCase):
                 assert service_info.server.lower() == service_server.lower()
                 service_updated_event.set()
 
-        def mock_record_update_incoming_msg(service_state_change: r.ServiceStateChange) -> r.DNSIncoming:
+        def mock_record_update_incoming_msg(
+            service_state_change: r.ServiceStateChange,
+        ) -> r.DNSIncoming:
             generated = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
             assert generated.is_response() is True
 
@@ -232,7 +234,11 @@ class TestServiceBrowser(unittest.TestCase):
 
             generated.add_answer_at_time(
                 r.DNSText(
-                    service_name, const._TYPE_TXT, const._CLASS_IN | const._CLASS_UNIQUE, ttl, service_text
+                    service_name,
+                    const._TYPE_TXT,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    ttl,
+                    service_text,
                 ),
                 0,
             )
@@ -287,12 +293,13 @@ class TestServiceBrowser(unittest.TestCase):
             )
 
             generated.add_answer_at_time(
-                r.DNSPointer(service_type, const._TYPE_PTR, const._CLASS_IN, ttl, service_name), 0
+                r.DNSPointer(service_type, const._TYPE_PTR, const._CLASS_IN, ttl, service_name),
+                0,
             )
 
             return r.DNSIncoming(generated.packets()[0])
 
-        zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
+        zeroconf = r.Zeroconf(interfaces=["127.0.0.1"])
         service_browser = r.ServiceBrowser(zeroconf, service_type, listener=MyServiceListener())
 
         try:
@@ -307,7 +314,7 @@ class TestServiceBrowser(unittest.TestCase):
 
             # service SRV updated
             service_updated_event.clear()
-            service_server = 'ash-2.local.'
+            service_server = "ash-2.local."
             _inject_response(zeroconf, mock_record_update_incoming_msg(r.ServiceStateChange.Updated))
             service_updated_event.wait(wait_time)
             assert service_added_count == 1
@@ -316,7 +323,7 @@ class TestServiceBrowser(unittest.TestCase):
 
             # service TXT updated
             service_updated_event.clear()
-            service_text = b'path=/~matt2/'
+            service_text = b"path=/~matt2/"
             _inject_response(zeroconf, mock_record_update_incoming_msg(r.ServiceStateChange.Updated))
             service_updated_event.wait(wait_time)
             assert service_added_count == 1
@@ -325,7 +332,7 @@ class TestServiceBrowser(unittest.TestCase):
 
             # service TXT updated - duplicate update should not trigger another service_updated
             service_updated_event.clear()
-            service_text = b'path=/~matt2/'
+            service_text = b"path=/~matt2/"
             _inject_response(zeroconf, mock_record_update_incoming_msg(r.ServiceStateChange.Updated))
             service_updated_event.wait(wait_time)
             assert service_added_count == 1
@@ -334,7 +341,7 @@ class TestServiceBrowser(unittest.TestCase):
 
             # service A updated
             service_updated_event.clear()
-            service_address = '10.0.1.3'
+            service_address = "10.0.1.3"
             # Verify we match on uppercase
             service_server = service_server.upper()
             _inject_response(zeroconf, mock_record_update_incoming_msg(r.ServiceStateChange.Updated))
@@ -345,9 +352,9 @@ class TestServiceBrowser(unittest.TestCase):
 
             # service all updated
             service_updated_event.clear()
-            service_server = 'ash-3.local.'
-            service_text = b'path=/~matt3/'
-            service_address = '10.0.1.3'
+            service_server = "ash-3.local."
+            service_text = b"path=/~matt3/"
+            service_address = "10.0.1.3"
             _inject_response(zeroconf, mock_record_update_incoming_msg(r.ServiceStateChange.Updated))
             service_updated_event.wait(wait_time)
             assert service_added_count == 1
@@ -372,8 +379,12 @@ class TestServiceBrowser(unittest.TestCase):
 
 class TestServiceBrowserMultipleTypes(unittest.TestCase):
     def test_update_record(self):
-        service_names = ['name2._type2._tcp.local.', 'name._type._tcp.local.', 'name._type._udp.local']
-        service_types = ['_type2._tcp.local.', '_type._tcp.local.', '_type._udp.local.']
+        service_names = [
+            "name2._type2._tcp.local.",
+            "name._type._tcp.local.",
+            "name._type._udp.local",
+        ]
+        service_types = ["_type2._tcp.local.", "_type._tcp.local.", "_type._udp.local."]
 
         service_added_count = 0
         service_removed_count = 0
@@ -394,15 +405,19 @@ class TestServiceBrowserMultipleTypes(unittest.TestCase):
                     service_removed_event.set()
 
         def mock_record_update_incoming_msg(
-            service_state_change: r.ServiceStateChange, service_type: str, service_name: str, ttl: int
+            service_state_change: r.ServiceStateChange,
+            service_type: str,
+            service_name: str,
+            ttl: int,
         ) -> r.DNSIncoming:
             generated = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
             generated.add_answer_at_time(
-                r.DNSPointer(service_type, const._TYPE_PTR, const._CLASS_IN, ttl, service_name), 0
+                r.DNSPointer(service_type, const._TYPE_PTR, const._CLASS_IN, ttl, service_name),
+                0,
             )
             return r.DNSIncoming(generated.packets()[0])
 
-        zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
+        zeroconf = r.Zeroconf(interfaces=["127.0.0.1"])
         service_browser = r.ServiceBrowser(zeroconf, service_types, listener=MyServiceListener())
 
         try:
@@ -437,7 +452,10 @@ class TestServiceBrowserMultipleTypes(unittest.TestCase):
                 _inject_response(
                     zeroconf,
                     mock_record_update_incoming_msg(
-                        r.ServiceStateChange.Added, service_types[0], service_names[0], 120
+                        r.ServiceStateChange.Added,
+                        service_types[0],
+                        service_names[0],
+                        120,
                     ),
                 )
                 # Add the last record after updating the first one
@@ -446,7 +464,10 @@ class TestServiceBrowserMultipleTypes(unittest.TestCase):
                 _inject_response(
                     zeroconf,
                     mock_record_update_incoming_msg(
-                        r.ServiceStateChange.Added, service_types[2], service_names[2], 120
+                        r.ServiceStateChange.Added,
+                        service_types[2],
+                        service_names[2],
+                        120,
                     ),
                 )
                 service_add_event.wait(wait_time)
@@ -502,7 +523,7 @@ def test_first_query_delay():
     https://datatracker.ietf.org/doc/html/rfc6762#section-5.2
     """
     type_ = "_http._tcp.local."
-    zeroconf_browser = Zeroconf(interfaces=['127.0.0.1'])
+    zeroconf_browser = Zeroconf(interfaces=["127.0.0.1"])
     _wait_for_start(zeroconf_browser)
 
     # we are going to patch the zeroconf send to check query transmission
@@ -553,7 +574,7 @@ async def test_asking_default_is_asking_qm_questions_after_the_first_qu():
             elif state_change is ServiceStateChange.Removed:
                 service_removed.set()
 
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_browser = aiozc.zeroconf
     zeroconf_browser.question_history = QuestionHistoryWithoutSuppression()
     await zeroconf_browser.async_wait_for_start()
@@ -573,7 +594,7 @@ async def test_asking_default_is_asking_qm_questions_after_the_first_qu():
 
     assert len(zeroconf_browser.engine.protocols) == 2
 
-    aio_zeroconf_registrar = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aio_zeroconf_registrar = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_registrar = aio_zeroconf_registrar.zeroconf
     await aio_zeroconf_registrar.zeroconf.async_wait_for_start()
 
@@ -590,7 +611,7 @@ async def test_asking_default_is_asking_qm_questions_after_the_first_qu():
             80,
             0,
             0,
-            {'path': '/~paulsm/'},
+            {"path": "/~paulsm/"},
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
         )
@@ -655,7 +676,7 @@ async def test_ttl_refresh_cancelled_rescue_query():
             elif state_change is ServiceStateChange.Removed:
                 service_removed.set()
 
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_browser = aiozc.zeroconf
     zeroconf_browser.question_history = QuestionHistoryWithoutSuppression()
     await zeroconf_browser.async_wait_for_start()
@@ -675,7 +696,7 @@ async def test_ttl_refresh_cancelled_rescue_query():
 
     assert len(zeroconf_browser.engine.protocols) == 2
 
-    aio_zeroconf_registrar = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aio_zeroconf_registrar = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_registrar = aio_zeroconf_registrar.zeroconf
     await aio_zeroconf_registrar.zeroconf.async_wait_for_start()
 
@@ -692,7 +713,7 @@ async def test_ttl_refresh_cancelled_rescue_query():
             80,
             0,
             0,
-            {'path': '/~paulsm/'},
+            {"path": "/~paulsm/"},
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
         )
@@ -751,7 +772,7 @@ async def test_ttl_refresh_cancelled_rescue_query():
 async def test_asking_qm_questions():
     """Verify explictly asking QM questions."""
     type_ = "_quservice._tcp.local."
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_browser = aiozc.zeroconf
     await zeroconf_browser.async_wait_for_start()
     # we are going to patch the zeroconf send to check query transmission
@@ -773,7 +794,10 @@ async def test_asking_qm_questions():
             pass
 
         browser = AsyncServiceBrowser(
-            zeroconf_browser, type_, [on_service_state_change], question_type=r.DNSQuestionType.QM
+            zeroconf_browser,
+            type_,
+            [on_service_state_change],
+            question_type=r.DNSQuestionType.QM,
         )
         await asyncio.sleep(millis_to_seconds(_services_browser._FIRST_QUERY_DELAY_RANDOM_INTERVAL[1] + 5))
         try:
@@ -787,7 +811,7 @@ async def test_asking_qm_questions():
 async def test_asking_qu_questions():
     """Verify the service browser can ask QU questions."""
     type_ = "_quservice._tcp.local."
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_browser = aiozc.zeroconf
     await zeroconf_browser.async_wait_for_start()
 
@@ -810,7 +834,10 @@ async def test_asking_qu_questions():
             pass
 
         browser = AsyncServiceBrowser(
-            zeroconf_browser, type_, [on_service_state_change], question_type=r.DNSQuestionType.QU
+            zeroconf_browser,
+            type_,
+            [on_service_state_change],
+            question_type=r.DNSQuestionType.QU,
         )
         await asyncio.sleep(millis_to_seconds(_services_browser._FIRST_QUERY_DELAY_RANDOM_INTERVAL[1] + 5))
         try:
@@ -824,11 +851,13 @@ def test_legacy_record_update_listener():
     """Test a RecordUpdateListener that does not implement update_records."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
 
     with pytest.raises(RuntimeError):
         r.RecordUpdateListener().update_record(
-            zc, 0, r.DNSRecord('irrelevant', const._TYPE_SRV, const._CLASS_IN, const._DNS_HOST_TTL)
+            zc,
+            0,
+            r.DNSRecord("irrelevant", const._TYPE_SRV, const._CLASS_IN, const._DNS_HOST_TTL),
         )
 
     updates = []
@@ -836,7 +865,7 @@ def test_legacy_record_update_listener():
     class LegacyRecordUpdateListener(r.RecordUpdateListener):
         """A RecordUpdateListener that does not implement update_records."""
 
-        def update_record(self, zc: 'Zeroconf', now: float, record: r.DNSRecord) -> None:
+        def update_record(self, zc: "Zeroconf", now: float, record: r.DNSRecord) -> None:
             nonlocal updates
             updates.append(record)
 
@@ -855,11 +884,11 @@ def test_legacy_record_update_listener():
 
     info_service = ServiceInfo(
         type_,
-        f'{name}.{type_}',
+        f"{name}.{type_}",
         80,
         0,
         0,
-        {'path': '/~paulsm/'},
+        {"path": "/~paulsm/"},
         "ash-2.local.",
         addresses=[socket.inet_aton("10.0.1.2")],
     )
@@ -884,7 +913,7 @@ def test_service_browser_is_aware_of_port_changes():
     """Test that the ServiceBrowser is aware of port changes."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
     registration_name = "xxxyyy.%s" % type_
@@ -900,18 +929,25 @@ def test_service_browser_is_aware_of_port_changes():
 
     browser = ServiceBrowser(zc, type_, [on_service_state_change])
 
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     address_parsed = "10.0.1.2"
     address = socket.inet_aton(address_parsed)
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address])
 
     _inject_response(
         zc,
-        mock_incoming_msg([info.dns_pointer(), info.dns_service(), info.dns_text(), *info.dns_addresses()]),
+        mock_incoming_msg(
+            [
+                info.dns_pointer(),
+                info.dns_service(),
+                info.dns_text(),
+                *info.dns_addresses(),
+            ]
+        ),
     )
     time.sleep(0.1)
 
-    assert callbacks == [('_hap._tcp.local.', ServiceStateChange.Added, 'xxxyyy._hap._tcp.local.')]
+    assert callbacks == [("_hap._tcp.local.", ServiceStateChange.Added, "xxxyyy._hap._tcp.local.")]
     service_info = zc.get_service_info(type_, registration_name)
     assert service_info is not None
     assert service_info.port == 80
@@ -926,8 +962,8 @@ def test_service_browser_is_aware_of_port_changes():
     time.sleep(0.1)
 
     assert callbacks == [
-        ('_hap._tcp.local.', ServiceStateChange.Added, 'xxxyyy._hap._tcp.local.'),
-        ('_hap._tcp.local.', ServiceStateChange.Updated, 'xxxyyy._hap._tcp.local.'),
+        ("_hap._tcp.local.", ServiceStateChange.Added, "xxxyyy._hap._tcp.local."),
+        ("_hap._tcp.local.", ServiceStateChange.Updated, "xxxyyy._hap._tcp.local."),
     ]
     service_info = zc.get_service_info(type_, registration_name)
     assert service_info is not None
@@ -941,7 +977,7 @@ def test_service_browser_listeners_update_service():
     """Test that the ServiceBrowser ServiceListener that implements update_service."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
     registration_name = "xxxyyy.%s" % type_
@@ -967,14 +1003,21 @@ def test_service_browser_listeners_update_service():
 
     browser = r.ServiceBrowser(zc, type_, None, listener)
 
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     address_parsed = "10.0.1.2"
     address = socket.inet_aton(address_parsed)
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address])
 
     _inject_response(
         zc,
-        mock_incoming_msg([info.dns_pointer(), info.dns_service(), info.dns_text(), *info.dns_addresses()]),
+        mock_incoming_msg(
+            [
+                info.dns_pointer(),
+                info.dns_service(),
+                info.dns_text(),
+                *info.dns_addresses(),
+            ]
+        ),
     )
     time.sleep(0.2)
     info._dns_service_cache = None  # we are mutating the record so clear the cache
@@ -987,8 +1030,8 @@ def test_service_browser_listeners_update_service():
     time.sleep(0.2)
 
     assert callbacks == [
-        ('add', type_, registration_name),
-        ('update', type_, registration_name),
+        ("add", type_, registration_name),
+        ("update", type_, registration_name),
     ]
     browser.cancel()
 
@@ -999,7 +1042,7 @@ def test_service_browser_listeners_no_update_service():
     """Test that the ServiceBrowser ServiceListener that does not implement update_service."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_hap._tcp.local."
     registration_name = "xxxyyy.%s" % type_
@@ -1020,14 +1063,21 @@ def test_service_browser_listeners_no_update_service():
 
     browser = r.ServiceBrowser(zc, type_, None, listener)
 
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     address_parsed = "10.0.1.2"
     address = socket.inet_aton(address_parsed)
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address])
 
     _inject_response(
         zc,
-        mock_incoming_msg([info.dns_pointer(), info.dns_service(), info.dns_text(), *info.dns_addresses()]),
+        mock_incoming_msg(
+            [
+                info.dns_pointer(),
+                info.dns_service(),
+                info.dns_text(),
+                *info.dns_addresses(),
+            ]
+        ),
     )
     time.sleep(0.2)
     info.port = 400
@@ -1040,7 +1090,7 @@ def test_service_browser_listeners_no_update_service():
     time.sleep(0.2)
 
     assert callbacks == [
-        ('add', type_, registration_name),
+        ("add", type_, registration_name),
     ]
     browser.cancel()
 
@@ -1054,7 +1104,7 @@ def test_service_browser_uses_non_strict_names():
     def on_service_state_change(zeroconf, service_type, state_change, name):
         pass
 
-    zc = r.Zeroconf(interfaces=['127.0.0.1'])
+    zc = r.Zeroconf(interfaces=["127.0.0.1"])
     browser = ServiceBrowser(zc, ["_tivo-videostream._tcp.local."], [on_service_state_change])
     browser.cancel()
 
@@ -1092,7 +1142,7 @@ def test_group_ptr_queries_with_known_answers():
 @pytest.mark.asyncio
 async def test_generate_service_query_suppress_duplicate_questions():
     """Generate a service query for sending with zeroconf.send."""
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zc = aiozc.zeroconf
     now = current_time_millis()
     name = "_suppresstest._tcp.local."
@@ -1102,7 +1152,7 @@ async def test_generate_service_query_suppress_duplicate_questions():
         const._TYPE_PTR,
         const._CLASS_IN,
         10000,
-        f'known-to-other.{name}',
+        f"known-to-other.{name}",
     )
     other_known_answers: Set[r.DNSRecord] = {answer}
     zc.question_history.add_question_at_time(question, now, other_known_answers)
@@ -1146,7 +1196,7 @@ async def test_generate_service_query_suppress_duplicate_questions():
 async def test_query_scheduler():
     delay = const._BROWSER_TIME
     types_ = {"_hap._tcp.local.", "_http._tcp.local."}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     await aiozc.zeroconf.async_wait_for_start()
     zc = aiozc.zeroconf
     sends: List[r.DNSIncoming] = []
@@ -1161,7 +1211,6 @@ async def test_query_scheduler():
 
     # patch the zeroconf send so we can capture what is being sent
     with patch.object(zc, "async_send", send):
-
         query_scheduler.start(loop)
 
         original_now = loop.time()
@@ -1189,7 +1238,11 @@ async def test_query_scheduler():
         expected_when_time = ptr_record.get_expiration_time(const._EXPIRE_REFRESH_TIME_PERCENT)
         expected_expire_time = ptr_record.get_expiration_time(100)
         ptr_query = _ScheduledPTRQuery(
-            ptr_record.alias, ptr_record.name, int(ptr_record.ttl), expected_expire_time, expected_when_time
+            ptr_record.alias,
+            ptr_record.name,
+            int(ptr_record.ttl),
+            expected_expire_time,
+            expected_when_time,
         )
         assert query_scheduler._query_heap == [ptr_query]
 
@@ -1236,7 +1289,7 @@ async def test_query_scheduler():
 async def test_query_scheduler_rescue_records():
     delay = const._BROWSER_TIME
     types_ = {"_hap._tcp.local.", "_http._tcp.local."}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     await aiozc.zeroconf.async_wait_for_start()
     zc = aiozc.zeroconf
     sends: List[r.DNSIncoming] = []
@@ -1251,7 +1304,6 @@ async def test_query_scheduler_rescue_records():
 
     # patch the zeroconf send so we can capture what is being sent
     with patch.object(zc, "async_send", send):
-
         query_scheduler.start(loop)
 
         original_now = loop.time()
@@ -1272,7 +1324,11 @@ async def test_query_scheduler_rescue_records():
         expected_when_time = ptr_record.get_expiration_time(const._EXPIRE_REFRESH_TIME_PERCENT)
         expected_expire_time = ptr_record.get_expiration_time(100)
         ptr_query = _ScheduledPTRQuery(
-            ptr_record.alias, ptr_record.name, int(ptr_record.ttl), expected_expire_time, expected_when_time
+            ptr_record.alias,
+            ptr_record.name,
+            int(ptr_record.ttl),
+            expected_expire_time,
+            expected_when_time,
         )
         assert query_scheduler._query_heap == [ptr_query]
         assert query_scheduler._query_heap[0].cancelled is False
@@ -1308,7 +1364,7 @@ def test_service_browser_matching():
     """Test that the ServiceBrowser matching does not match partial names."""
 
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_http._tcp.local."
     registration_name = "xxxyyy.%s" % type_
@@ -1336,17 +1392,31 @@ def test_service_browser_matching():
 
     browser = r.ServiceBrowser(zc, type_, None, listener)
 
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     address_parsed = "10.0.1.2"
     address = socket.inet_aton(address_parsed)
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address])
     should_not_match = ServiceInfo(
-        not_match_type_, not_match_registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address]
+        not_match_type_,
+        not_match_registration_name,
+        80,
+        0,
+        0,
+        desc,
+        "ash-2.local.",
+        addresses=[address],
     )
 
     _inject_response(
         zc,
-        mock_incoming_msg([info.dns_pointer(), info.dns_service(), info.dns_text(), *info.dns_addresses()]),
+        mock_incoming_msg(
+            [
+                info.dns_pointer(),
+                info.dns_service(),
+                info.dns_text(),
+                *info.dns_addresses(),
+            ]
+        ),
     )
     _inject_response(
         zc,
@@ -1375,8 +1445,8 @@ def test_service_browser_matching():
     time.sleep(0.2)
 
     assert callbacks == [
-        ('add', type_, registration_name),
-        ('update', type_, registration_name),
+        ("add", type_, registration_name),
+        ("update", type_, registration_name),
     ]
     browser.cancel()
 
@@ -1387,7 +1457,7 @@ def test_service_browser_matching():
 def test_service_browser_expire_callbacks():
     """Test that the ServiceBrowser matching does not match partial names."""
     # instantiate a zeroconf instance
-    zc = Zeroconf(interfaces=['127.0.0.1'])
+    zc = Zeroconf(interfaces=["127.0.0.1"])
     # start a browser
     type_ = "_old._tcp.local."
     registration_name = "uniquezip323.%s" % type_
@@ -1413,7 +1483,7 @@ def test_service_browser_expire_callbacks():
 
     browser = r.ServiceBrowser(zc, type_, None, listener)
 
-    desc = {'path': '/~paul2/'}
+    desc = {"path": "/~paul2/"}
     address_parsed = "10.0.1.3"
     address = socket.inet_aton(address_parsed)
     info = ServiceInfo(
@@ -1431,7 +1501,14 @@ def test_service_browser_expire_callbacks():
 
     _inject_response(
         zc,
-        mock_incoming_msg([info.dns_pointer(), info.dns_service(), info.dns_text(), *info.dns_addresses()]),
+        mock_incoming_msg(
+            [
+                info.dns_pointer(),
+                info.dns_service(),
+                info.dns_text(),
+                *info.dns_addresses(),
+            ]
+        ),
     )
     # Force the ttl to be 1 second
     now = current_time_millis()
@@ -1454,8 +1531,8 @@ def test_service_browser_expire_callbacks():
             break
 
     assert callbacks == [
-        ('add', type_, registration_name),
-        ('update', type_, registration_name),
+        ("add", type_, registration_name),
+        ("update", type_, registration_name),
     ]
 
     for _ in range(25):
@@ -1464,9 +1541,9 @@ def test_service_browser_expire_callbacks():
             break
 
     assert callbacks == [
-        ('add', type_, registration_name),
-        ('update', type_, registration_name),
-        ('remove', type_, registration_name),
+        ("add", type_, registration_name),
+        ("update", type_, registration_name),
+        ("remove", type_, registration_name),
     ]
     browser.cancel()
 
@@ -1494,13 +1571,13 @@ def test_scheduled_ptr_query_dunder_methods():
 
     assert query75 != other
     with pytest.raises(TypeError):
-        query75 < other  # type: ignore[operator]
+        assert query75 < other  # type: ignore[operator]
     with pytest.raises(TypeError):
-        query75 <= other  # type: ignore[operator]
+        assert query75 <= other  # type: ignore[operator]
     with pytest.raises(TypeError):
-        query75 > other  # type: ignore[operator]
+        assert query75 > other  # type: ignore[operator]
     with pytest.raises(TypeError):
-        query75 >= other  # type: ignore[operator]
+        assert query75 >= other  # type: ignore[operator]
 
 
 @pytest.mark.asyncio
@@ -1515,7 +1592,7 @@ async def test_close_zeroconf_without_browser_before_start_up_queries():
             if state_change is ServiceStateChange.Added:
                 service_added.set()
 
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_browser = aiozc.zeroconf
     zeroconf_browser.question_history = QuestionHistoryWithoutSuppression()
     await zeroconf_browser.async_wait_for_start()
@@ -1529,7 +1606,7 @@ async def test_close_zeroconf_without_browser_before_start_up_queries():
 
     assert len(zeroconf_browser.engine.protocols) == 2
 
-    aio_zeroconf_registrar = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aio_zeroconf_registrar = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_registrar = aio_zeroconf_registrar.zeroconf
     await aio_zeroconf_registrar.zeroconf.async_wait_for_start()
 
@@ -1545,7 +1622,7 @@ async def test_close_zeroconf_without_browser_before_start_up_queries():
             80,
             0,
             0,
-            {'path': '/~paulsm/'},
+            {"path": "/~paulsm/"},
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
         )
@@ -1584,7 +1661,7 @@ async def test_close_zeroconf_without_browser_after_start_up_queries():
             if state_change is ServiceStateChange.Added:
                 service_added.set()
 
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_browser = aiozc.zeroconf
     zeroconf_browser.question_history = QuestionHistoryWithoutSuppression()
     await zeroconf_browser.async_wait_for_start()
@@ -1598,7 +1675,7 @@ async def test_close_zeroconf_without_browser_after_start_up_queries():
 
     assert len(zeroconf_browser.engine.protocols) == 2
 
-    aio_zeroconf_registrar = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aio_zeroconf_registrar = AsyncZeroconf(interfaces=["127.0.0.1"])
     zeroconf_registrar = aio_zeroconf_registrar.zeroconf
     await aio_zeroconf_registrar.zeroconf.async_wait_for_start()
 
@@ -1614,7 +1691,7 @@ async def test_close_zeroconf_without_browser_after_start_up_queries():
             80,
             0,
             0,
-            {'path': '/~paulsm/'},
+            {"path": "/~paulsm/"},
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
         )

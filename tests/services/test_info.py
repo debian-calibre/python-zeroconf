@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-""" Unit tests for zeroconf._services.info. """
+"""Unit tests for zeroconf._services.info."""
 
 import asyncio
 import logging
@@ -26,7 +26,7 @@ from zeroconf.asyncio import AsyncZeroconf
 
 from .. import _inject_response, has_working_ipv6
 
-log = logging.getLogger('zeroconf')
+log = logging.getLogger("zeroconf")
 original_logging_level = logging.NOTSET
 
 
@@ -44,29 +44,43 @@ def teardown_module():
 class TestServiceInfo(unittest.TestCase):
     def test_get_name(self):
         """Verify the name accessor can strip the type."""
-        desc = {'path': '/~paulsm/'}
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
+        desc = {"path": "/~paulsm/"}
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
         service_address = socket.inet_aton("10.0.1.2")
         info = ServiceInfo(
-            service_type, service_name, 22, 0, 0, desc, service_server, addresses=[service_address]
+            service_type,
+            service_name,
+            22,
+            0,
+            0,
+            desc,
+            service_server,
+            addresses=[service_address],
         )
         assert info.get_name() == "name"
 
     def test_service_info_rejects_non_matching_updates(self):
         """Verify records with the wrong name are rejected."""
 
-        zc = r.Zeroconf(interfaces=['127.0.0.1'])
-        desc = {'path': '/~paulsm/'}
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
+        desc = {"path": "/~paulsm/"}
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
         service_address = socket.inet_aton("10.0.1.2")
         ttl = 120
         now = r.current_time_millis()
         info = ServiceInfo(
-            service_type, service_name, 22, 0, 0, desc, service_server, addresses=[service_address]
+            service_type,
+            service_name,
+            22,
+            0,
+            0,
+            desc,
+            service_server,
+            addresses=[service_address],
         )
         # Verify backwards compatiblity with calling with None
         info.async_update_records(zc, now, [])
@@ -81,7 +95,7 @@ class TestServiceInfo(unittest.TestCase):
                         const._TYPE_TXT,
                         const._CLASS_IN | const._CLASS_UNIQUE,
                         ttl,
-                        b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+                        b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
                     ),
                     None,
                 )
@@ -101,14 +115,14 @@ class TestServiceInfo(unittest.TestCase):
                         0,
                         0,
                         80,
-                        'ASH-2.local.',
+                        "ASH-2.local.",
                     ),
                     None,
                 )
             ],
         )
-        assert info.server_key == 'ash-2.local.'
-        assert info.server == 'ASH-2.local.'
+        assert info.server_key == "ash-2.local."
+        assert info.server == "ASH-2.local."
         new_address = socket.inet_aton("10.0.1.3")
         info.async_update_records(
             zc,
@@ -116,7 +130,7 @@ class TestServiceInfo(unittest.TestCase):
             [
                 RecordUpdate(
                     r.DNSAddress(
-                        'ASH-2.local.',
+                        "ASH-2.local.",
                         const._TYPE_A,
                         const._CLASS_IN | const._CLASS_UNIQUE,
                         ttl,
@@ -138,7 +152,7 @@ class TestServiceInfo(unittest.TestCase):
                         const._TYPE_TXT,
                         const._CLASS_IN | const._CLASS_UNIQUE,
                         ttl,
-                        b'\x04ff=0\x04ci=3\x04sf=0\x0bsh=6fLM5A==',
+                        b"\x04ff=0\x04ci=3\x04sf=0\x0bsh=6fLM5A==",
                     ),
                     None,
                 )
@@ -158,14 +172,14 @@ class TestServiceInfo(unittest.TestCase):
                         0,
                         0,
                         80,
-                        'ASH-2.local.',
+                        "ASH-2.local.",
                     ),
                     None,
                 )
             ],
         )
-        assert info.server_key == 'ash-2.local.'
-        assert info.server == 'ASH-2.local.'
+        assert info.server_key == "ash-2.local."
+        assert info.server == "ASH-2.local."
         new_address = socket.inet_aton("10.0.1.4")
         info.async_update_records(
             zc,
@@ -188,16 +202,23 @@ class TestServiceInfo(unittest.TestCase):
 
     def test_service_info_rejects_expired_records(self):
         """Verify records that are expired are rejected."""
-        zc = r.Zeroconf(interfaces=['127.0.0.1'])
-        desc = {'path': '/~paulsm/'}
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
+        desc = {"path": "/~paulsm/"}
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
         service_address = socket.inet_aton("10.0.1.2")
         ttl = 120
         now = r.current_time_millis()
         info = ServiceInfo(
-            service_type, service_name, 22, 0, 0, desc, service_server, addresses=[service_address]
+            service_type,
+            service_name,
+            22,
+            0,
+            0,
+            desc,
+            service_server,
+            addresses=[service_address],
         )
         # Matching updates
         info.async_update_records(
@@ -210,7 +231,7 @@ class TestServiceInfo(unittest.TestCase):
                         const._TYPE_TXT,
                         const._CLASS_IN | const._CLASS_UNIQUE,
                         ttl,
-                        b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+                        b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
                     ),
                     None,
                 )
@@ -223,24 +244,24 @@ class TestServiceInfo(unittest.TestCase):
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             ttl,
-            b'\x04ff=0\x04ci=3\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=3\x04sf=0\x0bsh=6fLM5A==",
         )
         expired_record.set_created_ttl(1000, 1)
         info.async_update_records(zc, now, [RecordUpdate(expired_record, None)])
         assert info.properties[b"ci"] == b"2"
         zc.close()
 
-    @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
-    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
+    @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
+    @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
     def test_get_info_partial(self):
-        zc = r.Zeroconf(interfaces=['127.0.0.1'])
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
 
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
-        service_text = b'path=/~matt1/'
-        service_address = '10.0.1.2'
-        service_address_v6_ll = 'fe80::52e:c2f2:bc5f:e9c6'
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
+        service_text = b"path=/~matt1/"
+        service_address = "10.0.1.2"
+        service_address_v6_ll = "fe80::52e:c2f2:bc5f:e9c6"
         service_scope_id = 12
 
         service_info = None
@@ -275,7 +296,8 @@ class TestServiceInfo(unittest.TestCase):
             try:
                 ttl = 120
                 helper_thread = threading.Thread(
-                    target=get_service_info_helper, args=(zc, service_type, service_name)
+                    target=get_service_info_helper,
+                    args=(zc, service_type, service_name),
                 )
                 helper_thread.start()
                 wait_time = 1
@@ -377,13 +399,13 @@ class TestServiceInfo(unittest.TestCase):
                 zc.remove_all_service_listeners()
                 zc.close()
 
-    @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
-    @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
+    @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
+    @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
     def test_get_info_suppressed_by_question_history(self):
-        zc = r.Zeroconf(interfaces=['127.0.0.1'])
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
 
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
 
         service_info = None
         send_event = Event()
@@ -416,7 +438,8 @@ class TestServiceInfo(unittest.TestCase):
 
             try:
                 helper_thread = threading.Thread(
-                    target=get_service_info_helper, args=(zc, service_type, service_name)
+                    target=get_service_info_helper,
+                    args=(zc, service_type, service_name),
                 )
                 helper_thread.start()
                 wait_time = (const._LISTENER_TIME + info._AVOID_SYNC_DELAY_RANDOM_INTERVAL[1] + 5) / 1000
@@ -441,13 +464,19 @@ class TestServiceInfo(unittest.TestCase):
                     )  # Wait long enough to be inside the question history window
                     now = r.current_time_millis()
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_A, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_A, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_AAAA, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_AAAA, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_TXT, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_TXT, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                 send_event.wait(wait_time * 0.25)
                 assert last_sent is not None
@@ -467,16 +496,24 @@ class TestServiceInfo(unittest.TestCase):
                     )  # Wait long enough to be inside the question history window
                     now = r.current_time_millis()
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_A, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_A, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_AAAA, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_AAAA, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_TXT, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_TXT, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                     zc.question_history.add_question_at_time(
-                        r.DNSQuestion(service_name, const._TYPE_SRV, const._CLASS_IN), now, set()
+                        r.DNSQuestion(service_name, const._TYPE_SRV, const._CLASS_IN),
+                        now,
+                        set(),
                     )
                 send_event.wait(wait_time * 0.25)
                 # All questions are suppressed so no query should be sent
@@ -489,13 +526,13 @@ class TestServiceInfo(unittest.TestCase):
                 zc.close()
 
     def test_get_info_single(self):
-        zc = r.Zeroconf(interfaces=['127.0.0.1'])
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
 
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
-        service_text = b'path=/~matt1/'
-        service_address = '10.0.1.2'
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
+        service_text = b"path=/~matt1/"
+        service_address = "10.0.1.2"
 
         service_info = None
         send_event = Event()
@@ -529,7 +566,8 @@ class TestServiceInfo(unittest.TestCase):
             try:
                 ttl = 120
                 helper_thread = threading.Thread(
-                    target=get_service_info_helper, args=(zc, service_type, service_name)
+                    target=get_service_info_helper,
+                    args=(zc, service_type, service_name),
                 )
                 helper_thread.start()
                 wait_time = 1
@@ -590,16 +628,23 @@ class TestServiceInfo(unittest.TestCase):
     def test_service_info_duplicate_properties_txt_records(self):
         """Verify the first property is always used when there are duplicates in a txt record."""
 
-        zc = r.Zeroconf(interfaces=['127.0.0.1'])
-        desc = {'path': '/~paulsm/'}
-        service_name = 'name._type._tcp.local.'
-        service_type = '_type._tcp.local.'
-        service_server = 'ash-1.local.'
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
+        desc = {"path": "/~paulsm/"}
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
         service_address = socket.inet_aton("10.0.1.2")
         ttl = 120
         now = r.current_time_millis()
         info = ServiceInfo(
-            service_type, service_name, 22, 0, 0, desc, service_server, addresses=[service_address]
+            service_type,
+            service_name,
+            22,
+            0,
+            0,
+            desc,
+            service_server,
+            addresses=[service_address],
         )
         info.async_update_records(
             zc,
@@ -611,7 +656,7 @@ class TestServiceInfo(unittest.TestCase):
                         const._TYPE_TXT,
                         const._CLASS_IN | const._CLASS_UNIQUE,
                         ttl,
-                        b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==\x04dd=0\x04jl=2\x04qq=0\x0brr=6fLM5A==\x04ci=3',
+                        b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==\x04dd=0\x04jl=2\x04qq=0\x0brr=6fLM5A==\x04ci=3",
                     ),
                     None,
                 )
@@ -626,12 +671,21 @@ class TestServiceInfo(unittest.TestCase):
 def test_multiple_addresses():
     type_ = "_http._tcp.local."
     registration_name = "xxxyyy.%s" % type_
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     address_parsed = "10.0.1.2"
     address = socket.inet_aton(address_parsed)
 
     # New kwarg way
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[address, address])
+    info = ServiceInfo(
+        type_,
+        registration_name,
+        80,
+        0,
+        0,
+        desc,
+        "ash-2.local.",
+        addresses=[address, address],
+    )
 
     assert info.addresses == [address, address]
     assert info.parsed_addresses() == [address_parsed, address_parsed]
@@ -652,7 +706,7 @@ def test_multiple_addresses():
     assert info.parsed_scoped_addresses() == [address_parsed, address_parsed]
     ipaddress_supports_scope_id = sys.version_info >= (3, 9, 0)
 
-    if has_working_ipv6() and not os.environ.get('SKIP_IPV6'):
+    if has_working_ipv6() and not os.environ.get("SKIP_IPV6"):
         address_v6_parsed = "2001:db8::1"
         address_v6 = socket.inet_pton(socket.AF_INET6, address_v6_parsed)
         address_v6_ll_parsed = "fe80::52e:c2f2:bc5f:e9c6"
@@ -679,13 +733,21 @@ def test_multiple_addresses():
                 0,
                 desc,
                 "ash-2.local.",
-                parsed_addresses=[address_parsed, address_v6_parsed, address_v6_ll_parsed],
+                parsed_addresses=[
+                    address_parsed,
+                    address_v6_parsed,
+                    address_v6_ll_parsed,
+                ],
                 interface_index=interface_index,
             ),
         ]
         for info in infos:
             assert info.addresses == [address]
-            assert info.addresses_by_version(r.IPVersion.All) == [address, address_v6, address_v6_ll]
+            assert info.addresses_by_version(r.IPVersion.All) == [
+                address,
+                address_v6,
+                address_v6_ll,
+            ]
             assert info.ip_addresses_by_version(r.IPVersion.All) == [
                 ip_address(address),
                 ip_address(address_v6),
@@ -695,16 +757,26 @@ def test_multiple_addresses():
             ]
             assert info.addresses_by_version(r.IPVersion.V4Only) == [address]
             assert info.ip_addresses_by_version(r.IPVersion.V4Only) == [ip_address(address)]
-            assert info.addresses_by_version(r.IPVersion.V6Only) == [address_v6, address_v6_ll]
+            assert info.addresses_by_version(r.IPVersion.V6Only) == [
+                address_v6,
+                address_v6_ll,
+            ]
             assert info.ip_addresses_by_version(r.IPVersion.V6Only) == [
                 ip_address(address_v6),
                 ip_address(address_v6_ll_scoped_parsed)
                 if ipaddress_supports_scope_id
                 else ip_address(address_v6_ll),
             ]
-            assert info.parsed_addresses() == [address_parsed, address_v6_parsed, address_v6_ll_parsed]
+            assert info.parsed_addresses() == [
+                address_parsed,
+                address_v6_parsed,
+                address_v6_ll_parsed,
+            ]
             assert info.parsed_addresses(r.IPVersion.V4Only) == [address_parsed]
-            assert info.parsed_addresses(r.IPVersion.V6Only) == [address_v6_parsed, address_v6_ll_parsed]
+            assert info.parsed_addresses(r.IPVersion.V6Only) == [
+                address_v6_parsed,
+                address_v6_ll_parsed,
+            ]
             assert info.parsed_scoped_addresses() == [
                 address_parsed,
                 address_v6_parsed,
@@ -717,11 +789,11 @@ def test_multiple_addresses():
             ]
 
 
-@unittest.skipIf(sys.version_info < (3, 9, 0), 'Requires newer python')
+@unittest.skipIf(sys.version_info < (3, 9, 0), "Requires newer python")
 def test_scoped_addresses_from_cache():
     type_ = "_http._tcp.local."
     registration_name = f"scoped.{type_}"
-    zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
+    zeroconf = r.Zeroconf(interfaces=["127.0.0.1"])
     host = "scoped.local."
 
     zeroconf.cache.async_add_records(
@@ -769,18 +841,18 @@ async def test_multiple_a_addresses_newest_address_first():
     """Test that info.addresses returns the newest seen address first."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    desc = {'path': '/~paulsm/'}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    desc = {"path": "/~paulsm/"}
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     cache = aiozc.zeroconf.cache
     host = "multahost.local."
-    record1 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b'\x7f\x00\x00\x01')
-    record2 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b'\x7f\x00\x00\x02')
+    record1 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b"\x7f\x00\x00\x01")
+    record2 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b"\x7f\x00\x00\x02")
     cache.async_add_records([record1, record2])
 
     # New kwarg way
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
     info.load_from_cache(aiozc.zeroconf)
-    assert info.addresses == [b'\x7f\x00\x00\x02', b'\x7f\x00\x00\x01']
+    assert info.addresses == [b"\x7f\x00\x00\x02", b"\x7f\x00\x00\x01"]
     await aiozc.async_close()
 
 
@@ -788,12 +860,12 @@ async def test_multiple_a_addresses_newest_address_first():
 async def test_invalid_a_addresses(caplog):
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    desc = {'path': '/~paulsm/'}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    desc = {"path": "/~paulsm/"}
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     cache = aiozc.zeroconf.cache
     host = "multahost.local."
-    record1 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b'a')
-    record2 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b'b')
+    record1 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b"a")
+    record2 = r.DNSAddress(host, const._TYPE_A, const._CLASS_IN, 1000, b"b")
     cache.async_add_records([record1, record2])
 
     # New kwarg way
@@ -805,11 +877,11 @@ async def test_invalid_a_addresses(caplog):
     await aiozc.async_close()
 
 
-@unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
-@unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
+@unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
+@unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
 def test_filter_address_by_type_from_service_info():
     """Verify dns_addresses can filter by ipversion."""
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     type_ = "_homeassistant._tcp.local."
     name = "MyTestHome"
     registration_name = f"{name}.{type_}"
@@ -821,7 +893,10 @@ def test_filter_address_by_type_from_service_info():
         return [address.address for address in dns_address]
 
     assert dns_addresses_to_addresses(info.dns_addresses()) == [ipv4, ipv6]
-    assert dns_addresses_to_addresses(info.dns_addresses(version=r.IPVersion.All)) == [ipv4, ipv6]
+    assert dns_addresses_to_addresses(info.dns_addresses(version=r.IPVersion.All)) == [
+        ipv4,
+        ipv6,
+    ]
     assert dns_addresses_to_addresses(info.dns_addresses(version=r.IPVersion.V4Only)) == [ipv4]
     assert dns_addresses_to_addresses(info.dns_addresses(version=r.IPVersion.V6Only)) == [ipv6]
 
@@ -832,11 +907,11 @@ def test_changing_name_updates_serviceinfo_key():
     name = "MyTestHome"
     info_service = ServiceInfo(
         type_,
-        f'{name}.{type_}',
+        f"{name}.{type_}",
         80,
         0,
         0,
-        {'path': '/~paulsm/'},
+        {"path": "/~paulsm/"},
         "ash-2.local.",
         addresses=[socket.inet_aton("10.0.1.2")],
     )
@@ -854,11 +929,11 @@ def test_serviceinfo_address_updates():
     with pytest.raises(TypeError):
         info_service = ServiceInfo(
             type_,
-            f'{name}.{type_}',
+            f"{name}.{type_}",
             80,
             0,
             0,
-            {'path': '/~paulsm/'},
+            {"path": "/~paulsm/"},
             "ash-2.local.",
             addresses=[socket.inet_aton("10.0.1.2")],
             parsed_addresses=["10.0.1.2"],
@@ -866,11 +941,11 @@ def test_serviceinfo_address_updates():
 
     info_service = ServiceInfo(
         type_,
-        f'{name}.{type_}',
+        f"{name}.{type_}",
         80,
         0,
         0,
-        {'path': '/~paulsm/'},
+        {"path": "/~paulsm/"},
         "ash-2.local.",
         addresses=[socket.inet_aton("10.0.1.2")],
     )
@@ -885,48 +960,55 @@ def test_serviceinfo_accepts_bytes_or_string_dict():
     addresses = [socket.inet_aton("10.0.1.2")]
     server_name = "ash-2.local."
     info_service = ServiceInfo(
-        type_, f'{name}.{type_}', 80, 0, 0, {b'path': b'/~paulsm/'}, server_name, addresses=addresses
-    )
-    assert info_service.dns_text().text == b'\x0epath=/~paulsm/'
-    info_service = ServiceInfo(
         type_,
-        f'{name}.{type_}',
+        f"{name}.{type_}",
         80,
         0,
         0,
-        {'path': '/~paulsm/'},
+        {b"path": b"/~paulsm/"},
         server_name,
         addresses=addresses,
     )
-    assert info_service.dns_text().text == b'\x0epath=/~paulsm/'
+    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
     info_service = ServiceInfo(
         type_,
-        f'{name}.{type_}',
+        f"{name}.{type_}",
         80,
         0,
         0,
-        {b'path': '/~paulsm/'},
+        {"path": "/~paulsm/"},
         server_name,
         addresses=addresses,
     )
-    assert info_service.dns_text().text == b'\x0epath=/~paulsm/'
+    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
     info_service = ServiceInfo(
         type_,
-        f'{name}.{type_}',
+        f"{name}.{type_}",
         80,
         0,
         0,
-        {'path': b'/~paulsm/'},
+        {b"path": "/~paulsm/"},
         server_name,
         addresses=addresses,
     )
-    assert info_service.dns_text().text == b'\x0epath=/~paulsm/'
+    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
+    info_service = ServiceInfo(
+        type_,
+        f"{name}.{type_}",
+        80,
+        0,
+        0,
+        {"path": b"/~paulsm/"},
+        server_name,
+        addresses=addresses,
+    )
+    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
 
 
 def test_asking_qu_questions():
     """Verify explictly asking QU questions."""
     type_ = "_quservice._tcp.local."
-    zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
+    zeroconf = r.Zeroconf(interfaces=["127.0.0.1"])
 
     # we are going to patch the zeroconf send to check query transmission
     old_send = zeroconf.async_send
@@ -950,7 +1032,7 @@ def test_asking_qu_questions():
 def test_asking_qm_questions():
     """Verify explictly asking QM questions."""
     type_ = "_quservice._tcp.local."
-    zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
+    zeroconf = r.Zeroconf(interfaces=["127.0.0.1"])
 
     # we are going to patch the zeroconf send to check query transmission
     old_send = zeroconf.async_send
@@ -973,7 +1055,7 @@ def test_asking_qm_questions():
 
 def test_request_timeout():
     """Test that the timeout does not throw an exception and finishes close to the actual timeout."""
-    zeroconf = r.Zeroconf(interfaces=['127.0.0.1'])
+    zeroconf = r.Zeroconf(interfaces=["127.0.0.1"])
     start_time = r.current_time_millis()
     assert zeroconf.get_service_info("_notfound.local.", "notthere._notfound.local.") is None
     end_time = r.current_time_millis()
@@ -987,7 +1069,7 @@ def test_request_timeout():
 async def test_we_try_four_times_with_random_delay():
     """Verify we try four times even with the random delay."""
     type_ = "_typethatisnothere._tcp.local."
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
 
     # we are going to patch the zeroconf send to check query transmission
     request_count = 0
@@ -1011,8 +1093,8 @@ async def test_release_wait_when_new_recorded_added():
     """Test that async_request returns as soon as new matching records are added to the cache."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    desc = {'path': '/~paulsm/'}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    desc = {"path": "/~paulsm/"}
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1049,7 +1131,7 @@ async def test_release_wait_when_new_recorded_added():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1059,7 +1141,7 @@ async def test_release_wait_when_new_recorded_added():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1067,7 +1149,7 @@ async def test_release_wait_when_new_recorded_added():
     await asyncio.sleep(0)
     aiozc.zeroconf.record_manager.async_updates_from_response(r.DNSIncoming(generated.packets()[0]))
     assert await asyncio.wait_for(task, timeout=2)
-    assert info.addresses == [b'\x7f\x00\x00\x01']
+    assert info.addresses == [b"\x7f\x00\x00\x01"]
     await aiozc.async_close()
 
 
@@ -1076,8 +1158,8 @@ async def test_port_changes_are_seen():
     """Test that port changes are seen by async_request."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    desc = {'path': '/~paulsm/'}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    desc = {"path": "/~paulsm/"}
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1112,7 +1194,7 @@ async def test_port_changes_are_seen():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1122,7 +1204,7 @@ async def test_port_changes_are_seen():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1159,8 +1241,8 @@ async def test_port_changes_are_seen_with_directed_request():
     """Test that port changes are seen by async_request with a directed request."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    desc = {'path': '/~paulsm/'}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    desc = {"path": "/~paulsm/"}
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1195,7 +1277,7 @@ async def test_port_changes_are_seen_with_directed_request():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1205,7 +1287,7 @@ async def test_port_changes_are_seen_with_directed_request():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1242,7 +1324,7 @@ async def test_ipv4_changes_are_seen():
     """Test that ipv4 changes are seen by async_request."""
     type_ = "_http._tcp.local."
     registration_name = "multiaipv4rec.%s" % type_
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1277,7 +1359,7 @@ async def test_ipv4_changes_are_seen():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1287,7 +1369,7 @@ async def test_ipv4_changes_are_seen():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1296,7 +1378,7 @@ async def test_ipv4_changes_are_seen():
     aiozc.zeroconf.record_manager.async_updates_from_response(r.DNSIncoming(generated.packets()[0]))
     info = ServiceInfo(type_, registration_name)
     info.load_from_cache(aiozc.zeroconf)
-    assert info.addresses_by_version(IPVersion.V4Only) == [b'\x7f\x00\x00\x01']
+    assert info.addresses_by_version(IPVersion.V4Only) == [b"\x7f\x00\x00\x01"]
 
     generated = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
     generated.add_answer_at_time(
@@ -1305,7 +1387,7 @@ async def test_ipv4_changes_are_seen():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x02',
+            b"\x7f\x00\x00\x02",
         ),
         0,
     )
@@ -1313,9 +1395,15 @@ async def test_ipv4_changes_are_seen():
 
     info = ServiceInfo(type_, registration_name)
     info.load_from_cache(aiozc.zeroconf)
-    assert info.addresses_by_version(IPVersion.V4Only) == [b'\x7f\x00\x00\x02', b'\x7f\x00\x00\x01']
+    assert info.addresses_by_version(IPVersion.V4Only) == [
+        b"\x7f\x00\x00\x02",
+        b"\x7f\x00\x00\x01",
+    ]
     await info.async_request(aiozc.zeroconf, timeout=200)
-    assert info.addresses_by_version(IPVersion.V4Only) == [b'\x7f\x00\x00\x02', b'\x7f\x00\x00\x01']
+    assert info.addresses_by_version(IPVersion.V4Only) == [
+        b"\x7f\x00\x00\x02",
+        b"\x7f\x00\x00\x01",
+    ]
     await aiozc.async_close()
 
 
@@ -1324,7 +1412,7 @@ async def test_ipv6_changes_are_seen():
     """Test that ipv6 changes are seen by async_request."""
     type_ = "_http._tcp.local."
     registration_name = "multiaipv6rec.%s" % type_
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1359,7 +1447,7 @@ async def test_ipv6_changes_are_seen():
             const._TYPE_AAAA,
             const._CLASS_IN,
             10000,
-            b'\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            b"\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
         ),
         0,
     )
@@ -1369,7 +1457,7 @@ async def test_ipv6_changes_are_seen():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1379,7 +1467,7 @@ async def test_ipv6_changes_are_seen():
     info = ServiceInfo(type_, registration_name)
     info.load_from_cache(aiozc.zeroconf)
     assert info.addresses_by_version(IPVersion.V6Only) == [
-        b'\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b"\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
     ]
 
     generated = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
@@ -1389,7 +1477,7 @@ async def test_ipv6_changes_are_seen():
             const._TYPE_AAAA,
             const._CLASS_IN,
             10000,
-            b'\x00\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            b"\x00\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
         ),
         0,
     )
@@ -1398,13 +1486,13 @@ async def test_ipv6_changes_are_seen():
     info = ServiceInfo(type_, registration_name)
     info.load_from_cache(aiozc.zeroconf)
     assert info.addresses_by_version(IPVersion.V6Only) == [
-        b'\x00\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-        b'\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        b"\x00\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
     ]
     await info.async_request(aiozc.zeroconf, timeout=200)
     assert info.addresses_by_version(IPVersion.V6Only) == [
-        b'\x00\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-        b'\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        b"\x00\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
     ]
     await aiozc.async_close()
 
@@ -1414,7 +1502,7 @@ async def test_bad_ip_addresses_ignored_in_cache():
     """Test that bad ip address in the cache are ignored async_request."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1438,7 +1526,7 @@ async def test_bad_ip_addresses_ignored_in_cache():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1448,19 +1536,19 @@ async def test_bad_ip_addresses_ignored_in_cache():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
     # Manually add a bad record to the cache
-    aiozc.zeroconf.cache.async_add_records([DNSAddress(host, const._TYPE_A, const._CLASS_IN, 10000, b'\x00')])
+    aiozc.zeroconf.cache.async_add_records([DNSAddress(host, const._TYPE_A, const._CLASS_IN, 10000, b"\x00")])
 
     await aiozc.zeroconf.async_wait_for_start()
     await asyncio.sleep(0)
     aiozc.zeroconf.record_manager.async_updates_from_response(r.DNSIncoming(generated.packets()[0]))
     info = ServiceInfo(type_, registration_name)
     info.load_from_cache(aiozc.zeroconf)
-    assert info.addresses_by_version(IPVersion.V4Only) == [b'\x7f\x00\x00\x01']
+    assert info.addresses_by_version(IPVersion.V4Only) == [b"\x7f\x00\x00\x01"]
 
 
 @pytest.mark.asyncio
@@ -1468,7 +1556,7 @@ async def test_service_name_change_as_seen_has_ip_in_cache():
     """Test that service name changes are seen by async_request when the ip is in the cache."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1490,7 +1578,7 @@ async def test_service_name_change_as_seen_has_ip_in_cache():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1500,7 +1588,7 @@ async def test_service_name_change_as_seen_has_ip_in_cache():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x02',
+            b"\x7f\x00\x00\x02",
         ),
         0,
     )
@@ -1510,7 +1598,7 @@ async def test_service_name_change_as_seen_has_ip_in_cache():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1540,7 +1628,7 @@ async def test_service_name_change_as_seen_has_ip_in_cache():
 
     info = ServiceInfo(type_, registration_name)
     await info.async_request(aiozc.zeroconf, timeout=200)
-    assert info.addresses_by_version(IPVersion.V4Only) == [b'\x7f\x00\x00\x02']
+    assert info.addresses_by_version(IPVersion.V4Only) == [b"\x7f\x00\x00\x02"]
 
     await aiozc.async_close()
 
@@ -1550,7 +1638,7 @@ async def test_service_name_change_as_seen_ip_not_in_cache():
     """Test that service name changes are seen by async_request when the ip is not in the cache."""
     type_ = "_http._tcp.local."
     registration_name = "multiarec.%s" % type_
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
@@ -1572,7 +1660,7 @@ async def test_service_name_change_as_seen_ip_not_in_cache():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1582,7 +1670,7 @@ async def test_service_name_change_as_seen_ip_not_in_cache():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1614,7 +1702,7 @@ async def test_service_name_change_as_seen_ip_not_in_cache():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x02',
+            b"\x7f\x00\x00\x02",
         ),
         0,
     )
@@ -1622,7 +1710,7 @@ async def test_service_name_change_as_seen_ip_not_in_cache():
 
     info = ServiceInfo(type_, registration_name)
     await info.async_request(aiozc.zeroconf, timeout=200)
-    assert info.addresses_by_version(IPVersion.V4Only) == [b'\x7f\x00\x00\x02']
+    assert info.addresses_by_version(IPVersion.V4Only) == [b"\x7f\x00\x00\x02"]
 
     await aiozc.async_close()
 
@@ -1633,8 +1721,8 @@ async def test_release_wait_when_new_recorded_added_concurrency():
     """Test that concurrent async_request returns as soon as new matching records are added to the cache."""
     type_ = "_http._tcp.local."
     registration_name = "multiareccon.%s" % type_
-    desc = {'path': '/~paulsm/'}
-    aiozc = AsyncZeroconf(interfaces=['127.0.0.1'])
+    desc = {"path": "/~paulsm/"}
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahostcon.local."
     await aiozc.zeroconf.async_wait_for_start()
 
@@ -1675,7 +1763,7 @@ async def test_release_wait_when_new_recorded_added_concurrency():
             const._TYPE_A,
             const._CLASS_IN,
             10000,
-            b'\x7f\x00\x00\x01',
+            b"\x7f\x00\x00\x01",
         ),
         0,
     )
@@ -1685,7 +1773,7 @@ async def test_release_wait_when_new_recorded_added_concurrency():
             const._TYPE_TXT,
             const._CLASS_IN | const._CLASS_UNIQUE,
             10000,
-            b'\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==',
+            b"\x04ff=0\x04ci=2\x04sf=0\x0bsh=6fLM5A==",
         ),
         0,
     )
@@ -1695,7 +1783,7 @@ async def test_release_wait_when_new_recorded_added_concurrency():
     aiozc.zeroconf.record_manager.async_updates_from_response(r.DNSIncoming(generated.packets()[0]))
     _, pending = await asyncio.wait(tasks, timeout=2)
     assert not pending
-    assert info.addresses == [b'\x7f\x00\x00\x01']
+    assert info.addresses == [b"\x7f\x00\x00\x01"]
     await aiozc.async_close()
 
 
@@ -1704,7 +1792,7 @@ async def test_service_info_nsec_records():
     """Test we can generate nsec records from ServiceInfo."""
     type_ = "_http._tcp.local."
     registration_name = "multiareccon.%s" % type_
-    desc = {'path': '/~paulsm/'}
+    desc = {"path": "/~paulsm/"}
     host = "multahostcon.local."
     info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
     nsec_record = info.dns_nsec([const._TYPE_A, const._TYPE_AAAA], 50)
