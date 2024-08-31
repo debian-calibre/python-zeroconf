@@ -12,33 +12,33 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index 1afe6d5..fb1b003 100644
+index f50ea42..dd73b27 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
 @@ -92,6 +92,7 @@ def test_integration_with_listener_v6_records(disable_duplicate_packet_suppressi
  
- @unittest.skipIf(not has_working_ipv6() or sys.platform == 'win32', 'Requires IPv6')
- @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+@unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
+ @unittest.skipIf(not has_working_ipv6() or sys.platform == "win32", "Requires IPv6")
+ @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
++@unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
  def test_integration_with_listener_ipv6(disable_duplicate_packet_suppression):
      type_ = "_test-listenv6ip-type._tcp.local."
      name = "xxxyyy"
 diff --git a/tests/test_core.py b/tests/test_core.py
-index de4b2ef..e41ed92 100644
+index fc2685f..cbfbc21 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
 @@ -62,12 +62,14 @@ def threadsafe_query(
  
  
  class Framework(unittest.TestCase):
-+    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
++    @unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
      def test_launch_and_close(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All)
          rv.close()
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
          rv.close()
  
-+    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
++    @unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
      def test_launch_and_close_context_manager(self):
          with r.Zeroconf(interfaces=r.InterfaceChoice.All) as rv:
              assert rv.done is False
@@ -46,23 +46,23 @@ index de4b2ef..e41ed92 100644
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default, unicast=True)
          rv.close()
  
-+    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
++    @unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
      def test_close_multiple_times(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
          rv.close()
 @@ -90,6 +93,7 @@ class Framework(unittest.TestCase):
  
-     @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
-     @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
+     @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
+     @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
++    @unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
      def test_launch_and_close_v4_v6(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.All)
          rv.close()
 @@ -98,6 +102,7 @@ class Framework(unittest.TestCase):
  
-     @unittest.skipIf(not has_working_ipv6(), 'Requires IPv6')
-     @unittest.skipIf(os.environ.get('SKIP_IPV6'), 'IPv6 tests disabled')
-+    @unittest.skipIf(os.environ.get('DEBIAN_TEST'), 'disabled by Debian builder')
+     @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
+     @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
++    @unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
      def test_launch_and_close_v6_only(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.V6Only)
          rv.close()
