@@ -1,23 +1,23 @@
-""" Multicast DNS Service Discovery for Python, v0.14-wmcbrine
-    Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
+"""Multicast DNS Service Discovery for Python, v0.14-wmcbrine
+Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
 
-    This module provides a framework for the use of DNS Service Discovery
-    using IP multicast.
+This module provides a framework for the use of DNS Service Discovery
+using IP multicast.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-    USA
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
 """
 
 import asyncio
@@ -28,7 +28,7 @@ import threading
 import time
 import warnings
 from functools import partial
-from types import TracebackType  # noqa # used in type hints
+from types import TracebackType  # used in type hints
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -105,11 +105,22 @@ heappush = heapq.heappush
 
 
 class _ScheduledPTRQuery:
-
-    __slots__ = ('alias', 'name', 'ttl', 'cancelled', 'expire_time_millis', 'when_millis')
+    __slots__ = (
+        "alias",
+        "name",
+        "ttl",
+        "cancelled",
+        "expire_time_millis",
+        "when_millis",
+    )
 
     def __init__(
-        self, alias: str, name: str, ttl: int, expire_time_millis: float, when_millis: float
+        self,
+        alias: str,
+        name: str,
+        ttl: int,
+        expire_time_millis: float,
+        when_millis: float,
     ) -> None:
         """Create a scheduled query."""
         self.alias = alias
@@ -144,13 +155,13 @@ class _ScheduledPTRQuery:
             ">"
         )
 
-    def __lt__(self, other: '_ScheduledPTRQuery') -> bool:
+    def __lt__(self, other: "_ScheduledPTRQuery") -> bool:
         """Compare two scheduled queries."""
         if type(other) is _ScheduledPTRQuery:
             return self.when_millis < other.when_millis
         return NotImplemented
 
-    def __le__(self, other: '_ScheduledPTRQuery') -> bool:
+    def __le__(self, other: "_ScheduledPTRQuery") -> bool:
         """Compare two scheduled queries."""
         if type(other) is _ScheduledPTRQuery:
             return self.when_millis < other.when_millis or self.__eq__(other)
@@ -162,13 +173,13 @@ class _ScheduledPTRQuery:
             return self.when_millis == other.when_millis
         return NotImplemented
 
-    def __ge__(self, other: '_ScheduledPTRQuery') -> bool:
+    def __ge__(self, other: "_ScheduledPTRQuery") -> bool:
         """Compare two scheduled queries."""
         if type(other) is _ScheduledPTRQuery:
             return self.when_millis > other.when_millis or self.__eq__(other)
         return NotImplemented
 
-    def __gt__(self, other: '_ScheduledPTRQuery') -> bool:
+    def __gt__(self, other: "_ScheduledPTRQuery") -> bool:
         """Compare two scheduled queries."""
         if type(other) is _ScheduledPTRQuery:
             return self.when_millis > other.when_millis
@@ -178,7 +189,7 @@ class _ScheduledPTRQuery:
 class _DNSPointerOutgoingBucket:
     """A DNSOutgoing bucket."""
 
-    __slots__ = ('now_millis', 'out', 'bytes')
+    __slots__ = ("now_millis", "out", "bytes")
 
     def __init__(self, now_millis: float, multicast: bool) -> None:
         """Create a bucket to wrap a DNSOutgoing."""
@@ -195,7 +206,9 @@ class _DNSPointerOutgoingBucket:
 
 
 def group_ptr_queries_with_known_answers(
-    now: float_, multicast: bool_, question_with_known_answers: _QuestionWithKnownAnswers
+    now: float_,
+    multicast: bool_,
+    question_with_known_answers: _QuestionWithKnownAnswers,
 ) -> List[DNSOutgoing]:
     """Aggregate queries so that as many known answers as possible fit in the same packet
     without having known answers spill over into the next packet unless the
@@ -209,7 +222,9 @@ def group_ptr_queries_with_known_answers(
 
 
 def _group_ptr_queries_with_known_answers(
-    now_millis: float_, multicast: bool_, question_with_known_answers: _QuestionWithKnownAnswers
+    now_millis: float_,
+    multicast: bool_,
+    question_with_known_answers: _QuestionWithKnownAnswers,
 ) -> List[DNSOutgoing]:
     """Inner wrapper for group_ptr_queries_with_known_answers."""
     # This is the maximum size the query + known answers can be with name compression.
@@ -246,7 +261,7 @@ def _group_ptr_queries_with_known_answers(
 
 
 def generate_service_query(
-    zc: 'Zeroconf',
+    zc: "Zeroconf",
     now_millis: float_,
     types_: Set[str],
     multicast: bool,
@@ -281,7 +296,7 @@ def generate_service_query(
 
 def _on_change_dispatcher(
     listener: ServiceListener,
-    zeroconf: 'Zeroconf',
+    zeroconf: "Zeroconf",
     service_type: str,
     name: str,
     state_change: ServiceStateChange,
@@ -290,14 +305,17 @@ def _on_change_dispatcher(
     getattr(listener, _ON_CHANGE_DISPATCH[state_change])(zeroconf, service_type, name)
 
 
-def _service_state_changed_from_listener(listener: ServiceListener) -> Callable[..., None]:
+def _service_state_changed_from_listener(
+    listener: ServiceListener,
+) -> Callable[..., None]:
     """Generate a service_state_changed handlers from a listener."""
     assert listener is not None
-    if not hasattr(listener, 'update_service'):
+    if not hasattr(listener, "update_service"):
         warnings.warn(
-            "%r has no update_service method. Provide one (it can be empty if you "
-            "don't care about the updates), it'll become mandatory." % (listener,),
+            f"{listener!r} has no update_service method. Provide one (it can be empty if you "
+            "don't care about the updates), it'll become mandatory.",
             FutureWarning,
+            stacklevel=1,
         )
     return partial(_on_change_dispatcher, listener)
 
@@ -310,20 +328,20 @@ class QueryScheduler:
     """
 
     __slots__ = (
-        '_zc',
-        '_types',
-        '_addr',
-        '_port',
-        '_multicast',
-        '_first_random_delay_interval',
-        '_min_time_between_queries_millis',
-        '_loop',
-        '_startup_queries_sent',
-        '_next_scheduled_for_alias',
-        '_query_heap',
-        '_next_run',
-        '_clock_resolution_millis',
-        '_question_type',
+        "_zc",
+        "_types",
+        "_addr",
+        "_port",
+        "_multicast",
+        "_first_random_delay_interval",
+        "_min_time_between_queries_millis",
+        "_loop",
+        "_startup_queries_sent",
+        "_next_scheduled_for_alias",
+        "_query_heap",
+        "_next_run",
+        "_clock_resolution_millis",
+        "_question_type",
     )
 
     def __init__(
@@ -349,7 +367,7 @@ class QueryScheduler:
         self._next_scheduled_for_alias: Dict[str, _ScheduledPTRQuery] = {}
         self._query_heap: list[_ScheduledPTRQuery] = []
         self._next_run: Optional[asyncio.TimerHandle] = None
-        self._clock_resolution_millis = time.get_clock_info('monotonic').resolution * 1000
+        self._clock_resolution_millis = time.get_clock_info("monotonic").resolution * 1000
         self._question_type = question_type
 
     def start(self, loop: asyncio.AbstractEventLoop) -> None:
@@ -362,7 +380,7 @@ class QueryScheduler:
         also delay the first query of the series by a randomly chosen amount
         in the range 20-120 ms.
         """
-        start_delay = millis_to_seconds(random.randint(*self._first_random_delay_interval))
+        start_delay = millis_to_seconds(random.randint(*self._first_random_delay_interval))  # noqa: S311
         self._loop = loop
         self._next_run = loop.call_later(start_delay, self._process_startup_queries)
 
@@ -375,7 +393,10 @@ class QueryScheduler:
         self._query_heap.clear()
 
     def _schedule_ptr_refresh(
-        self, pointer: DNSPointer, expire_time_millis: float_, refresh_time_millis: float_
+        self,
+        pointer: DNSPointer,
+        expire_time_millis: float_,
+        refresh_time_millis: float_,
     ) -> None:
         """Schedule a query for a pointer."""
         ttl = int(pointer.ttl) if isinstance(pointer.ttl, float) else pointer.ttl
@@ -414,7 +435,10 @@ class QueryScheduler:
         self._schedule_ptr_refresh(pointer, expire_time_millis, refresh_time_millis)
 
     def schedule_rescue_query(
-        self, query: _ScheduledPTRQuery, now_millis: float_, additional_percentage: float_
+        self,
+        query: _ScheduledPTRQuery,
+        now_millis: float_,
+        additional_percentage: float_,
     ) -> None:
         """Reschedule a query for a pointer at an additional percentage of expiration."""
         ttl_millis = query.ttl * 1000
@@ -426,7 +450,11 @@ class QueryScheduler:
             # tried to rescue the record and failed
             return
         scheduled_ptr_query = _ScheduledPTRQuery(
-            query.alias, query.name, query.ttl, query.expire_time_millis, next_query_time
+            query.alias,
+            query.name,
+            query.ttl,
+            query.expire_time_millis,
+            next_query_time,
         )
         self._schedule_ptr_query(scheduled_ptr_query)
 
@@ -528,20 +556,20 @@ class _ServiceBrowserBase(RecordUpdateListener):
     """Base class for ServiceBrowser."""
 
     __slots__ = (
-        'types',
-        'zc',
-        '_cache',
-        '_loop',
-        '_pending_handlers',
-        '_service_state_changed',
-        'query_scheduler',
-        'done',
-        '_query_sender_task',
+        "types",
+        "zc",
+        "_cache",
+        "_loop",
+        "_pending_handlers",
+        "_service_state_changed",
+        "query_scheduler",
+        "done",
+        "_query_sender_task",
     )
 
     def __init__(
         self,
-        zc: 'Zeroconf',
+        zc: "Zeroconf",
         type_: Union[str, list],
         handlers: Optional[Union[ServiceListener, List[Callable[..., None]]]] = None,
         listener: Optional[ServiceListener] = None,
@@ -567,7 +595,7 @@ class _ServiceBrowserBase(RecordUpdateListener):
         remove_service() methods called when this browser
         discovers changes in the services availability.
         """
-        assert handlers or listener, 'You need to specify at least one handler'
+        assert handlers or listener, "You need to specify at least one handler"
         self.types: Set[str] = set(type_ if isinstance(type_, list) else [type_])
         for check_type_ in self.types:
             # Will generate BadTypeInNameException on a bad name
@@ -591,8 +619,8 @@ class _ServiceBrowserBase(RecordUpdateListener):
         self.done = False
         self._query_sender_task: Optional[asyncio.Task] = None
 
-        if hasattr(handlers, 'add_service'):
-            listener = cast('ServiceListener', handlers)
+        if hasattr(handlers, "add_service"):
+            listener = cast("ServiceListener", handlers)
             handlers = None
 
         handlers = cast(List[Callable[..., None]], handlers or [])
@@ -642,7 +670,7 @@ class _ServiceBrowserBase(RecordUpdateListener):
         ):
             self._pending_handlers[key] = state_change
 
-    def async_update_records(self, zc: 'Zeroconf', now: float_, records: List[RecordUpdate]) -> None:
+    def async_update_records(self, zc: "Zeroconf", now: float_, records: List[RecordUpdate]) -> None:
         """Callback invoked by Zeroconf when new information arrives.
 
         Updates information required by browser in the Zeroconf cache.
@@ -741,7 +769,7 @@ class ServiceBrowser(_ServiceBrowserBase, threading.Thread):
 
     def __init__(
         self,
-        zc: 'Zeroconf',
+        zc: "Zeroconf",
         type_: Union[str, list],
         handlers: Optional[Union[ServiceListener, List[Callable[..., None]]]] = None,
         listener: Optional[ServiceListener] = None,
@@ -763,8 +791,8 @@ class ServiceBrowser(_ServiceBrowserBase, threading.Thread):
         self.start()
         zc.loop.call_soon_threadsafe(self._async_start)
         self.name = "zeroconf-ServiceBrowser-{}-{}".format(
-            '-'.join([type_[:-7] for type_ in self.types]),
-            getattr(self, 'native_id', self.ident),
+            "-".join([type_[:-7] for type_ in self.types]),
+            getattr(self, "native_id", self.ident),
         )
 
     def cancel(self) -> None:
@@ -793,7 +821,7 @@ class ServiceBrowser(_ServiceBrowserBase, threading.Thread):
             self.queue.put(pending)
         self._pending_handlers.clear()
 
-    def __enter__(self) -> 'ServiceBrowser':
+    def __enter__(self) -> "ServiceBrowser":
         return self
 
     def __exit__(  # pylint: disable=useless-return

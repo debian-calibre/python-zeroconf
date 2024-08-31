@@ -29,7 +29,7 @@ async def test_async_get_all_tasks() -> None:
     loop = aioutils.get_running_loop()
     assert loop is not None
     await aioutils._async_get_all_tasks(loop)
-    if not hasattr(asyncio, 'all_tasks'):
+    if not hasattr(asyncio, "all_tasks"):
         return
     with patch("zeroconf._utils.asyncio.asyncio.all_tasks", side_effect=RuntimeError):
         await aioutils._async_get_all_tasks(loop)

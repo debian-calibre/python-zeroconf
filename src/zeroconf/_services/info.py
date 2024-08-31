@@ -1,23 +1,23 @@
-""" Multicast DNS Service Discovery for Python, v0.14-wmcbrine
-    Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
+"""Multicast DNS Service Discovery for Python, v0.14-wmcbrine
+Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
 
-    This module provides a framework for the use of DNS Service Discovery
-    using IP multicast.
+This module provides a framework for the use of DNS Service Discovery
+using IP multicast.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-    USA
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
 """
 
 import asyncio
@@ -168,7 +168,7 @@ class ServiceInfo(RecordUpdateListener):
         port: Optional[int] = None,
         weight: int = 0,
         priority: int = 0,
-        properties: Union[bytes, Dict] = b'',
+        properties: Union[bytes, Dict] = b"",
         server: Optional[str] = None,
         host_ttl: int = _DNS_HOST_TTL,
         other_ttl: int = _DNS_OTHER_TTL,
@@ -183,7 +183,7 @@ class ServiceInfo(RecordUpdateListener):
         if not type_.endswith(service_type_name(name, strict=False)):
             raise BadTypeInNameException
         self.interface_index = interface_index
-        self.text = b''
+        self.text = b""
         self.type = type_
         self._name = name
         self.key = name.lower()
@@ -369,21 +369,21 @@ class ServiceInfo(RecordUpdateListener):
         """Sets properties and text of this info from a dictionary"""
         list_: List[bytes] = []
         properties_contain_str = False
-        result = b''
+        result = b""
         for key, value in properties.items():
             if isinstance(key, str):
-                key = key.encode('utf-8')
+                key = key.encode("utf-8")
                 properties_contain_str = True
 
             record = key
             if value is not None:
                 if not isinstance(value, bytes):
-                    value = str(value).encode('utf-8')
+                    value = str(value).encode("utf-8")
                     properties_contain_str = True
-                record += b'=' + value
+                record += b"=" + value
             list_.append(record)
         for item in list_:
-            result = b''.join((result, bytes((len(item),)), item))
+            result = b"".join((result, bytes((len(item),)), item))
         if not properties_contain_str:
             # If there are no str keys or values, we can use the properties
             # as-is, without decoding them, otherwise calling
@@ -426,7 +426,7 @@ class ServiceInfo(RecordUpdateListener):
             length = text[index]
             index += 1
             key_value = text[index : index + length]
-            key_sep_value = key_value.partition(b'=')
+            key_sep_value = key_value.partition(b"=")
             key = key_sep_value[0]
             if key not in properties:
                 properties[key] = key_sep_value[2] or None
@@ -439,7 +439,7 @@ class ServiceInfo(RecordUpdateListener):
         return self._name[: len(self._name) - len(self.type) - 1]
 
     def _get_ip_addresses_from_cache_lifo(
-        self, zc: 'Zeroconf', now: float_, type: int_
+        self, zc: "Zeroconf", now: float_, type: int_
     ) -> List[Union[IPv4Address, IPv6Address]]:
         """Set IPv6 addresses from the cache."""
         address_list: List[Union[IPv4Address, IPv6Address]] = []
@@ -452,25 +452,27 @@ class ServiceInfo(RecordUpdateListener):
         address_list.reverse()  # Reverse to get LIFO order
         return address_list
 
-    def _set_ipv6_addresses_from_cache(self, zc: 'Zeroconf', now: float_) -> None:
+    def _set_ipv6_addresses_from_cache(self, zc: "Zeroconf", now: float_) -> None:
         """Set IPv6 addresses from the cache."""
         if TYPE_CHECKING:
             self._ipv6_addresses = cast(
-                "List[IPv6Address]", self._get_ip_addresses_from_cache_lifo(zc, now, _TYPE_AAAA)
+                "List[IPv6Address]",
+                self._get_ip_addresses_from_cache_lifo(zc, now, _TYPE_AAAA),
             )
         else:
             self._ipv6_addresses = self._get_ip_addresses_from_cache_lifo(zc, now, _TYPE_AAAA)
 
-    def _set_ipv4_addresses_from_cache(self, zc: 'Zeroconf', now: float_) -> None:
+    def _set_ipv4_addresses_from_cache(self, zc: "Zeroconf", now: float_) -> None:
         """Set IPv4 addresses from the cache."""
         if TYPE_CHECKING:
             self._ipv4_addresses = cast(
-                "List[IPv4Address]", self._get_ip_addresses_from_cache_lifo(zc, now, _TYPE_A)
+                "List[IPv4Address]",
+                self._get_ip_addresses_from_cache_lifo(zc, now, _TYPE_A),
             )
         else:
             self._ipv4_addresses = self._get_ip_addresses_from_cache_lifo(zc, now, _TYPE_A)
 
-    def async_update_records(self, zc: 'Zeroconf', now: float_, records: List[RecordUpdate]) -> None:
+    def async_update_records(self, zc: "Zeroconf", now: float_, records: List[RecordUpdate]) -> None:
         """Updates service information from a DNS record.
 
         This method will be run in the event loop.
@@ -482,7 +484,7 @@ class ServiceInfo(RecordUpdateListener):
         if updated and new_records_futures:
             _resolve_all_futures_to_none(new_records_futures)
 
-    def _process_record_threadsafe(self, zc: 'Zeroconf', record: DNSRecord, now: float_) -> bool:
+    def _process_record_threadsafe(self, zc: "Zeroconf", record: DNSRecord, now: float_) -> bool:
         """Thread safe record updating.
 
         Returns True if a new record was added.
@@ -701,13 +703,16 @@ class ServiceInfo(RecordUpdateListener):
             self._get_address_and_nsec_records_cache = records
         return records
 
-    def _get_address_records_from_cache_by_type(self, zc: 'Zeroconf', _type: int_) -> List[DNSAddress]:
+    def _get_address_records_from_cache_by_type(self, zc: "Zeroconf", _type: int_) -> List[DNSAddress]:
         """Get the addresses from the cache."""
         if self.server_key is None:
             return []
         cache = zc.cache
         if TYPE_CHECKING:
-            records = cast("List[DNSAddress]", cache.get_all_by_details(self.server_key, _type, _CLASS_IN))
+            records = cast(
+                "List[DNSAddress]",
+                cache.get_all_by_details(self.server_key, _type, _CLASS_IN),
+            )
         else:
             records = cache.get_all_by_details(self.server_key, _type, _CLASS_IN)
         return records
@@ -721,14 +726,14 @@ class ServiceInfo(RecordUpdateListener):
             self.server = self._name
             self.server_key = self.key
 
-    def load_from_cache(self, zc: 'Zeroconf', now: Optional[float_] = None) -> bool:
+    def load_from_cache(self, zc: "Zeroconf", now: Optional[float_] = None) -> bool:
         """Populate the service info from the cache.
 
         This method is designed to be threadsafe.
         """
         return self._load_from_cache(zc, now or current_time_millis())
 
-    def _load_from_cache(self, zc: 'Zeroconf', now: float_) -> bool:
+    def _load_from_cache(self, zc: "Zeroconf", now: float_) -> bool:
         """Populate the service info from the cache.
 
         This method is designed to be threadsafe.
@@ -758,7 +763,7 @@ class ServiceInfo(RecordUpdateListener):
 
     def request(
         self,
-        zc: 'Zeroconf',
+        zc: "Zeroconf",
         timeout: float,
         question_type: Optional[DNSQuestionType] = None,
         addr: Optional[str] = None,
@@ -782,7 +787,9 @@ class ServiceInfo(RecordUpdateListener):
             raise RuntimeError("Use AsyncServiceInfo.async_request from the event loop")
         return bool(
             run_coro_with_timeout(
-                self.async_request(zc, timeout, question_type, addr, port), zc.loop, timeout
+                self.async_request(zc, timeout, question_type, addr, port),
+                zc.loop,
+                timeout,
             )
         )
 
@@ -794,7 +801,7 @@ class ServiceInfo(RecordUpdateListener):
 
     async def async_request(
         self,
-        zc: 'Zeroconf',
+        zc: "Zeroconf",
         timeout: float,
         question_type: Optional[DNSQuestionType] = None,
         addr: Optional[str] = None,
@@ -894,7 +901,7 @@ class ServiceInfo(RecordUpdateListener):
             out.add_answer_at_time(answer, now)
 
     def _generate_request_query(
-        self, zc: 'Zeroconf', now: float_, question_type: DNSQuestionType
+        self, zc: "Zeroconf", now: float_, question_type: DNSQuestionType
     ) -> DNSOutgoing:
         """Generate the request query."""
         out = DNSOutgoing(_FLAGS_QR_QUERY)
@@ -919,20 +926,20 @@ class ServiceInfo(RecordUpdateListener):
 
     def __repr__(self) -> str:
         """String representation"""
-        return '{}({})'.format(
+        return "{}({})".format(
             type(self).__name__,
-            ', '.join(
-                f'{name}={getattr(self, name)!r}'
+            ", ".join(
+                f"{name}={getattr(self, name)!r}"
                 for name in (
-                    'type',
-                    'name',
-                    'addresses',
-                    'port',
-                    'weight',
-                    'priority',
-                    'server',
-                    'properties',
-                    'interface_index',
+                    "type",
+                    "name",
+                    "addresses",
+                    "port",
+                    "weight",
+                    "priority",
+                    "server",
+                    "properties",
+                    "interface_index",
                 )
             ),
         )

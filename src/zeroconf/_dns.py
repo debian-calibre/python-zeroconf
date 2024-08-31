@@ -1,23 +1,23 @@
-""" Multicast DNS Service Discovery for Python, v0.14-wmcbrine
-    Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
+"""Multicast DNS Service Discovery for Python, v0.14-wmcbrine
+Copyright 2003 Paul Scott-Murphy, 2014 William McBrine
 
-    This module provides a framework for the use of DNS Service Discovery
-    using IP multicast.
+This module provides a framework for the use of DNS Service Discovery
+using IP multicast.
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-    USA
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+USA
 """
 
 import enum
@@ -62,10 +62,9 @@ class DNSQuestionType(enum.Enum):
 
 
 class DNSEntry:
-
     """A DNS entry"""
 
-    __slots__ = ('key', 'name', 'type', 'class_', 'unique')
+    __slots__ = ("key", "name", "type", "class_", "unique")
 
     def __init__(self, name: str, type_: int, class_: int) -> None:
         self.name = name
@@ -107,16 +106,15 @@ class DNSEntry:
 
 
 class DNSQuestion(DNSEntry):
-
     """A DNS question entry"""
 
-    __slots__ = ('_hash',)
+    __slots__ = ("_hash",)
 
     def __init__(self, name: str, type_: int, class_: int) -> None:
         super().__init__(name, type_, class_)
         self._hash = hash((self.key, type_, self.class_))
 
-    def answered_by(self, rec: 'DNSRecord') -> bool:
+    def answered_by(self, rec: "DNSRecord") -> bool:
         """Returns true if the question is answered by the record"""
         return self.class_ == rec.class_ and self.type in (rec.type, _TYPE_ANY) and self.name == rec.name
 
@@ -130,7 +128,7 @@ class DNSQuestion(DNSEntry):
     @property
     def max_size(self) -> int:
         """Maximum size of the question in the packet."""
-        return len(self.name.encode('utf-8')) + _LEN_BYTE + _LEN_SHORT + _LEN_SHORT  # type  # class
+        return len(self.name.encode("utf-8")) + _LEN_BYTE + _LEN_SHORT + _LEN_SHORT  # type  # class
 
     @property
     def unicast(self) -> bool:
@@ -157,14 +155,18 @@ class DNSQuestion(DNSEntry):
 
 
 class DNSRecord(DNSEntry):
-
     """A DNS record - like a DNS entry, but has a TTL"""
 
-    __slots__ = ('ttl', 'created')
+    __slots__ = ("ttl", "created")
 
     # TODO: Switch to just int ttl
     def __init__(
-        self, name: str, type_: int, class_: int, ttl: Union[float, int], created: Optional[float] = None
+        self,
+        name: str,
+        type_: int,
+        class_: int,
+        ttl: Union[float, int],
+        created: Optional[float] = None,
     ) -> None:
         super().__init__(name, type_, class_)
         self.ttl = ttl
@@ -174,7 +176,7 @@ class DNSRecord(DNSEntry):
         """Abstract method"""
         raise AbstractMethodException
 
-    def suppressed_by(self, msg: 'DNSIncoming') -> bool:
+    def suppressed_by(self, msg: "DNSIncoming") -> bool:
         """Returns true if any answer in a message can suffice for the
         information held in this record."""
         answers = msg.answers()
@@ -221,7 +223,7 @@ class DNSRecord(DNSEntry):
         self.created = created
         self.ttl = ttl
 
-    def write(self, out: 'DNSOutgoing') -> None:  # pylint: disable=no-self-use
+    def write(self, out: "DNSOutgoing") -> None:  # pylint: disable=no-self-use
         """Abstract method"""
         raise AbstractMethodException
 
@@ -232,10 +234,9 @@ class DNSRecord(DNSEntry):
 
 
 class DNSAddress(DNSRecord):
-
     """A DNS address record"""
 
-    __slots__ = ('_hash', 'address', 'scope_id')
+    __slots__ = ("_hash", "address", "scope_id")
 
     def __init__(
         self,
@@ -252,7 +253,7 @@ class DNSAddress(DNSRecord):
         self.scope_id = scope_id
         self._hash = hash((self.key, type_, self.class_, address, scope_id))
 
-    def write(self, out: 'DNSOutgoing') -> None:
+    def write(self, out: "DNSOutgoing") -> None:
         """Used in constructing an outgoing packet"""
         out.write_string(self.address)
 
@@ -276,7 +277,8 @@ class DNSAddress(DNSRecord):
         try:
             return self.to_string(
                 socket.inet_ntop(
-                    socket.AF_INET6 if _is_v6_address(self.address) else socket.AF_INET, self.address
+                    socket.AF_INET6 if _is_v6_address(self.address) else socket.AF_INET,
+                    self.address,
                 )
             )
         except (ValueError, OSError):
@@ -284,23 +286,29 @@ class DNSAddress(DNSRecord):
 
 
 class DNSHinfo(DNSRecord):
-
     """A DNS host information record"""
 
-    __slots__ = ('_hash', 'cpu', 'os')
+    __slots__ = ("_hash", "cpu", "os")
 
     def __init__(
-        self, name: str, type_: int, class_: int, ttl: int, cpu: str, os: str, created: Optional[float] = None
+        self,
+        name: str,
+        type_: int,
+        class_: int,
+        ttl: int,
+        cpu: str,
+        os: str,
+        created: Optional[float] = None,
     ) -> None:
         super().__init__(name, type_, class_, ttl, created)
         self.cpu = cpu
         self.os = os
         self._hash = hash((self.key, type_, self.class_, cpu, os))
 
-    def write(self, out: 'DNSOutgoing') -> None:
+    def write(self, out: "DNSOutgoing") -> None:
         """Used in constructing an outgoing packet"""
-        out.write_character_string(self.cpu.encode('utf-8'))
-        out.write_character_string(self.os.encode('utf-8'))
+        out.write_character_string(self.cpu.encode("utf-8"))
+        out.write_character_string(self.os.encode("utf-8"))
 
     def __eq__(self, other: Any) -> bool:
         """Tests equality on cpu and os."""
@@ -320,13 +328,18 @@ class DNSHinfo(DNSRecord):
 
 
 class DNSPointer(DNSRecord):
-
     """A DNS pointer record"""
 
-    __slots__ = ('_hash', 'alias', 'alias_key')
+    __slots__ = ("_hash", "alias", "alias_key")
 
     def __init__(
-        self, name: str, type_: int, class_: int, ttl: int, alias: str, created: Optional[float] = None
+        self,
+        name: str,
+        type_: int,
+        class_: int,
+        ttl: int,
+        alias: str,
+        created: Optional[float] = None,
     ) -> None:
         super().__init__(name, type_, class_, ttl, created)
         self.alias = alias
@@ -343,7 +356,7 @@ class DNSPointer(DNSRecord):
             + _NAME_COMPRESSION_MIN_SIZE
         )
 
-    def write(self, out: 'DNSOutgoing') -> None:
+    def write(self, out: "DNSOutgoing") -> None:
         """Used in constructing an outgoing packet"""
         out.write_name(self.alias)
 
@@ -365,19 +378,24 @@ class DNSPointer(DNSRecord):
 
 
 class DNSText(DNSRecord):
-
     """A DNS text record"""
 
-    __slots__ = ('_hash', 'text')
+    __slots__ = ("_hash", "text")
 
     def __init__(
-        self, name: str, type_: int, class_: int, ttl: int, text: bytes, created: Optional[float] = None
+        self,
+        name: str,
+        type_: int,
+        class_: int,
+        ttl: int,
+        text: bytes,
+        created: Optional[float] = None,
     ) -> None:
         super().__init__(name, type_, class_, ttl, created)
         self.text = text
         self._hash = hash((self.key, type_, self.class_, text))
 
-    def write(self, out: 'DNSOutgoing') -> None:
+    def write(self, out: "DNSOutgoing") -> None:
         """Used in constructing an outgoing packet"""
         out.write_string(self.text)
 
@@ -401,10 +419,9 @@ class DNSText(DNSRecord):
 
 
 class DNSService(DNSRecord):
-
     """A DNS service record"""
 
-    __slots__ = ('_hash', 'priority', 'weight', 'port', 'server', 'server_key')
+    __slots__ = ("_hash", "priority", "weight", "port", "server", "server_key")
 
     def __init__(
         self,
@@ -426,7 +443,7 @@ class DNSService(DNSRecord):
         self.server_key = server.lower()
         self._hash = hash((self.key, type_, self.class_, priority, weight, port, self.server_key))
 
-    def write(self, out: 'DNSOutgoing') -> None:
+    def write(self, out: "DNSOutgoing") -> None:
         """Used in constructing an outgoing packet"""
         out.write_short(self.priority)
         out.write_short(self.weight)
@@ -457,10 +474,9 @@ class DNSService(DNSRecord):
 
 
 class DNSNsec(DNSRecord):
-
     """A DNS NSEC record"""
 
-    __slots__ = ('_hash', 'next_name', 'rdtypes')
+    __slots__ = ("_hash", "next_name", "rdtypes")
 
     def __init__(
         self,
@@ -477,9 +493,9 @@ class DNSNsec(DNSRecord):
         self.rdtypes = sorted(rdtypes)
         self._hash = hash((self.key, type_, self.class_, next_name, *self.rdtypes))
 
-    def write(self, out: 'DNSOutgoing') -> None:
+    def write(self, out: "DNSOutgoing") -> None:
         """Used in constructing an outgoing packet."""
-        bitmap = bytearray(b'\0' * 32)
+        bitmap = bytearray(b"\0" * 32)
         total_octets = 0
         for rdtype in self.rdtypes:
             if rdtype > 255:  # mDNS only supports window 0
@@ -526,7 +542,7 @@ _DNSRecord = DNSRecord
 class DNSRRSet:
     """A set of dns records with a lookup to get the ttl."""
 
-    __slots__ = ('_records', '_lookup')
+    __slots__ = ("_records", "_lookup")
 
     def __init__(self, records: List[DNSRecord]) -> None:
         """Create an RRset from records sets."""
