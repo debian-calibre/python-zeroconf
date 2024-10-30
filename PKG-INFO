@@ -1,16 +1,15 @@
 Metadata-Version: 2.1
 Name: zeroconf
-Version: 0.135.0
+Version: 0.136.0
 Summary: A pure python implementation of multicast DNS service discovery
 Home-page: https://github.com/python-zeroconf/python-zeroconf
-License: LGPL
+License: LGPL-2.1-or-later
 Author: Paul Scott-Murphy
 Requires-Python: >=3.8,<4.0
 Classifier: Development Status :: 5 - Production/Stable
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: System Administrators
-Classifier: License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)
-Classifier: License :: Other/Proprietary License
+Classifier: License :: OSI Approved
 Classifier: Operating System :: MacOS :: MacOS X
 Classifier: Operating System :: POSIX
 Classifier: Operating System :: POSIX :: Linux
