@@ -13,12 +13,7 @@ import time
 import unittest
 import unittest.mock
 from typing import Tuple, Union, cast
-from unittest.mock import Mock, patch
-
-if sys.version_info[:3][1] < 8:
-    AsyncMock = Mock
-else:
-    from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -348,7 +343,7 @@ def test_goodbye_all_services():
     second_packet = out.packets()
     assert second_packet == first_packet
 
-    # Verify the registery is empty
+    # Verify the registry is empty
     out3 = zc.generate_unregister_all_services()
     assert out3 is None
     assert zc.registry.async_get_service_infos() == []
@@ -676,7 +671,7 @@ async def test_open_close_twice_from_async() -> None:
     """Test we can close twice from a coroutine when using Zeroconf.
 
     Ideally callers switch to using AsyncZeroconf, however there will
-    be a peroid where they still call the sync wrapper that we want
+    be a period where they still call the sync wrapper that we want
     to ensure will not deadlock on shutdown.
 
     This test is expected to throw warnings about tasks being destroyed
@@ -748,7 +743,6 @@ def test_shutdown_while_register_in_process():
 
 
 @pytest.mark.asyncio
-@unittest.skipIf(sys.version_info[:3][1] < 8, "Requires Python 3.8 or later to patch _async_setup")
 @patch("zeroconf._core._STARTUP_TIMEOUT", 0)
 @patch("zeroconf._core.AsyncEngine._async_setup", new_callable=AsyncMock)
 async def test_event_loop_blocked(mock_start):

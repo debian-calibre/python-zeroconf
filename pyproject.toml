@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zeroconf"
-version = "0.136.0"
+version = "0.136.2"
 description = "A pure python implementation of multicast DNS service discovery"
 authors = ["Paul Scott-Murphy", "William McBrine", "Jakub Stasiak", "J. Nick Koston"]
 license = "LGPL-2.1-or-later"
@@ -193,6 +193,4 @@ requires = ['setuptools>=65.4.1', 'wheel', 'Cython>=3.0.8', "poetry-core>=1.5.2"
 build-backend = "poetry.core.masonry.api"
 
 [tool.codespell]
-skip = '*.po,*.ts,./tests,./bench'
-count = ''
-quiet-level = 3
+ignore-words-list = ["additionals", "HASS"]

@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.136.2 (2024-11-21)
+
+### Bug Fixes
+
+* fix: retrigger release from failed github workflow (#1443) ([`2ea705d`](https://github.com/python-zeroconf/python-zeroconf/commit/2ea705d850c1cb096c87372d5ec855f684603d01))
+
+
+## v0.136.1 (2024-11-21)
+
+### Bug Fixes
+
+* fix(ci): run release workflow only on main repository (#1441) ([`f637c75`](https://github.com/python-zeroconf/python-zeroconf/commit/f637c75f638ba20c193e58ff63c073a4003430b9))
+
+* fix(docs): update python to 3.8 (#1430) ([`483d067`](https://github.com/python-zeroconf/python-zeroconf/commit/483d0673d4ae3eec37840452723fc1839a6cc95c))
+
+
 ## v0.136.0 (2024-10-26)
 
 ### Bug Fixes
