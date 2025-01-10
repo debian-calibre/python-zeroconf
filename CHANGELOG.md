@@ -1,6 +1,50 @@
 # CHANGELOG
 
 
+## v0.139.0 (2025-01-09)
+
+### Features
+
+* feat: implement heapq for tracking cache expire times (#1465) ([`09db184`](https://github.com/python-zeroconf/python-zeroconf/commit/09db1848957b34415f364b7338e4adce99b57abc))
+
+
+## v0.138.1 (2025-01-08)
+
+### Bug Fixes
+
+* fix: ensure cache does not return stale created and ttl values (#1469) ([`e05055c`](https://github.com/python-zeroconf/python-zeroconf/commit/e05055c584ca46080990437b2b385a187bc48458))
+
+
+## v0.138.0 (2025-01-08)
+
+### Features
+
+* feat: improve performance of processing incoming records (#1467)
+
+Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com> ([`ebbb2af`](https://github.com/python-zeroconf/python-zeroconf/commit/ebbb2afccabd3841a3cb0a39824b49773cc6258a))
+
+
+## v0.137.2 (2025-01-06)
+
+### Bug Fixes
+
+* fix: split wheel builds to avoid timeout (#1461) ([`be05f0d`](https://github.com/python-zeroconf/python-zeroconf/commit/be05f0dc4f6b2431606031a7bb24585728d15f01))
+
+
+## v0.137.1 (2025-01-06)
+
+### Bug Fixes
+
+* fix: move wheel builds to macos-13 (#1459) ([`4ff48a0`](https://github.com/python-zeroconf/python-zeroconf/commit/4ff48a01bc76c82e5710aafaf6cf6e79c069cd85))
+
+
+## v0.137.0 (2025-01-06)
+
+### Features
+
+* feat: speed up parsing incoming records (#1458) ([`783c1b3`](https://github.com/python-zeroconf/python-zeroconf/commit/783c1b37d1372c90dfce658c66d03aa753afbf49))
+
+
 ## v0.136.2 (2024-11-21)
 
 ### Bug Fixes

@@ -1,11 +1,11 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.3
 Name: zeroconf
-Version: 0.136.2
+Version: 0.139.0
 Summary: A pure python implementation of multicast DNS service discovery
 Home-page: https://github.com/python-zeroconf/python-zeroconf
 License: LGPL-2.1-or-later
 Author: Paul Scott-Murphy
-Requires-Python: >=3.8,<4.0
+Requires-Python: >=3.9,<4.0
 Classifier: Development Status :: 5 - Production/Stable
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: System Administrators
@@ -14,7 +14,6 @@ Classifier: Operating System :: MacOS :: MacOS X
 Classifier: Operating System :: POSIX
 Classifier: Operating System :: POSIX :: Linux
 Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
@@ -42,6 +41,10 @@ python-zeroconf
 
 .. image:: https://codecov.io/gh/python-zeroconf/python-zeroconf/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/python-zeroconf/python-zeroconf
+
+.. image:: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
+   :target: https://codspeed.io/python-zeroconf/python-zeroconf
+   :alt: Codspeed.io status for python-zeroconf
 
 `Documentation <https://python-zeroconf.readthedocs.io/en/latest/>`_.
 
@@ -78,8 +81,8 @@ Compared to some other Zeroconf/Bonjour/Avahi Python packages, python-zeroconf:
 Python compatibility
 --------------------
 
-* CPython 3.8+
-* PyPy3.8 7.3+
+* CPython 3.9+
+* PyPy 3.9+
 
 Versioning
 ----------
