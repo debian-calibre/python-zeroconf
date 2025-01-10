@@ -15,6 +15,7 @@ Build-Depends-Indep: python3-async-timeout (>= 4.0.1),
                      python3-ifaddr,
                      python3-pytest <!nocheck>,
                      python3-pytest-asyncio <!nocheck>,
+                     python3-pytest-codspeed <!nocheck>,
                      python3-pytest-cov <!nocheck>,
                      python3-pytest-timeout <!nocheck>,
                      python3-pytest-tornasync <!nocheck>
