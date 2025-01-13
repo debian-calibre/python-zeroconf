@@ -1,3 +1,10 @@
+python-zeroconf (0.139.0-3) UNRELEASED; urgency=medium
+
+  * Keep ".md" extension for Markdown formatted changelog
+  * Fix too old timestamps in upstream source code
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Tue, 14 Jan 2025 03:01:41 +0900
+
 python-zeroconf (0.139.0-2) unstable; urgency=medium
 
   * Just rebuild the package because build bot will not install it.
