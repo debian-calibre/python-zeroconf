@@ -12,3 +12,9 @@ execute_after_dh_auto_install:
 # keep ".md" extension for changelogs
 override_dh_installchangelogs:
 	dh_installchangelogs --keep
+
+# fix too old timestamps that breaks Debian package
+execute_after_dh_installchangelogs:
+	touch --no-create --date="@$(SOURCE_DATE_EPOCH)" debian/python3-zeroconf/usr/share/doc/python3-zeroconf/changelog
+execute_after_dh_installdocs:
+	touch --no-create --date="@$(SOURCE_DATE_EPOCH)" debian/python3-zeroconf/usr/share/doc/python3-zeroconf/README.rst
