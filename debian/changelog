@@ -1,3 +1,9 @@
+python-zeroconf (0.139.0-2) unstable; urgency=medium
+
+  * Just rebuild the package because build bot will not install it.
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Mon, 13 Jan 2025 11:51:48 +0900
+
 python-zeroconf (0.139.0-1) unstable; urgency=medium
 
   * New upstream version 0.139.0
