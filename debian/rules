@@ -8,3 +8,7 @@ export PYBUILD_NAME=zeroconf
 execute_after_dh_auto_install:
 	rm -fv  debian/python3-zeroconf/usr/lib/python3*/dist-packages/.coverage
 	rm -rfv debian/python3-zeroconf/usr/lib/python3*/dist-packages/.benchmarks/
+
+# keep ".md" extension for changelogs
+override_dh_installchangelogs:
+	dh_installchangelogs --keep
