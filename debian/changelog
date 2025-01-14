@@ -1,3 +1,10 @@
+python-zeroconf (0.139.0-4) UNRELEASED; urgency=medium
+
+  * python3-pytest-codspeed is only available for amd64 and arm64
+  * Use benchmark test only if required module is available
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Tue, 14 Jan 2025 12:54:01 +0900
+
 python-zeroconf (0.139.0-3) unstable; urgency=medium
 
   * Keep ".md" extension for Markdown formatted changelog
