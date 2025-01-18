@@ -24,10 +24,10 @@ index 811b22c..565a91b 100644
      type_ = "_test-listenv6ip-type._tcp.local."
      name = "xxxyyy"
 diff --git a/tests/test_core.py b/tests/test_core.py
-index 8205596..a262272 100644
+index fcfdf42..226e3c4 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
-@@ -54,12 +54,14 @@ def threadsafe_query(
+@@ -56,12 +56,14 @@ def threadsafe_query(
  
  
  class Framework(unittest.TestCase):
@@ -42,7 +42,7 @@ index 8205596..a262272 100644
      def test_launch_and_close_context_manager(self):
          with r.Zeroconf(interfaces=r.InterfaceChoice.All) as rv:
              assert rv.done is False
-@@ -75,6 +77,7 @@ class Framework(unittest.TestCase):
+@@ -77,6 +79,7 @@ class Framework(unittest.TestCase):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default, unicast=True)
          rv.close()
  
@@ -50,7 +50,7 @@ index 8205596..a262272 100644
      def test_close_multiple_times(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.Default)
          rv.close()
-@@ -82,6 +85,7 @@ class Framework(unittest.TestCase):
+@@ -84,6 +87,7 @@ class Framework(unittest.TestCase):
  
      @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
      @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
@@ -58,7 +58,7 @@ index 8205596..a262272 100644
      def test_launch_and_close_v4_v6(self):
          rv = r.Zeroconf(interfaces=r.InterfaceChoice.All, ip_version=r.IPVersion.All)
          rv.close()
-@@ -90,6 +94,7 @@ class Framework(unittest.TestCase):
+@@ -92,6 +96,7 @@ class Framework(unittest.TestCase):
  
      @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
      @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")

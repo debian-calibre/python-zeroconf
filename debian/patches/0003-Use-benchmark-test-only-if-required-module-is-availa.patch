@@ -6,26 +6,14 @@ CodSpeed is only available for amd64 and arm64.
 ---
  tests/benchmarks/test_incoming.py       | 2 ++
  tests/benchmarks/test_outgoing.py       | 2 ++
+ tests/benchmarks/test_send.py           | 1 +
  tests/benchmarks/test_txt_properties.py | 2 ++
- 3 files changed, 6 insertions(+)
+ 4 files changed, 7 insertions(+)
 
 diff --git a/tests/benchmarks/test_incoming.py b/tests/benchmarks/test_incoming.py
-index 6285c19..31cfbf9 100644
+index e0552f3..e152ba1 100644
 --- a/tests/benchmarks/test_incoming.py
 +++ b/tests/benchmarks/test_incoming.py
-@@ -3,6 +3,8 @@
- import socket
- from typing import List
- 
-+import pytest
-+pytest_codspeed = pytest.importorskip("pytest_codspeed")
- from pytest_codspeed import BenchmarkFixture
- 
- from zeroconf import (
-diff --git a/tests/benchmarks/test_outgoing.py b/tests/benchmarks/test_outgoing.py
-index 5b7ee16..d04b458 100644
---- a/tests/benchmarks/test_outgoing.py
-+++ b/tests/benchmarks/test_outgoing.py
 @@ -2,6 +2,8 @@
  
  import socket
@@ -34,7 +22,31 @@ index 5b7ee16..d04b458 100644
 +pytest_codspeed = pytest.importorskip("pytest_codspeed")
  from pytest_codspeed import BenchmarkFixture
  
- from zeroconf import DNSAddress, DNSOutgoing, DNSService, DNSText, const
+ from zeroconf import (
+diff --git a/tests/benchmarks/test_outgoing.py b/tests/benchmarks/test_outgoing.py
+index 69de540..22a9d02 100644
+--- a/tests/benchmarks/test_outgoing.py
++++ b/tests/benchmarks/test_outgoing.py
+@@ -1,5 +1,7 @@
+ """Benchmark for DNSOutgoing."""
+ 
++import pytest
++pytest_codspeed = pytest.importorskip("pytest_codspeed")
+ from pytest_codspeed import BenchmarkFixture
+ 
+ from zeroconf._protocol.outgoing import State
+diff --git a/tests/benchmarks/test_send.py b/tests/benchmarks/test_send.py
+index 7a6d664..257a11b 100644
+--- a/tests/benchmarks/test_send.py
++++ b/tests/benchmarks/test_send.py
+@@ -1,6 +1,7 @@
+ """Benchmark for sending packets."""
+ 
+ import pytest
++pytest_codspeed = pytest.importorskip("pytest_codspeed")
+ from pytest_codspeed import BenchmarkFixture
+ 
+ from zeroconf.asyncio import AsyncZeroconf
 diff --git a/tests/benchmarks/test_txt_properties.py b/tests/benchmarks/test_txt_properties.py
 index ad75ab3..79d3eb0 100644
 --- a/tests/benchmarks/test_txt_properties.py
