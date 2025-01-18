@@ -1,3 +1,10 @@
+python-zeroconf (0.140.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.140.1
+  * Rediff patches
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 18 Jan 2025 21:44:30 +0900
+
 python-zeroconf (0.139.0-4) unstable; urgency=medium
 
   * python3-pytest-codspeed is only available for amd64 and arm64
