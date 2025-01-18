@@ -1,21 +1,11 @@
-"""Benchmark for DNSIncoming."""
+"""Benchmark helpers."""
 
 import socket
 
-from pytest_codspeed import BenchmarkFixture
-
-from zeroconf import (
-    DNSAddress,
-    DNSIncoming,
-    DNSNsec,
-    DNSOutgoing,
-    DNSService,
-    DNSText,
-    const,
-)
+from zeroconf import DNSAddress, DNSOutgoing, DNSService, DNSText, const
 
 
-def generate_packets() -> list[bytes]:
+def generate_packets() -> DNSOutgoing:
     out = DNSOutgoing(const._FLAGS_QR_RESPONSE | const._FLAGS_AA)
     address = socket.inet_pton(socket.AF_INET, "192.168.208.5")
 
@@ -159,26 +149,5 @@ def generate_packets() -> list[bytes]:
                 record["address"],  # type: ignore
             )
         )
-        out.add_additional_answer(
-            DNSNsec(
-                record["name"],  # type: ignore
-                const._TYPE_NSEC,
-                const._CLASS_IN | const._CLASS_UNIQUE,
-                const._DNS_OTHER_TTL,
-                record["name"],  # type: ignore
-                [const._TYPE_TXT, const._TYPE_SRV],
-            )
-        )
 
-    return out.packets()
-
-
-packets = generate_packets()
-
-
-def test_parse_incoming_message(benchmark: BenchmarkFixture) -> None:
-    @benchmark
-    def parse_incoming_message() -> None:
-        for packet in packets:
-            DNSIncoming(packet).answers  # noqa: B018
-            break
+    return out
