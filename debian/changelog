@@ -1,3 +1,13 @@
+python-zeroconf (0.141.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.141.0
+  * Rediff patches
+  * Add workaround for false-positive Lintian message: no-dh-sequencer
+  * Refactor for Lintian messages
+  * Lintian fix: uses-deprecated-python-stdlib distutils
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 25 Jan 2025 21:40:27 +0900
+
 python-zeroconf (0.140.1-1) unstable; urgency=medium
 
   * New upstream version 0.140.1
