@@ -1,0 +1,24 @@
+From: YOKOTA Hiroshi <yokota.hgml@gmail.com>
+Date: Sat, 25 Jan 2025 15:24:02 +0900
+Subject: Lintian fix: uses-deprecated-python-stdlib distutils
+
+> distutils is deprecated in Python 3.10, removed in Python 3.12.
+
+Use compatibility code from setuptools.
+---
+ build_ext.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build_ext.py b/build_ext.py
+index 26b4eb9..d918e9e 100644
+--- a/build_ext.py
++++ b/build_ext.py
+@@ -2,7 +2,7 @@
+ 
+ import logging
+ import os
+-from distutils.command.build_ext import build_ext
++import setuptools; from distutils.command.build_ext import build_ext
+ from typing import Any
+ 
+ _LOGGER = logging.getLogger(__name__)

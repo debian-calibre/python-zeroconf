@@ -1,3 +1,4 @@
 0001-Skip-some-network-test.patch
 0002-Skip-test-error.patch
 0003-Use-benchmark-test-only-if-required-module-is-availa.patch
+0004-Lintian-fix-uses-deprecated-python-stdlib-distutils.patch
