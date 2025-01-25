@@ -4,12 +4,23 @@ Subject: Use benchmark test only if required module is available
 
 CodSpeed is only available for amd64 and arm64.
 ---
+ tests/benchmarks/test_cache.py          | 2 ++
  tests/benchmarks/test_incoming.py       | 2 ++
  tests/benchmarks/test_outgoing.py       | 2 ++
  tests/benchmarks/test_send.py           | 1 +
  tests/benchmarks/test_txt_properties.py | 2 ++
- 4 files changed, 7 insertions(+)
+ 5 files changed, 9 insertions(+)
 
+diff --git a/tests/benchmarks/test_cache.py b/tests/benchmarks/test_cache.py
+index 6fde943..26c5243 100644
+--- a/tests/benchmarks/test_cache.py
++++ b/tests/benchmarks/test_cache.py
+@@ -1,3 +1,5 @@
++import pytest
++pytest_codspeed = pytest.importorskip("pytest_codspeed")
+ from pytest_codspeed import BenchmarkFixture
+ 
+ from zeroconf import DNSCache, DNSPointer, current_time_millis
 diff --git a/tests/benchmarks/test_incoming.py b/tests/benchmarks/test_incoming.py
 index e0552f3..e152ba1 100644
 --- a/tests/benchmarks/test_incoming.py
