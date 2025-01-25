@@ -1,4 +1,4 @@
-python-zeroconf (0.141.0-1) UNRELEASED; urgency=medium
+python-zeroconf (0.141.0-1) unstable; urgency=medium
 
   * New upstream version 0.141.0
   * Rediff patches
@@ -6,7 +6,7 @@ python-zeroconf (0.141.0-1) UNRELEASED; urgency=medium
   * Refactor for Lintian messages
   * Lintian fix: uses-deprecated-python-stdlib distutils
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 25 Jan 2025 21:40:27 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sat, 25 Jan 2025 21:46:32 +0900
 
 python-zeroconf (0.140.1-1) unstable; urgency=medium
 
