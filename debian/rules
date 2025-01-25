@@ -1,9 +1,12 @@
 #!/usr/bin/make -f
 export PYBUILD_NAME=zeroconf
 
+# special build flags for Debian package
+export DEBIAN_TEST=1
+export SKIP_CYTHON=True
+
 %:
-	DEBIAN_TEST=1 SKIP_CYTHON=True \
-		dh $@ --buildsystem=pybuild
+	dh $@ --buildsystem=pybuild
 
 # remove coverage test file from installation tree
 execute_after_dh_auto_install:
