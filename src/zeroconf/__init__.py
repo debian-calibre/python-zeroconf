@@ -20,6 +20,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 USA
 """
 
+from __future__ import annotations
+
 from ._cache import DNSCache  # noqa # import needed for backwards compat
 from ._core import Zeroconf
 from ._dns import (  # noqa # import needed for backwards compat
@@ -57,6 +59,9 @@ from ._services import (  # noqa # import needed for backwards compat
 )
 from ._services.browser import ServiceBrowser
 from ._services.info import (  # noqa # import needed for backwards compat
+    AddressResolver,
+    AddressResolverIPv4,
+    AddressResolverIPv6,
     ServiceInfo,
     instance_name_from_service_info,
 )
@@ -83,7 +88,7 @@ from ._utils.time import (  # noqa # import needed for backwards compat
 
 __author__ = "Paul Scott-Murphy, William McBrine"
 __maintainer__ = "Jakub Stasiak <jakub@stasiak.at>"
-__version__ = "0.141.0"
+__version__ = "0.143.0"
 __license__ = "LGPL"
 
 
