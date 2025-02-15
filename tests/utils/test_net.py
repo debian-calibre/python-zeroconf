@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import errno
 import socket
+import sys
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
@@ -82,9 +83,11 @@ def test_ip6_addresses_to_indexes():
 
 def test_normalize_interface_choice_errors():
     """Test we generate exception on invalid input."""
-    with patch("zeroconf._utils.net.get_all_addresses", return_value=[]), patch(
-        "zeroconf._utils.net.get_all_addresses_v6", return_value=[]
-    ), pytest.raises(RuntimeError):
+    with (
+        patch("zeroconf._utils.net.get_all_addresses", return_value=[]),
+        patch("zeroconf._utils.net.get_all_addresses_v6", return_value=[]),
+        pytest.raises(RuntimeError),
+    ):
         netutils.normalize_interface_choice(r.InterfaceChoice.All)
 
     with pytest.raises(TypeError):
@@ -128,8 +131,10 @@ def test_disable_ipv6_only_or_raise():
         errors_logged.append(args)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    with pytest.raises(OSError), patch.object(netutils.log, "error", _log_error), patch(
-        "socket.socket.setsockopt", side_effect=OSError
+    with (
+        pytest.raises(OSError),
+        patch.object(netutils.log, "error", _log_error),
+        patch("socket.socket.setsockopt", side_effect=OSError),
     ):
         netutils.disable_ipv6_only_or_raise(sock)
 
@@ -177,7 +182,7 @@ def test_set_mdns_port_socket_options_for_ip_version():
         netutils.set_mdns_port_socket_options_for_ip_version(sock, ("",), r.IPVersion.V4Only)
 
 
-def test_add_multicast_member():
+def test_add_multicast_member(caplog: pytest.LogCaptureFixture) -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     interface = "127.0.0.1"
 
@@ -217,6 +222,26 @@ def test_add_multicast_member():
     with patch("socket.socket.setsockopt"):
         assert netutils.add_multicast_member(sock, interface) is True
 
+    # Ran out of IGMP memberships is forgiving and logs about igmp_max_memberships on linux
+    caplog.clear()
+    with (
+        patch.object(sys, "platform", "linux"),
+        patch("socket.socket.setsockopt", side_effect=OSError(errno.ENOBUFS, "No buffer space available")),
+    ):
+        assert netutils.add_multicast_member(sock, interface) is False
+        assert "No buffer space available" in caplog.text
+        assert "net.ipv4.igmp_max_memberships" in caplog.text
+
+    # Ran out of IGMP memberships is forgiving and logs
+    caplog.clear()
+    with (
+        patch.object(sys, "platform", "darwin"),
+        patch("socket.socket.setsockopt", side_effect=OSError(errno.ENOBUFS, "No buffer space available")),
+    ):
+        assert netutils.add_multicast_member(sock, interface) is False
+        assert "No buffer space available" in caplog.text
+        assert "net.ipv4.igmp_max_memberships" not in caplog.text
+
 
 def test_bind_raises_skips_address():
     """Test bind failing in new_socket returns None on EADDRNOTAVAIL."""
@@ -233,6 +258,40 @@ def test_bind_raises_skips_address():
     err = errno.EAGAIN
     with pytest.raises(OSError), patch("socket.socket", _mock_socket):
         netutils.new_socket(("0.0.0.0", 0))  # type: ignore[arg-type]
+
+
+def test_bind_raises_address_in_use(caplog: pytest.LogCaptureFixture) -> None:
+    """Test bind failing in new_socket returns None on EADDRINUSE."""
+
+    def _mock_socket(*args, **kwargs):
+        sock = MagicMock()
+        sock.bind = MagicMock(side_effect=OSError(errno.EADDRINUSE, f"Error: {errno.EADDRINUSE}"))
+        return sock
+
+    with (
+        pytest.raises(OSError),
+        patch.object(sys, "platform", "darwin"),
+        patch("socket.socket", _mock_socket),
+    ):
+        netutils.new_socket(("0.0.0.0", 0))  # type: ignore[arg-type]
+    assert (
+        "On BSD based systems sharing the same port with "
+        "another stack may require processes to run with the same UID"
+    ) in caplog.text
+    assert (
+        "When using avahi, make sure disallow-other-stacks is set to no in avahi-daemon.conf" in caplog.text
+    )
+
+    caplog.clear()
+    with pytest.raises(OSError), patch.object(sys, "platform", "linux"), patch("socket.socket", _mock_socket):
+        netutils.new_socket(("0.0.0.0", 0))  # type: ignore[arg-type]
+    assert (
+        "On BSD based systems sharing the same port with "
+        "another stack may require processes to run with the same UID"
+    ) not in caplog.text
+    assert (
+        "When using avahi, make sure disallow-other-stacks is set to no in avahi-daemon.conf" in caplog.text
+    )
 
 
 def test_new_respond_socket_new_socket_returns_none():

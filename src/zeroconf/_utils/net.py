@@ -28,7 +28,8 @@ import ipaddress
 import socket
 import struct
 import sys
-from typing import Any, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Any, Union, cast
 
 import ifaddr
 
@@ -42,7 +43,7 @@ class InterfaceChoice(enum.Enum):
     All = 2
 
 
-InterfacesType = Union[Sequence[Union[str, int, Tuple[Tuple[str, int, int], int]]], InterfaceChoice]
+InterfacesType = Union[Sequence[Union[str, int, tuple[tuple[str, int, int], int]]], InterfaceChoice]
 
 
 @enum.unique
@@ -73,40 +74,41 @@ def _encode_address(address: str) -> bytes:
 
 
 def get_all_addresses() -> list[str]:
-    return list({addr.ip for iface in ifaddr.get_adapters() for addr in iface.ips if addr.is_IPv4})
+    return list({addr.ip for iface in ifaddr.get_adapters() for addr in iface.ips if addr.is_IPv4})  # type: ignore[misc]
 
 
 def get_all_addresses_v6() -> list[tuple[tuple[str, int, int], int]]:
     # IPv6 multicast uses positive indexes for interfaces
     # TODO: What about multi-address interfaces?
     return list(
-        {(addr.ip, iface.index) for iface in ifaddr.get_adapters() for addr in iface.ips if addr.is_IPv6}
+        {(addr.ip, iface.index) for iface in ifaddr.get_adapters() for addr in iface.ips if addr.is_IPv6}  # type: ignore[misc]
     )
 
 
-def ip6_to_address_and_index(adapters: list[Any], ip: str) -> tuple[tuple[str, int, int], int]:
+def ip6_to_address_and_index(adapters: list[ifaddr.Adapter], ip: str) -> tuple[tuple[str, int, int], int]:
     if "%" in ip:
         ip = ip[: ip.index("%")]  # Strip scope_id.
     ipaddr = ipaddress.ip_address(ip)
     for adapter in adapters:
         for adapter_ip in adapter.ips:
             # IPv6 addresses are represented as tuples
-            if isinstance(adapter_ip.ip, tuple) and ipaddress.ip_address(adapter_ip.ip[0]) == ipaddr:
-                return (
-                    cast(Tuple[str, int, int], adapter_ip.ip),
-                    cast(int, adapter.index),
-                )
+            if (
+                adapter.index is not None
+                and isinstance(adapter_ip.ip, tuple)
+                and ipaddress.ip_address(adapter_ip.ip[0]) == ipaddr
+            ):
+                return (adapter_ip.ip, adapter.index)
 
     raise RuntimeError(f"No adapter found for IP address {ip}")
 
 
-def interface_index_to_ip6_address(adapters: list[Any], index: int) -> tuple[str, int, int]:
+def interface_index_to_ip6_address(adapters: list[ifaddr.Adapter], index: int) -> tuple[str, int, int]:
     for adapter in adapters:
         if adapter.index == index:
             for adapter_ip in adapter.ips:
                 # IPv6 addresses are represented as tuples
                 if isinstance(adapter_ip.ip, tuple):
-                    return cast(Tuple[str, int, int], adapter_ip.ip)
+                    return adapter_ip.ip
 
     raise RuntimeError(f"No adapter found for index {index}")
 
@@ -126,9 +128,9 @@ def ip6_addresses_to_indexes(
 
     for iface in interfaces:
         if isinstance(iface, int):
-            result.append((interface_index_to_ip6_address(adapters, iface), iface))
+            result.append((interface_index_to_ip6_address(adapters, iface), iface))  # type: ignore[arg-type]
         elif isinstance(iface, str) and ipaddress.ip_address(iface).version == 6:
-            result.append(ip6_to_address_and_index(adapters, iface))
+            result.append(ip6_to_address_and_index(adapters, iface))  # type: ignore[arg-type]
 
     return result
 
@@ -260,6 +262,25 @@ def new_socket(
                 bind_tup,
             )
             return None
+        if ex.errno == errno.EADDRINUSE:
+            if sys.platform.startswith("darwin") or sys.platform.startswith("freebsd"):
+                log.error(
+                    "Address in use when binding to %s; "
+                    "On BSD based systems sharing the same port with another "
+                    "stack may require processes to run with the same UID; "
+                    "When using avahi, make sure disallow-other-stacks is set"
+                    " to no in avahi-daemon.conf",
+                    bind_tup,
+                )
+            else:
+                log.error(
+                    "Address in use when binding to %s; "
+                    "When using avahi, make sure disallow-other-stacks is set"
+                    " to no in avahi-daemon.conf",
+                    bind_tup,
+                )
+            # This is still a fatal error as its not going to work
+            # if we can't hear the traffic coming in.
         raise
     log.debug("Created socket %s", s)
     return s
@@ -301,6 +322,20 @@ def add_multicast_member(
                 interface,
             )
             return False
+        if _errno == errno.ENOBUFS:
+            # https://github.com/python-zeroconf/python-zeroconf/issues/1510
+            if not is_v6 and sys.platform.startswith("linux"):
+                log.warning(
+                    "No buffer space available when adding %s to multicast group, "
+                    "try increasing `net.ipv4.igmp_max_memberships` to `1024` in sysctl.conf",
+                    interface,
+                )
+            else:
+                log.warning(
+                    "No buffer space available when adding %s to multicast group.",
+                    interface,
+                )
+            return False
         if _errno == errno.EADDRNOTAVAIL:
             log.info(
                 "Address not available when adding %s to multicast "
@@ -340,7 +375,7 @@ def new_respond_socket(
     respond_socket = new_socket(
         ip_version=(IPVersion.V6Only if is_v6 else IPVersion.V4Only),
         apple_p2p=apple_p2p,
-        bind_addr=cast(Tuple[Tuple[str, int, int], int], interface)[0] if is_v6 else (cast(str, interface),),
+        bind_addr=cast(tuple[tuple[str, int, int], int], interface)[0] if is_v6 else (cast(str, interface),),
     )
     if not respond_socket:
         return None
@@ -399,8 +434,7 @@ def create_sockets(
     return listen_socket, respond_sockets
 
 
-def get_errno(e: Exception) -> int:
-    assert isinstance(e, socket.error)
+def get_errno(e: OSError) -> int:
     return cast(int, e.args[0])
 
 

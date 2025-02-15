@@ -1,6 +1,50 @@
 # CHANGELOG
 
 
+## v0.144.3 (2025-02-14)
+
+### Bug Fixes
+
+- Non unique name during wheel upload
+  ([#1527](https://github.com/python-zeroconf/python-zeroconf/pull/1527),
+  [`43136fa`](https://github.com/python-zeroconf/python-zeroconf/commit/43136fa418d4d7826415e1d0f7761b198347ced7))
+
+
+## v0.144.2 (2025-02-14)
+
+### Bug Fixes
+
+- Add a helpful hint for when EADDRINUSE happens during startup
+  ([#1526](https://github.com/python-zeroconf/python-zeroconf/pull/1526),
+  [`48dbb71`](https://github.com/python-zeroconf/python-zeroconf/commit/48dbb7190a4f5126e39dbcdb87e34380d4562cd0))
+
+
+## v0.144.1 (2025-02-12)
+
+### Bug Fixes
+
+- Wheel builds failing after adding armv7l builds
+  ([#1518](https://github.com/python-zeroconf/python-zeroconf/pull/1518),
+  [`e7adac9`](https://github.com/python-zeroconf/python-zeroconf/commit/e7adac9c59fc4d0c4822c6097a4daee3d68eb4de))
+
+
+## v0.144.0 (2025-02-12)
+
+### Features
+
+- Add armv7l wheel builds ([#1517](https://github.com/python-zeroconf/python-zeroconf/pull/1517),
+  [`39887b8`](https://github.com/python-zeroconf/python-zeroconf/commit/39887b80328d616e8e6f6ca9d08aecc06f7b0711))
+
+
+## v0.143.1 (2025-02-12)
+
+### Bug Fixes
+
+- Make no buffer space available when adding multicast memberships forgiving
+  ([#1516](https://github.com/python-zeroconf/python-zeroconf/pull/1516),
+  [`f377d5c`](https://github.com/python-zeroconf/python-zeroconf/commit/f377d5cd08d724282c8487785163b466f3971344))
+
+
 ## v0.143.0 (2025-01-31)
 
 ### Features
