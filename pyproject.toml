@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zeroconf"
-version = "0.144.3"
+version = "0.145.1"
 description = "A pure python implementation of multicast DNS service discovery"
 authors = ["Paul Scott-Murphy", "William McBrine", "Jakub Stasiak", "J. Nick Koston"]
 license = "LGPL-2.1-or-later"
@@ -113,6 +113,7 @@ ignore = [
     "PERF401", # Cython: closures inside cpdef functions not yet supported
 ]
 select = [
+    "ASYNC", # async rules
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "S",   # flake8-bandit
