@@ -11,7 +11,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-all,
                python3-poetry-core,
                python3-setuptools
-Build-Depends-Indep: python3-async-timeout (>= 4.0.1),
+Build-Depends-Indep:
                      python3-ifaddr,
                      python3-pytest <!nocheck>,
                      python3-pytest-asyncio <!nocheck>,
@@ -28,10 +28,6 @@ Rules-Requires-Root: no
 Package: python3-zeroconf
 Architecture: all
 Depends:
-# Internal "async-timeout" support is available from Python 3.11.
-# Explicit "python3-async-timeout" dependency is required for Python 3.10
-# while Python 3.10 is supported by "python3-all" package.
-         python3-async-timeout (>= 4.0.1),
          ${misc:Depends},
          ${python3:Depends}
 Breaks: calibre (<< 6.24.0-2~)
