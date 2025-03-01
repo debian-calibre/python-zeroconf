@@ -1,3 +1,11 @@
+python-zeroconf (0.145.1-2) UNRELEASED; urgency=medium
+
+  * Upgrade Debian policy to 4.7.2
+  * Drop obsolete dependency module python3-async-timeout
+  * Cosmetic fix
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 02 Mar 2025 00:11:16 +0900
+
 python-zeroconf (0.145.1-1) unstable; urgency=medium
 
   * New upstream version 0.145.1
