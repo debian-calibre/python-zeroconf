@@ -10,7 +10,7 @@ Use compatibility code from setuptools.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/build_ext.py b/build_ext.py
-index e91f635..01a5654 100644
+index 7faa607..ce5ac64 100644
 --- a/build_ext.py
 +++ b/build_ext.py
 @@ -2,7 +2,7 @@
@@ -21,4 +21,4 @@ index e91f635..01a5654 100644
 +import setuptools; from distutils.command.build_ext import build_ext
  from typing import Any
  
- _LOGGER = logging.getLogger(__name__)
+ try:
