@@ -10,7 +10,7 @@ Use compatibility code from setuptools.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/build_ext.py b/build_ext.py
-index 7faa607..ce5ac64 100644
+index ff088f8..651a4f5 100644
 --- a/build_ext.py
 +++ b/build_ext.py
 @@ -2,7 +2,7 @@
