@@ -1,9 +1,9 @@
-python-zeroconf (0.147.2-1) UNRELEASED; urgency=medium
+python-zeroconf (0.147.2-1) unstable; urgency=medium
 
   * New upstream version 0.147.2
   * Rediff patches
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 14 Sep 2025 03:48:57 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Sun, 14 Sep 2025 04:35:41 +0900
 
 python-zeroconf (0.147.0-2) unstable; urgency=medium
 
