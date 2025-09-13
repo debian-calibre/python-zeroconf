@@ -12,13 +12,13 @@ and its network connection is not so reliable.
  2 files changed, 6 insertions(+)
 
 diff --git a/tests/services/test_types.py b/tests/services/test_types.py
-index 6329224..bd5696e 100644
+index 10056c1..b4aec61 100644
 --- a/tests/services/test_types.py
 +++ b/tests/services/test_types.py
-@@ -91,6 +91,7 @@ def test_integration_with_listener_v6_records(disable_duplicate_packet_suppressi
- 
- @unittest.skipIf(not has_working_ipv6() or sys.platform == "win32", "Requires IPv6")
- @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
+@@ -95,6 +95,7 @@ def test_integration_with_listener_v6_records(disable_duplicate_packet_suppressi
+     sys.platform == "darwin" and os.environ.get("GITHUB_ACTIONS") == "true",
+     "IPv6 multicast not working on macOS GitHub Actions",
+ )
 +@unittest.skipIf(os.environ.get("DEBIAN_TEST"), "disabled by Debian builder")
  def test_integration_with_listener_ipv6(disable_duplicate_packet_suppression):
      type_ = "_test-listenv6ip-type._tcp.local."
