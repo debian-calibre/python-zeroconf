@@ -1,9 +1,9 @@
-python-zeroconf (0.148.0-1) UNRELEASED; urgency=medium
+python-zeroconf (0.148.0-1) unstable; urgency=medium
 
   * Drop wrong version 1.0.0
   * New upstream version 0.148.0
 
- -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 09 Oct 2025 12:08:55 +0900
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Thu, 09 Oct 2025 12:10:15 +0900
 
 python-zeroconf (0.147.2-2) unstable; urgency=medium
 
