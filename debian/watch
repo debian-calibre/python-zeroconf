@@ -1,5 +1,5 @@
 Version: 5
 
 Source: https://pypi.debian.net/zeroconf/
-Matching-Pattern: zeroconf-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
+Matching-Pattern: zeroconf-((*negative_lookahead:1\.0\.0).+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))
 Uversion-Mangle: s/(rc|a|b|c)/~$1/
