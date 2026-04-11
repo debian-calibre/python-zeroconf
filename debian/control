@@ -10,7 +10,8 @@ Build-Depends:
     pybuild-plugin-pyproject,
     python3-all,
     python3-poetry-core,
-    python3-setuptools
+    python3-setuptools,
+    python3-setuptools-scm
 Build-Depends-Indep:
     python3-ifaddr,
     python3-pytest <!nocheck>,
