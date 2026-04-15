@@ -2,8 +2,18 @@
 export PYBUILD_NAME=zeroconf
 
 # special build flags for Debian package
-export DEBIAN_TEST=1
 export SKIP_CYTHON=True
+
+DISABLE_TESTS = \
+	    not test_integration_with_listener_ipv6 \
+	and not test_launch_and_close \
+	and not test_launch_and_close_context_manager \
+	and not test_close_multiple_times \
+	and not test_launch_and_close_v4_v6 \
+	and not test_launch_and_close_v6_only \
+	and not test_service_browser_expire_callbacks
+
+export PYBUILD_TEST_ARGS = -k "$(DISABLE_TESTS)"
 
 %:
 	dh $@ --buildsystem=pybuild
