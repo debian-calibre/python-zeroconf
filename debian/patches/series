@@ -1,2 +1,2 @@
-0003-Use-benchmark-test-only-if-required-module-is-availa.patch
-0004-Lintian-fix-uses-deprecated-python-stdlib-distutils.patch
+0001-Use-benchmark-test-only-if-required-module-is-availa.patch
+0002-Lintian-fix-uses-deprecated-python-stdlib-distutils.patch
