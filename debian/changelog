@@ -1,3 +1,11 @@
+python-zeroconf (0.148.0-4) UNRELEASED; urgency=medium
+
+  * Move disabled test list from patches to rules file
+  * Add architecture specific rules for test
+  * Renumber patches
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Wed, 15 Apr 2026 13:15:04 +0900
+
 python-zeroconf (0.148.0-3) unstable; urgency=medium
 
   * Use setuptools-scm
