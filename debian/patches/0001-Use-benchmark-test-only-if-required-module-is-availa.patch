@@ -6,10 +6,11 @@ CodSpeed is only available for amd64 and arm64.
 ---
  tests/benchmarks/test_cache.py          | 2 ++
  tests/benchmarks/test_incoming.py       | 2 ++
+ tests/benchmarks/test_mark_seen.py      | 2 ++
  tests/benchmarks/test_outgoing.py       | 2 ++
  tests/benchmarks/test_send.py           | 1 +
  tests/benchmarks/test_txt_properties.py | 2 ++
- 5 files changed, 9 insertions(+)
+ 6 files changed, 11 insertions(+)
 
 diff --git a/tests/benchmarks/test_cache.py b/tests/benchmarks/test_cache.py
 index 7813f67..8f50b45 100644
@@ -36,6 +37,19 @@ index 6d31e51..e630f4f 100644
  from pytest_codspeed import BenchmarkFixture
  
  from zeroconf import (
+diff --git a/tests/benchmarks/test_mark_seen.py b/tests/benchmarks/test_mark_seen.py
+index 4f82da8..fc0a4c9 100644
+--- a/tests/benchmarks/test_mark_seen.py
++++ b/tests/benchmarks/test_mark_seen.py
+@@ -2,6 +2,8 @@
+ 
+ from __future__ import annotations
+ 
++import pytest
++pytest_codspeed = pytest.importorskip("pytest_codspeed")
+ from pytest_codspeed import BenchmarkFixture
+ 
+ from zeroconf._logger import _MAX_SEEN_LOGS, _mark_seen
 diff --git a/tests/benchmarks/test_outgoing.py b/tests/benchmarks/test_outgoing.py
 index a8db4d6..4db56fb 100644
 --- a/tests/benchmarks/test_outgoing.py
