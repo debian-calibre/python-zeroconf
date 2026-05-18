@@ -1,5 +1,174 @@
 # CHANGELOG
 
+<!-- version list -->
+
+## v0.149.6 (2026-05-18)
+
+### Bug Fixes
+
+- Bound _seen_logs and stop retaining exc_info
+  ([#1717](https://github.com/python-zeroconf/python-zeroconf/pull/1717),
+  [`95561e2`](https://github.com/python-zeroconf/python-zeroconf/commit/95561e28b24922358f1991e38e3a86d70d72dcec))
+
+
+## v0.149.5 (2026-05-18)
+
+### Bug Fixes
+
+- Bound DNS compression-pointer chain depth in DNSIncoming
+  ([#1719](https://github.com/python-zeroconf/python-zeroconf/pull/1719),
+  [`f9e2359`](https://github.com/python-zeroconf/python-zeroconf/commit/f9e23592137f30fdf7ef710dba065da31c79b1cf))
+
+### Testing
+
+- Cap helper get_service_info timeout in suppression test (~3.0s → ~1.85s)
+  ([#1708](https://github.com/python-zeroconf/python-zeroconf/pull/1708),
+  [`ee3c7d7`](https://github.com/python-zeroconf/python-zeroconf/commit/ee3c7d74ff45327a3a6d520b86a691e21e2bc219))
+
+- Drop ZeroconfServiceTypes.find() timeouts from 500ms to 200ms on loopback
+  ([#1710](https://github.com/python-zeroconf/python-zeroconf/pull/1710),
+  [`64d143d`](https://github.com/python-zeroconf/python-zeroconf/commit/64d143d2ee7874ee1d9cef0dd2799c008b4aa791))
+
+- Eliminate test_get_info_single race by injecting from the send mock
+  ([#1716](https://github.com/python-zeroconf/python-zeroconf/pull/1716),
+  [`963d3d7`](https://github.com/python-zeroconf/python-zeroconf/commit/963d3d70e1cde056967eba0d8747ddcd247ae707))
+
+- Fix race in test_register_and_lookup_type_by_uppercase_name
+  ([#1712](https://github.com/python-zeroconf/python-zeroconf/pull/1712),
+  [`91aa21d`](https://github.com/python-zeroconf/python-zeroconf/commit/91aa21d52a0873f5fc12d43675b1b521dfe20519))
+
+- Speed up service-info request tests with quick_request_timing fixture
+  ([#1709](https://github.com/python-zeroconf/python-zeroconf/pull/1709),
+  [`4bae30a`](https://github.com/python-zeroconf/python-zeroconf/commit/4bae30a2ed0910ee7c4f1d0f92f2c400a7b10f31))
+
+
+## v0.149.4 (2026-05-17)
+
+### Bug Fixes
+
+- **core**: Release sockets when close runs before engine setup completes
+  ([#1706](https://github.com/python-zeroconf/python-zeroconf/pull/1706),
+  [`0deb56b`](https://github.com/python-zeroconf/python-zeroconf/commit/0deb56b78fe6cd701a43ce34dccd4b69d6dd6d36))
+
+### Testing
+
+- Drop pending multicast responses before TOCTOU assertion
+  ([#1701](https://github.com/python-zeroconf/python-zeroconf/pull/1701),
+  [`d2058d9`](https://github.com/python-zeroconf/python-zeroconf/commit/d2058d95882c70fb2eb786d373a630314e656c15))
+
+- Speed up slow loopback tests (closes #1697)
+  ([#1699](https://github.com/python-zeroconf/python-zeroconf/pull/1699),
+  [`dd341a3`](https://github.com/python-zeroconf/python-zeroconf/commit/dd341a378e904cbf9b9a09e5c2ac8ff7c9944cd0))
+
+- Speed up slow loopback tests (closes #1700)
+  ([#1703](https://github.com/python-zeroconf/python-zeroconf/pull/1703),
+  [`d03ea36`](https://github.com/python-zeroconf/python-zeroconf/commit/d03ea364dea5866e0301ff11f6b78714ecf991e8))
+
+- Speed up test_async_wait_unblocks_on_update
+  ([#1702](https://github.com/python-zeroconf/python-zeroconf/pull/1702),
+  [`653c385`](https://github.com/python-zeroconf/python-zeroconf/commit/653c38559c468672cf907d808d432dec0fb06968))
+
+- Widen scheduling buffer in flaky get_info suppression test
+  ([#1698](https://github.com/python-zeroconf/python-zeroconf/pull/1698),
+  [`9b4db62`](https://github.com/python-zeroconf/python-zeroconf/commit/9b4db625e121c2d590ed8fe2f4d187d5e3bb9a73))
+
+
+## v0.149.3 (2026-05-17)
+
+### Bug Fixes
+
+- **ci**: Drop x86_64 mac wheels and clean up obsolete CIBW_SKIP entries
+  ([#1694](https://github.com/python-zeroconf/python-zeroconf/pull/1694),
+  [`104c5d6`](https://github.com/python-zeroconf/python-zeroconf/commit/104c5d6674896612aa83a89fd17b90de5f38a508))
+
+
+## v0.149.2 (2026-05-17)
+
+### Bug Fixes
+
+- **ci**: Drop retired macos-13 runner and skip cp39/pp39 in wheel matrix
+  ([#1693](https://github.com/python-zeroconf/python-zeroconf/pull/1693),
+  [`745198b`](https://github.com/python-zeroconf/python-zeroconf/commit/745198b1128213915c1c89829feb950046e3de91))
+
+
+## v0.149.1 (2026-05-16)
+
+### Bug Fixes
+
+- **ci**: Drop cp39 from cibuildwheel matrix
+  ([#1691](https://github.com/python-zeroconf/python-zeroconf/pull/1691),
+  [`591288b`](https://github.com/python-zeroconf/python-zeroconf/commit/591288ba77a872ce6ccfe040f9c73da89e180f8d))
+
+
+## v0.149.0 (2026-05-16)
+
+### Features
+
+- Drop Python 3.9 support ([#1688](https://github.com/python-zeroconf/python-zeroconf/pull/1688),
+  [`327b93d`](https://github.com/python-zeroconf/python-zeroconf/commit/327b93dc602707e25d53788f0fb14e142f4558b3))
+
+### Performance Improvements
+
+- **build**: Parallelize cython extension compilation
+  ([#1689](https://github.com/python-zeroconf/python-zeroconf/pull/1689),
+  [`1ea6b94`](https://github.com/python-zeroconf/python-zeroconf/commit/1ea6b940ecbfd7e7654ad022cf7f4f888cf1daa5))
+
+
+## v0.147.4 (2026-05-16)
+
+### Bug Fixes
+
+- **core**: Close owned event loop on Zeroconf.close() to stop FD leak
+  ([#1685](https://github.com/python-zeroconf/python-zeroconf/pull/1685),
+  [`2f78370`](https://github.com/python-zeroconf/python-zeroconf/commit/2f78370c75d1082afe3191b7447aebfff1206657))
+
+### Build System
+
+- Adjust actions checkout ref parameter on release
+  ([#1669](https://github.com/python-zeroconf/python-zeroconf/pull/1669),
+  [`bc8ec8d`](https://github.com/python-zeroconf/python-zeroconf/commit/bc8ec8d59d875522f75901644d423d30d803a030))
+
+### Documentation
+
+- Add CLAUDE.md orientation file and pr-workflow skill
+  ([#1672](https://github.com/python-zeroconf/python-zeroconf/pull/1672),
+  [`8f8b4d6`](https://github.com/python-zeroconf/python-zeroconf/commit/8f8b4d6526729906337f4562c7b391745bb878af))
+
+- Add Cython gotchas section to CLAUDE.md
+  ([#1679](https://github.com/python-zeroconf/python-zeroconf/pull/1679),
+  [`5cfb09d`](https://github.com/python-zeroconf/python-zeroconf/commit/5cfb09d89395cb507d436c45fc38edb9e44b94c8))
+
+- Add SECURITY.md with private vulnerability reporting policy
+  ([#1675](https://github.com/python-zeroconf/python-zeroconf/pull/1675),
+  [`13f9048`](https://github.com/python-zeroconf/python-zeroconf/commit/13f9048f0f9786ce18e89daef04073847735a006))
+
+### Testing
+
+- Add quick_timing fixture and apply to register-heavy tests
+  ([#1678](https://github.com/python-zeroconf/python-zeroconf/pull/1678),
+  [`d5e1f01`](https://github.com/python-zeroconf/python-zeroconf/commit/d5e1f01bb336ea19d982ce7d99f191723d3f18af))
+
+- Fix flaky test_run_coro_with_timeout
+  ([#1683](https://github.com/python-zeroconf/python-zeroconf/pull/1683),
+  [`277f80d`](https://github.com/python-zeroconf/python-zeroconf/commit/277f80da2c0fea5b256f981bd3f425906f6b7be6))
+
+- Pass timeout=0 explicitly in test_event_loop_blocked
+  ([#1676](https://github.com/python-zeroconf/python-zeroconf/pull/1676),
+  [`1b31ed5`](https://github.com/python-zeroconf/python-zeroconf/commit/1b31ed5fed9db1608255799701cd6f32b494952f))
+
+- Pass timeout=200 to ServiceInfo-request timeout tests
+  ([#1677](https://github.com/python-zeroconf/python-zeroconf/pull/1677),
+  [`01ef6ff`](https://github.com/python-zeroconf/python-zeroconf/commit/01ef6ffd9ff442b3cfb37d2793e0ca6ad5148832))
+
+
+## v0.148.0 (2025-10-05)
+
+### Features
+
+- Trigger semantic releases for 0.x branch
+  ([#1626](https://github.com/python-zeroconf/python-zeroconf/pull/1626),
+  [`812a2b3`](https://github.com/python-zeroconf/python-zeroconf/commit/812a2b3ff4370593a7a0c3ad67389c76c434aa9b))
+
 
 ## v0.147.3 (2025-10-04)
 
@@ -1984,3 +2153,5 @@ Include documentation and test files in source distributions, in order to make t
 
 
 ## v0.15.1 (2014-07-10)
+
+- Initial Release
