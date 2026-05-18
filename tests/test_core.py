@@ -12,6 +12,7 @@ import time
 import unittest
 import unittest.mock
 import warnings
+from pathlib import Path
 from typing import cast
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -23,7 +24,7 @@ from zeroconf._listener import AsyncListener, _WrappedTransport
 from zeroconf._protocol.incoming import DNSIncoming
 from zeroconf.asyncio import AsyncZeroconf
 
-from . import _clear_cache, _inject_response, _wait_for_start, has_working_ipv6
+from . import _backdate_cache, _clear_cache, _inject_response, _wait_for_start, has_working_ipv6
 
 log = logging.getLogger("zeroconf")
 original_logging_level = logging.NOTSET
@@ -83,6 +84,40 @@ class Framework(unittest.TestCase):
         rv.close()
         rv.close()
 
+    def test_close_releases_owned_event_loop(self):
+        """Closing a Zeroconf that started its own loop thread closes that loop.
+
+        Regression test for issue #1589 — without loop.close(), the selector
+        (epoll on Linux) and its self-pipe sockets stay open across each
+        Zeroconf construct/close cycle and the process eventually exhausts
+        its FD limit.
+        """
+        rv = r.Zeroconf(interfaces=["127.0.0.1"])
+        loop = rv.loop
+        assert loop is not None
+        assert loop.is_running()
+        rv.close()
+        assert loop.is_closed()
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Requires /proc/<pid>/fd")
+    @unittest.skipUnless(Path(f"/proc/{os.getpid()}/fd").is_dir(), "/proc/<pid>/fd not available")
+    def test_close_does_not_leak_file_descriptors(self):
+        """Tight loops of Zeroconf()/close() do not leak FDs (issue #1589)."""
+        fd_dir = Path(f"/proc/{os.getpid()}/fd")
+
+        def _fd_count() -> int:
+            return sum(1 for _ in fd_dir.iterdir())
+
+        # Warm-up cycle so any one-shot import-time FDs land before measuring.
+        r.Zeroconf(interfaces=["127.0.0.1"]).close()
+        baseline = _fd_count()
+        for _ in range(10):
+            r.Zeroconf(interfaces=["127.0.0.1"]).close()
+        # Allow tiny slack for unrelated FDs the test harness may open
+        # (e.g. coverage), but reject the per-cycle linear growth pattern
+        # the bug produced (~3 FDs per cycle, so >=30 over 10 cycles).
+        assert _fd_count() - baseline < 10
+
     @unittest.skipIf(not has_working_ipv6(), "Requires IPv6")
     @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
     def test_launch_and_close_v4_v6(self):
@@ -118,6 +153,36 @@ class Framework(unittest.TestCase):
     def test_launch_and_close_apple_p2p_on_mac(self):
         rv = r.Zeroconf(apple_p2p=True)
         rv.close()
+
+    def test_use_asyncio_false_forces_thread_when_loop_running(self):
+        """use_asyncio=False starts a thread even with a running event loop."""
+
+        async def run() -> r.Zeroconf:
+            return r.Zeroconf(interfaces=["127.0.0.1"], use_asyncio=False)
+
+        loop = asyncio.new_event_loop()
+        zc: r.Zeroconf | None = None
+        try:
+            zc = loop.run_until_complete(run())
+            assert zc._loop_thread is not None
+            assert zc.loop is not loop
+        finally:
+            if zc is not None:
+                zc.close()
+            loop.close()
+
+    def test_use_asyncio_true_requires_running_loop(self):
+        """use_asyncio=True without a running loop raises RuntimeError."""
+        with pytest.raises(RuntimeError, match="requires a running asyncio event loop"):
+            r.Zeroconf(interfaces=["127.0.0.1"], use_asyncio=True)
+
+    def test_use_asyncio_default_starts_thread_without_loop(self):
+        """use_asyncio=None (default) keeps the historic auto-detect behavior."""
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
+        try:
+            assert zc._loop_thread is not None
+        finally:
+            zc.close()
 
     def test_async_updates_from_response(self):
         def mock_incoming_msg(
@@ -236,7 +301,7 @@ class Framework(unittest.TestCase):
             # all old records with that name, rrtype, and rrclass that were received
             # more than one second ago are declared invalid,
             # and marked to expire from the cache in one second.
-            time.sleep(1.1)
+            _backdate_cache(zeroconf)
 
             # service updated. currently only text record can be updated
             service_text = b"path=/~humingchun/"
@@ -245,12 +310,12 @@ class Framework(unittest.TestCase):
             assert dns_text is not None
             assert cast(r.DNSText, dns_text).text == service_text  # service_text is b'path=/~humingchun/'
 
-            time.sleep(1.1)
+            _backdate_cache(zeroconf)
 
             # The split message only has a SRV and A record.
             # This should not evict TXT records from the cache
             _inject_response(zeroconf, mock_split_incoming_msg(r.ServiceStateChange.Updated))
-            time.sleep(1.1)
+            _backdate_cache(zeroconf)
             dns_text = zeroconf.cache.get_by_details(service_name, const._TYPE_TXT, const._CLASS_IN)
             assert dns_text is not None
             assert cast(r.DNSText, dns_text).text == service_text  # service_text is b'path=/~humingchun/'
@@ -361,7 +426,7 @@ def test_goodbye_all_services():
     zc.close()
 
 
-def test_register_service_with_custom_ttl():
+def test_register_service_with_custom_ttl(quick_timing: None) -> None:
     """Test a registering a service with a custom ttl."""
 
     # instantiate a zeroconf instance
@@ -388,7 +453,7 @@ def test_register_service_with_custom_ttl():
     zc.close()
 
 
-def test_logging_packets(caplog):
+def test_logging_packets(caplog: pytest.LogCaptureFixture, quick_timing: None) -> None:
     """Test packets are only logged with debug logging."""
 
     # instantiate a zeroconf instance
@@ -431,6 +496,10 @@ def test_get_service_info_failure_path():
     zc.close()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="multicast loopback on the 127.0.0.1-only socket is unreliable on GH Actions Windows runners",
+)
 def test_sending_unicast():
     """Test sending unicast response."""
     zc = Zeroconf(interfaces=["127.0.0.1"])
@@ -452,8 +521,6 @@ def test_sending_unicast():
     assert zc.cache.get(entry) is None
 
     zc.send(generated)
-
-    # Handle slow github CI runners on windows
     for _ in range(10):
         time.sleep(0.05)
         if zc.cache.get(entry) is not None:
@@ -721,7 +788,7 @@ async def test_multiple_sync_instances_stared_from_async_close():
     await asyncio.sleep(0)
 
 
-def test_shutdown_while_register_in_process():
+def test_shutdown_while_register_in_process(quick_timing: None) -> None:
     """Test we can shutdown while registering a service in another thread."""
 
     # instantiate a zeroconf instance
@@ -753,11 +820,13 @@ def test_shutdown_while_register_in_process():
 
 
 @pytest.mark.asyncio
-@patch("zeroconf._core._STARTUP_TIMEOUT", 0)
 @patch("zeroconf._core.AsyncEngine._async_setup", new_callable=AsyncMock)
 async def test_event_loop_blocked(mock_start):
     """Test we raise NotRunningException when waiting for startup that times out."""
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
-    with pytest.raises(NotRunningException):
-        await aiozc.zeroconf.async_wait_for_start()
-    assert aiozc.zeroconf.started is False
+    try:
+        with pytest.raises(NotRunningException):
+            await aiozc.zeroconf.async_wait_for_start(timeout=0)
+        assert aiozc.zeroconf.started is False
+    finally:
+        await aiozc.async_close()
