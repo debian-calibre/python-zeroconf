@@ -2,6 +2,113 @@
 
 <!-- version list -->
 
+## v0.149.16 (2026-05-21)
+
+### Bug Fixes
+
+- Re-release for GHSA-qc2x-6f54-m6h9
+  ([#1770](https://github.com/python-zeroconf/python-zeroconf/pull/1770),
+  [`fad8646`](https://github.com/python-zeroconf/python-zeroconf/commit/fad86461630237d1f0c04e3745fef65e4cc3055c))
+
+
+## v0.149.15 (2026-05-21)
+
+### Bug Fixes
+
+- Preserve scope_id when scoped AAAA arrives alongside unscoped
+  ([#1764](https://github.com/python-zeroconf/python-zeroconf/pull/1764),
+  [`e2352ea`](https://github.com/python-zeroconf/python-zeroconf/commit/e2352ea84437d6fca81dfbdc41116feaaf45fefc))
+
+
+## v0.149.14 (2026-05-20)
+
+### Bug Fixes
+
+- Skip NSEC records in ServiceBrowser to suppress spurious updates
+  ([#1762](https://github.com/python-zeroconf/python-zeroconf/pull/1762),
+  [`137a5d6`](https://github.com/python-zeroconf/python-zeroconf/commit/137a5d6c29389ffcd8abfba0925d8cbe58cb2c1b))
+
+### Testing
+
+- Add blockbuster to detect blocking calls in asyncio tests
+  ([#1761](https://github.com/python-zeroconf/python-zeroconf/pull/1761),
+  [`90a5a39`](https://github.com/python-zeroconf/python-zeroconf/commit/90a5a39df7400926bc5498a86b9fe4c46eaffd44))
+
+- Scale aggregation timings 10x to speed up timing-dependent tests
+  ([#1759](https://github.com/python-zeroconf/python-zeroconf/pull/1759),
+  [`3e5ac4f`](https://github.com/python-zeroconf/python-zeroconf/commit/3e5ac4fbc5cd8d8b5ffed5cc8994782e7157cfad))
+
+- Shave loopback timing overhead from remaining slow tests
+  ([#1760](https://github.com/python-zeroconf/python-zeroconf/pull/1760),
+  [`343dc7a`](https://github.com/python-zeroconf/python-zeroconf/commit/343dc7a305b47a574f58265081f172ed54f461bb))
+
+- Widen QM follow-up window in info_asking_default test
+  ([#1765](https://github.com/python-zeroconf/python-zeroconf/pull/1765),
+  [`4ffba87`](https://github.com/python-zeroconf/python-zeroconf/commit/4ffba87177fcc11a0fd8ccb7d93c6996a1269a26))
+
+
+## v0.149.13 (2026-05-20)
+
+### Bug Fixes
+
+- Bound record payload reads against rdlength overrun
+  ([#1756](https://github.com/python-zeroconf/python-zeroconf/pull/1756),
+  [`5444495`](https://github.com/python-zeroconf/python-zeroconf/commit/544449596e645fcaad3834fa0cb614a54f847a82))
+
+### Documentation
+
+- Clarify LGPL-2.1-or-later license in README
+  ([#1763](https://github.com/python-zeroconf/python-zeroconf/pull/1763),
+  [`28bb01f`](https://github.com/python-zeroconf/python-zeroconf/commit/28bb01f23951f7883d8c3af66b6d537c34c516c7))
+
+### Refactoring
+
+- Extract loopback Zeroconf fixtures and mock_incoming_msg helper
+  ([#1758](https://github.com/python-zeroconf/python-zeroconf/pull/1758),
+  [`cb0af4a`](https://github.com/python-zeroconf/python-zeroconf/commit/cb0af4a8f4cdaad3721a2851d9fa17709d39ae62))
+
+
+## v0.149.12 (2026-05-20)
+
+### Bug Fixes
+
+- Bound QuestionHistory per-entry known-answer payload
+  ([#1755](https://github.com/python-zeroconf/python-zeroconf/pull/1755),
+  [`4ff6540`](https://github.com/python-zeroconf/python-zeroconf/commit/4ff65407bdc097f73a8b1f98659572e24d5c0df1))
+
+- Bound TC-deferred queues against spoofed-source flood OOM
+  ([#1751](https://github.com/python-zeroconf/python-zeroconf/pull/1751),
+  [`b22c8ff`](https://github.com/python-zeroconf/python-zeroconf/commit/b22c8ff19c66c68907d220a4823c0950f4fa93f7))
+
+
+## v0.149.11 (2026-05-20)
+
+### Bug Fixes
+
+- Bound duplicate-packet dedup against alternating-payload floods
+  ([#1750](https://github.com/python-zeroconf/python-zeroconf/pull/1750),
+  [`8c9d6ce`](https://github.com/python-zeroconf/python-zeroconf/commit/8c9d6ce0ccdb8854d14606c93f3790482363e1b9))
+
+
+## v0.149.10 (2026-05-20)
+
+### Bug Fixes
+
+- Accept uppercase .local. trailer in service_type_name
+  ([#1747](https://github.com/python-zeroconf/python-zeroconf/pull/1747),
+  [`37edde2`](https://github.com/python-zeroconf/python-zeroconf/commit/37edde2f5d9688e9d6c6573ee41a7cd25a54111e))
+
+- Bound TC-deferral assembly window to first-arrival + max delay
+  ([#1732](https://github.com/python-zeroconf/python-zeroconf/pull/1732),
+  [`a096238`](https://github.com/python-zeroconf/python-zeroconf/commit/a0962385a5079d6204fac7744fee9a9d67233eec))
+
+### Testing
+
+- Add codspeed benchmarks for listener duplicate-packet dedup
+  ([#1744](https://github.com/python-zeroconf/python-zeroconf/pull/1744),
+  [`068c3f6`](https://github.com/python-zeroconf/python-zeroconf/commit/068c3f68aeaaaf085d5fa197f7bff304ab80f847))
+
+
 ## v0.149.9 (2026-05-20)
 
 ### Bug Fixes
