@@ -4,15 +4,17 @@ Subject: Use benchmark test only if required module is available
 
 CodSpeed is only available for amd64 and arm64.
 ---
- tests/benchmarks/test_cache.py          | 2 ++
- tests/benchmarks/test_cache_bound.py    | 2 ++
- tests/benchmarks/test_incoming.py       | 2 ++
- tests/benchmarks/test_listener_dedup.py | 1 +
- tests/benchmarks/test_mark_seen.py      | 2 ++
- tests/benchmarks/test_outgoing.py       | 2 ++
- tests/benchmarks/test_send.py           | 1 +
- tests/benchmarks/test_txt_properties.py | 2 ++
- 8 files changed, 14 insertions(+)
+ tests/benchmarks/test_cache.py             | 2 ++
+ tests/benchmarks/test_cache_bound.py       | 2 ++
+ tests/benchmarks/test_cache_mark_expire.py | 2 ++
+ tests/benchmarks/test_incoming.py          | 2 ++
+ tests/benchmarks/test_ipaddress.py         | 2 ++
+ tests/benchmarks/test_listener_dedup.py    | 1 +
+ tests/benchmarks/test_mark_seen.py         | 2 ++
+ tests/benchmarks/test_outgoing.py          | 2 ++
+ tests/benchmarks/test_send.py              | 1 +
+ tests/benchmarks/test_txt_properties.py    | 2 ++
+ 10 files changed, 18 insertions(+)
 
 diff --git a/tests/benchmarks/test_cache.py b/tests/benchmarks/test_cache.py
 index 7813f67..8f50b45 100644
@@ -39,6 +41,19 @@ index 774129e..bf853d1 100644
  from pytest_codspeed import BenchmarkFixture
  
  from zeroconf import DNSAddress, DNSCache, current_time_millis
+diff --git a/tests/benchmarks/test_cache_mark_expire.py b/tests/benchmarks/test_cache_mark_expire.py
+index 326d1ae..7846167 100644
+--- a/tests/benchmarks/test_cache_mark_expire.py
++++ b/tests/benchmarks/test_cache_mark_expire.py
+@@ -12,6 +12,8 @@ from __future__ import annotations
+ 
+ from typing import Any
+ 
++import pytest
++pytest_codspeed = pytest.importorskip("pytest_codspeed")
+ from pytest_codspeed import BenchmarkFixture
+ 
+ from zeroconf import DNSAddress, DNSCache, DNSPointer, current_time_millis
 diff --git a/tests/benchmarks/test_incoming.py b/tests/benchmarks/test_incoming.py
 index 6d31e51..e630f4f 100644
 --- a/tests/benchmarks/test_incoming.py
@@ -52,6 +67,19 @@ index 6d31e51..e630f4f 100644
  from pytest_codspeed import BenchmarkFixture
  
  from zeroconf import (
+diff --git a/tests/benchmarks/test_ipaddress.py b/tests/benchmarks/test_ipaddress.py
+index 60aea89..7c6bd27 100644
+--- a/tests/benchmarks/test_ipaddress.py
++++ b/tests/benchmarks/test_ipaddress.py
+@@ -2,6 +2,8 @@
+ 
+ from __future__ import annotations
+ 
++import pytest
++pytest_codspeed = pytest.importorskip("pytest_codspeed")
+ from pytest_codspeed import BenchmarkFixture
+ 
+ from zeroconf._utils.ipaddress import ZeroconfIPv4Address, ZeroconfIPv6Address
 diff --git a/tests/benchmarks/test_listener_dedup.py b/tests/benchmarks/test_listener_dedup.py
 index b1b500b..84b8303 100644
 --- a/tests/benchmarks/test_listener_dedup.py
