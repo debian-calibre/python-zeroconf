@@ -5,8 +5,9 @@ Uploaders: Ruben Undheim <ruben.undheim@gmail.com>,
 Section: python
 Testsuite: autopkgtest-pkg-pybuild
 Build-Depends:
-    debhelper-compat (= 13),
+    debhelper-compat (= 14),
     dh-sequence-python3,
+    dh-sequence-single-binary,
     pybuild-plugin-pyproject,
     python3-all,
     python3-poetry-core,
@@ -29,7 +30,6 @@ Rules-Requires-Root: no
 Package: python3-zeroconf
 Architecture: all
 Depends:
-    ${misc:Depends},
     ${python3:Depends}
 Breaks: calibre (<< 6.24.0-2~)
 Description: Pure Python implementation of multicast DNS service discovery (Python3)
