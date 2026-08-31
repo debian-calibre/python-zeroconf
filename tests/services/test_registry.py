@@ -8,6 +8,8 @@ import unittest
 import zeroconf as r
 from zeroconf import ServiceInfo
 
+from .. import make_service_info
+
 
 class TestServiceRegistry(unittest.TestCase):
     def test_only_register_once(self):
@@ -15,17 +17,8 @@ class TestServiceRegistry(unittest.TestCase):
         name = "xxxyyy"
         registration_name = f"{name}.{type_}"
 
-        desc = {"path": "/~paulsm/"}
-        info = ServiceInfo(
-            type_,
-            registration_name,
-            80,
-            0,
-            0,
-            desc,
-            "ash-2.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-        )
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, registration_name, properties=desc)
 
         registry = r.ServiceRegistry()
         registry.async_add(info)
@@ -40,27 +33,9 @@ class TestServiceRegistry(unittest.TestCase):
         registration_name = f"{name}.{type_}"
         registration_name2 = f"{name2}.{type_}"
 
-        desc = {"path": "/~paulsm/"}
-        info = ServiceInfo(
-            type_,
-            registration_name,
-            80,
-            0,
-            0,
-            desc,
-            "same.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-        )
-        info2 = ServiceInfo(
-            type_,
-            registration_name2,
-            80,
-            0,
-            0,
-            desc,
-            "same.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-        )
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, registration_name, properties=desc, server="same.local.")
+        info2 = make_service_info(type_, registration_name2, properties=desc, server="same.local.")
         registry = r.ServiceRegistry()
         registry.async_add(info)
         registry.async_add(info2)
@@ -82,17 +57,8 @@ class TestServiceRegistry(unittest.TestCase):
         name = "xxxyyy"
         registration_name = f"{name}.{type_}"
 
-        desc = {"path": "/~paulsm/"}
-        info = ServiceInfo(
-            type_,
-            registration_name,
-            80,
-            0,
-            0,
-            desc,
-            "ash-2.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-        )
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, registration_name, properties=desc)
 
         registry = r.ServiceRegistry()
         registry.async_add(info)
@@ -105,17 +71,8 @@ class TestServiceRegistry(unittest.TestCase):
         name = "xxxyyy"
         registration_name = f"{name}.{type_}"
 
-        desc = {"path": "/~paulsm/"}
-        info = ServiceInfo(
-            type_,
-            registration_name,
-            80,
-            0,
-            0,
-            desc,
-            "ash-2.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-        )
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, registration_name, properties=desc)
 
         registry = r.ServiceRegistry()
         registry.async_add(info)
@@ -123,7 +80,7 @@ class TestServiceRegistry(unittest.TestCase):
         assert registry.async_get_service_infos() == [info]
         assert registry.async_get_info_name(registration_name) == info
         assert registry.async_get_infos_type(type_) == [info]
-        assert registry.async_get_infos_server("ash-2.local.") == [info]
+        assert registry.async_get_infos_server("spare-rig.local.") == [info]
         assert registry.async_get_types() == [type_]
 
     def test_lookups_upper_case_by_lower_case(self):
@@ -131,17 +88,8 @@ class TestServiceRegistry(unittest.TestCase):
         name = "Xxxyyy"
         registration_name = f"{name}.{type_}"
 
-        desc = {"path": "/~paulsm/"}
-        info = ServiceInfo(
-            type_,
-            registration_name,
-            80,
-            0,
-            0,
-            desc,
-            "ASH-2.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-        )
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, registration_name, properties=desc, server="SPARE-RIG.local.")
 
         registry = r.ServiceRegistry()
         registry.async_add(info)
@@ -149,5 +97,77 @@ class TestServiceRegistry(unittest.TestCase):
         assert registry.async_get_service_infos() == [info]
         assert registry.async_get_info_name(registration_name.lower()) == info
         assert registry.async_get_infos_type(type_.lower()) == [info]
-        assert registry.async_get_infos_server("ash-2.local.") == [info]
+        assert registry.async_get_infos_server("spare-rig.local.") == [info]
         assert registry.async_get_types() == [type_.lower()]
+
+    def test_empty_buckets_are_removed_when_last_entry_is_removed(self):
+        type_ = "_test-srvc-type._tcp.local."
+        registration_name = f"xxxyyy.{type_}"
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, registration_name, properties=desc)
+
+        registry = r.ServiceRegistry()
+        registry.async_add(info)
+        registry.async_remove(info)
+
+        assert type_.lower() not in registry.types
+        assert "spare-rig.local." not in registry.servers
+        assert registry.async_get_types() == []
+
+    def test_bulk_remove_preserves_order_of_survivors(self):
+        type_ = "_test-srvc-type._tcp.local."
+        server = "shared.local."
+        desc = {"path": "/healthz/"}
+        infos = [
+            make_service_info(type_, f"svc{i}.{type_}", properties=desc, server=server) for i in range(20)
+        ]
+
+        registry = r.ServiceRegistry()
+        for info in infos:
+            registry.async_add(info)
+
+        # Remove every other entry in one bulk call.
+        to_remove = [infos[i] for i in range(0, 20, 2)]
+        registry.async_remove(to_remove)
+
+        expected = [infos[i] for i in range(1, 20, 2)]
+        assert registry.async_get_infos_type(type_) == expected
+        assert registry.async_get_infos_server(server) == expected
+
+    def test_bulk_remove_then_readd_under_same_key(self):
+        """Re-adding after the bucket was deleted must rebuild it cleanly."""
+        type_ = "_test-srvc-type._tcp.local."
+        server = "spare-rig.local."
+        desc = {"path": "/healthz/"}
+        info = make_service_info(type_, f"only.{type_}", properties=desc, server=server)
+
+        registry = r.ServiceRegistry()
+        registry.async_add(info)
+        registry.async_remove(info)
+        assert type_.lower() not in registry.types
+        registry.async_add(info)
+        assert registry.async_get_infos_type(type_) == [info]
+        assert registry.async_get_infos_server(server) == [info]
+
+    def test_update_replaces_indexed_info(self):
+        type_ = "_test-srvc-type._tcp.local."
+        server = "spare-rig.local."
+        registration_name = f"xxxyyy.{type_}"
+        info = make_service_info(type_, registration_name, properties={"path": "/healthz/"}, server=server)
+        updated = ServiceInfo(
+            type_,
+            registration_name,
+            81,
+            0,
+            0,
+            {"path": "/healthz/"},
+            server,
+            addresses=[socket.inet_aton("10.7.4.3")],
+        )
+
+        registry = r.ServiceRegistry()
+        registry.async_add(info)
+        registry.async_update(updated)
+
+        assert registry.async_get_infos_type(type_)[0] is updated
+        assert registry.async_get_infos_server(server)[0] is updated

@@ -20,21 +20,9 @@ python-zeroconf
 
 `Documentation <https://python-zeroconf.readthedocs.io/en/latest/>`_.
 
-This is fork of pyzeroconf, Multicast DNS Service Discovery for Python,
-originally by Paul Scott-Murphy (https://github.com/paulsm/pyzeroconf),
-modified by William McBrine (https://github.com/wmcbrine/pyzeroconf).
-
-The original William McBrine's fork note::
-
-    This fork is used in all of my TiVo-related projects: HME for Python
-    (and therefore HME/VLC), Network Remote, Remote Proxy, and pyTivo.
-    Before this, I was tracking the changes for zeroconf.py in three
-    separate repos. I figured I should have an authoritative source.
-
-    Although I make changes based on my experience with TiVos, I expect that
-    they're generally applicable. This version also includes patches found
-    on the now-defunct (?) Launchpad repo of pyzeroconf, and elsewhere
-    around the net -- not always well-documented, sorry.
+This project is a fork of pyzeroconf, originally by Paul Scott-Murphy
+(https://github.com/paulsm/pyzeroconf), modified by William McBrine
+(https://github.com/wmcbrine/pyzeroconf).
 
 Compatible with:
 
@@ -100,33 +88,28 @@ The easiest way to install python-zeroconf is using pip::
 How do I use it?
 ================
 
-Here's an example of browsing for a service:
+Here's how to discover services:
 
 .. code-block:: python
 
     from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
 
-    class MyListener(ServiceListener):
-
-        def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-            print(f"Service {name} updated")
-
-        def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-            print(f"Service {name} removed")
-
+    class EventLogger(ServiceListener):
         def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
             info = zc.get_service_info(type_, name)
-            print(f"Service {name} added, service info: {info}")
+            print(f"discovered {name}: {info}")
+
+        def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+            print(f"lost {name}")
+
+        def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+            print(f"refreshed {name}")
 
 
-    zeroconf = Zeroconf()
-    listener = MyListener()
-    browser = ServiceBrowser(zeroconf, "_http._tcp.local.", listener)
-    try:
-        input("Press enter to exit...\n\n")
-    finally:
-        zeroconf.close()
+    with Zeroconf() as zc:
+        ServiceBrowser(zc, "_http._tcp.local.", EventLogger())
+        input("browsing, press enter to stop\n")
 
 .. note::
 
@@ -134,7 +117,7 @@ Here's an example of browsing for a service:
     If you want to customize that you need to specify ``interfaces`` argument when
     constructing ``Zeroconf`` object (see the code for details).
 
-If you don't know the name of the service you need to browse for, try:
+To see which service types are present on the network, try:
 
 .. code-block:: python
 

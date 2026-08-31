@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib.util
+import os
 import threading
 from collections.abc import AsyncGenerator, Generator, Iterator
 from unittest.mock import patch
@@ -14,6 +16,20 @@ from zeroconf._handlers import query_handler
 from zeroconf._services import browser as service_browser
 from zeroconf._services import info as service_info
 from zeroconf.asyncio import AsyncZeroconf
+
+# The dev dependency group only installs hypothesis on CPython (the CI
+# matrix pins pypy-3.10 and hypothesis ships no pp310 wheels), and a
+# non-dev install has no hypothesis at all.
+collect_ignore: list[str] = []
+if importlib.util.find_spec("hypothesis") is None:
+    collect_ignore.append("test_fuzz_incoming.py")
+else:
+    from hypothesis import settings as _hypothesis_settings
+
+    # Deterministic in CI; set HYPOTHESIS_PROFILE=long for a deep local run.
+    _hypothesis_settings.register_profile("ci", derandomize=True, max_examples=200, deadline=None)
+    _hypothesis_settings.register_profile("long", max_examples=50000, deadline=None)
+    _hypothesis_settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "ci"))
 
 try:
     from blockbuster import BlockBuster, blockbuster_ctx
@@ -43,7 +59,7 @@ _KNOWN_BLOCKING: frozenset[str] = frozenset(
         "tests/test_asyncio.py::test_async_service_registration_same_server_different_ports",
         "tests/test_asyncio.py::test_async_service_registration_same_server_same_ports",
         "tests/test_asyncio.py::test_async_tasks",
-        "tests/test_core.py::Framework::test_use_asyncio_false_forces_thread_when_loop_running",
+        "tests/test_core.py::test_use_asyncio_false_forces_thread_when_loop_running",
         "tests/utils/test_asyncio.py::test_run_coro_with_timeout",
     }
 )
@@ -71,6 +87,11 @@ def blockbuster(
         yield None
         return
     with blockbuster_ctx() as bb:
+        # coverage's C tracer acquires its data lock from whatever frame
+        # is running when tracing starts on a new thread, which can be an
+        # event-loop callback and is not a blocking call zeroconf makes.
+        for func in ("threading.Lock.acquire", "threading.Lock.acquire_lock"):
+            bb.functions[func].can_block_in("coverage/collector.py", "lock_data")
         yield bb
 
 
@@ -84,12 +105,15 @@ def verify_threads_ended():
 
 
 @pytest.fixture
-def zc_loopback() -> Generator[Zeroconf]:
+def zc(verify_threads_ended: None) -> Generator[Zeroconf]:
     """Yield a loopback `Zeroconf` and close it on teardown.
 
     Replaces the inline `zc = Zeroconf(interfaces=["127.0.0.1"])` +
     explicit `zc.close()` pattern duplicated across the suite. Calling
     `zc.close()` inside a test is still safe — `close()` is idempotent.
+
+    Depends on `verify_threads_ended` so the instance is torn down before
+    the thread check runs.
     """
     zc = Zeroconf(interfaces=["127.0.0.1"])
     try:
@@ -99,7 +123,7 @@ def zc_loopback() -> Generator[Zeroconf]:
 
 
 @pytest_asyncio.fixture
-async def aiozc_loopback() -> AsyncGenerator[AsyncZeroconf]:
+async def aiozc(verify_threads_ended: None) -> AsyncGenerator[AsyncZeroconf]:
     """Yield a loopback `AsyncZeroconf` and close it on teardown.
 
     Replaces the inline `aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])`
