@@ -2,6 +2,140 @@
 
 <!-- version list -->
 
+## v0.151.3 (2026-08-30)
+
+### Bug Fixes
+
+- Correct the recursion available header flag to the rfc 1035 value
+  ([#1893](https://github.com/python-zeroconf/python-zeroconf/pull/1893),
+  [`07e3812`](https://github.com/python-zeroconf/python-zeroconf/commit/07e38121a30ecd3c19690ffc956dead8160e6c46))
+
+### Refactoring
+
+- Compute probe pacing from fresh clock reads
+  ([#1888](https://github.com/python-zeroconf/python-zeroconf/pull/1888),
+  [`7737108`](https://github.com/python-zeroconf/python-zeroconf/commit/773710807a0159dc49de2a8c875a63d1085df604))
+
+- Compute service info request pacing from fresh clock reads
+  ([#1895](https://github.com/python-zeroconf/python-zeroconf/pull/1895),
+  [`49aa15f`](https://github.com/python-zeroconf/python-zeroconf/commit/49aa15f639bc50f05f0f88c8153463a7a42c06ef))
+
+### Testing
+
+- Fix flaky test_service_browser_expire_callbacks
+  ([#1879](https://github.com/python-zeroconf/python-zeroconf/pull/1879),
+  [`6d061a4`](https://github.com/python-zeroconf/python-zeroconf/commit/6d061a4fb3b3557bafc37ef951c5214f7b24a125))
+
+- Make test_qu_response deterministic by injecting the announcement
+  ([#1845](https://github.com/python-zeroconf/python-zeroconf/pull/1845),
+  [`10db10a`](https://github.com/python-zeroconf/python-zeroconf/commit/10db10a8b5db3cbd6e6c6718a6cbb8830f4b9d07))
+
+
+## v0.151.2 (2026-08-29)
+
+### Bug Fixes
+
+- Restore sdist contents and listener typing after the reverts
+  ([#1839](https://github.com/python-zeroconf/python-zeroconf/pull/1839),
+  [`6b2a040`](https://github.com/python-zeroconf/python-zeroconf/commit/6b2a04080df823b4ef9f4bcb07e058df7af3c242))
+
+
+## v0.151.1 (2026-08-28)
+
+### Bug Fixes
+
+- Accept str addresses in ServiceInfo.addresses under cython
+  ([#1836](https://github.com/python-zeroconf/python-zeroconf/pull/1836),
+  [`c0b2d50`](https://github.com/python-zeroconf/python-zeroconf/commit/c0b2d5018b2946eee89ca584c377fa00870b32b6))
+
+
+## v0.151.0 (2026-08-28)
+
+### Features
+
+- Speed up incoming packet parsing
+  ([#1830](https://github.com/python-zeroconf/python-zeroconf/pull/1830),
+  [`b3634f2`](https://github.com/python-zeroconf/python-zeroconf/commit/b3634f2c3ed39ffaa8e64f5175b09335c3e13343))
+
+### Testing
+
+- Add fuzzing coverage for incoming packet parsing
+  ([#1829](https://github.com/python-zeroconf/python-zeroconf/pull/1829),
+  [`868391c`](https://github.com/python-zeroconf/python-zeroconf/commit/868391cbde5da7a63001b6867e42768c45199919))
+
+- Widen loopback find timeout on macos
+  ([#1832](https://github.com/python-zeroconf/python-zeroconf/pull/1832),
+  [`9e732c5`](https://github.com/python-zeroconf/python-zeroconf/commit/9e732c56bd8242d94b3a26ec2a160b85c192e5cf))
+
+
+## v0.150.5 (2026-08-28)
+
+### Bug Fixes
+
+- Fail service resolution fast when nsec denies the needed address types
+  ([#1827](https://github.com/python-zeroconf/python-zeroconf/pull/1827),
+  [`77f8cf0`](https://github.com/python-zeroconf/python-zeroconf/commit/77f8cf0ccd0c55427a768c403382b82e560f6255))
+
+### Testing
+
+- Allow coverage data lock in blockbuster
+  ([#1828](https://github.com/python-zeroconf/python-zeroconf/pull/1828),
+  [`ca9d027`](https://github.com/python-zeroconf/python-zeroconf/commit/ca9d02709dd4ccfe7ae6fc6a9f12ea76fdb9691b))
+
+
+## v0.150.4 (2026-08-28)
+
+### Bug Fixes
+
+- Correct nsec bitmap semantics and resolve txt denials
+  ([#1825](https://github.com/python-zeroconf/python-zeroconf/pull/1825),
+  [`b37155e`](https://github.com/python-zeroconf/python-zeroconf/commit/b37155e0175b9e2e3beb06a1780da22f04d06d68))
+
+### Testing
+
+- Fix race in test_get_info_partial
+  ([#1826](https://github.com/python-zeroconf/python-zeroconf/pull/1826),
+  [`7635d45`](https://github.com/python-zeroconf/python-zeroconf/commit/7635d458e348903420db42421500cd545ab41b92))
+
+
+## v0.150.3 (2026-08-28)
+
+### Bug Fixes
+
+- Require a TXT record before a service is considered complete
+  ([#1821](https://github.com/python-zeroconf/python-zeroconf/pull/1821),
+  [`32d963b`](https://github.com/python-zeroconf/python-zeroconf/commit/32d963bd4a401c098ff518d3b1e78b091f1f9c9c))
+
+### Performance Improvements
+
+- **registry**: Use insertion-ordered dicts for O(1) removal
+  ([#1786](https://github.com/python-zeroconf/python-zeroconf/pull/1786),
+  [`1216f59`](https://github.com/python-zeroconf/python-zeroconf/commit/1216f59b1113d01d3241904f11e6d05dde654c6d))
+
+
+## v0.150.2 (2026-08-28)
+
+### Bug Fixes
+
+- Keep `key=` distinct from a valueless `key` in TXT records
+  ([#1813](https://github.com/python-zeroconf/python-zeroconf/pull/1813),
+  [`899eaaa`](https://github.com/python-zeroconf/python-zeroconf/commit/899eaaa8a11c3d63b8325f73c9968a270e1e72f2))
+
+
+## v0.150.1 (2026-08-28)
+
+### Bug Fixes
+
+- Build with cython 3.3.0 ([#1820](https://github.com/python-zeroconf/python-zeroconf/pull/1820),
+  [`df947b2`](https://github.com/python-zeroconf/python-zeroconf/commit/df947b2f4df94950e272fe09dc9d48ad18411743))
+
+### Documentation
+
+- Add an example for re-announcing on interface changes
+  ([#1803](https://github.com/python-zeroconf/python-zeroconf/pull/1803),
+  [`c690b78`](https://github.com/python-zeroconf/python-zeroconf/commit/c690b78cbd8d54df9847e8873cf5edce80e70b8d))
+
+
 ## v0.150.0 (2026-06-22)
 
 ### Features
@@ -310,7 +444,7 @@
 
 ### Build System
 
-- Adjust actions checkout ref parameter on release
+- Use an explicit checkout ref in the release workflow
   ([#1669](https://github.com/python-zeroconf/python-zeroconf/pull/1669),
   [`bc8ec8d`](https://github.com/python-zeroconf/python-zeroconf/commit/bc8ec8d59d875522f75901644d423d30d803a030))
 
@@ -1908,16 +2042,9 @@ This also revealed that we do not send NSEC records in the initial broadcast. Th
   ([#1145](https://github.com/python-zeroconf/python-zeroconf/pull/1145),
   [`524494e`](https://github.com/python-zeroconf/python-zeroconf/commit/524494edd49bd049726b19ae8ac8f6eea69a3943))
 
-- Include tests and docs in sdist archives
+- Ship the tests, docs and COPYING file in the sdist
   ([#1142](https://github.com/python-zeroconf/python-zeroconf/pull/1142),
   [`da10a3b`](https://github.com/python-zeroconf/python-zeroconf/commit/da10a3b2827cee0719d3bb9152ae897f061c6e2e))
-
-feat: Include tests and docs in sdist archives
-
-Include documentation and test files in source distributions, in order to make them more useful for
-  packagers (Linux distributions, Conda). Testing is an important part of packaging process, and at
-  least Gentoo users have requested offline documentation for Python packages. Furthermore, the
-  COPYING file was missing from sdist, even though it was referenced in README.
 
 - Small cleanups to cache cleanup interval
   ([#1146](https://github.com/python-zeroconf/python-zeroconf/pull/1146),

@@ -7,7 +7,9 @@ import logging
 import os
 import socket
 import threading
+import time
 import unittest
+from collections.abc import Callable
 from ipaddress import ip_address
 from threading import Event
 from unittest.mock import patch
@@ -23,7 +25,13 @@ from zeroconf._utils.ipaddress import ZeroconfIPv4Address
 from zeroconf._utils.net import IPVersion
 from zeroconf.asyncio import AsyncZeroconf
 
-from .. import QUICK_REQUEST_TIMEOUT_MS, _inject_response, has_working_ipv6, mock_incoming_msg
+from .. import (
+    QUICK_REQUEST_TIMEOUT_MS,
+    _inject_response,
+    has_working_ipv6,
+    make_service_info,
+    mock_incoming_msg,
+)
 
 log = logging.getLogger("zeroconf")
 original_logging_level = logging.NOTSET
@@ -43,11 +51,11 @@ def teardown_module():
 class TestServiceInfo(unittest.TestCase):
     def test_get_name(self):
         """Verify the name accessor can strip the type."""
-        desc = {"path": "/~paulsm/"}
+        desc = {"path": "/healthz/"}
         service_name = "name._type._tcp.local."
         service_type = "_type._tcp.local."
         service_server = "ash-1.local."
-        service_address = socket.inet_aton("10.0.1.2")
+        service_address = socket.inet_aton("10.7.4.2")
         info = ServiceInfo(
             service_type,
             service_name,
@@ -64,11 +72,11 @@ class TestServiceInfo(unittest.TestCase):
         """Verify records with the wrong name are rejected."""
 
         zc = r.Zeroconf(interfaces=["127.0.0.1"])
-        desc = {"path": "/~paulsm/"}
+        desc = {"path": "/healthz/"}
         service_name = "name._type._tcp.local."
         service_type = "_type._tcp.local."
         service_server = "ash-1.local."
-        service_address = socket.inet_aton("10.0.1.2")
+        service_address = socket.inet_aton("10.7.4.2")
         ttl = 120
         now = r.current_time_millis()
         info = ServiceInfo(
@@ -114,22 +122,22 @@ class TestServiceInfo(unittest.TestCase):
                         0,
                         0,
                         80,
-                        "ASH-2.local.",
+                        "SPARE-RIG.local.",
                     ),
                     None,
                 )
             ],
         )
-        assert info.server_key == "ash-2.local."
-        assert info.server == "ASH-2.local."
-        new_address = socket.inet_aton("10.0.1.3")
+        assert info.server_key == "spare-rig.local."
+        assert info.server == "SPARE-RIG.local."
+        new_address = socket.inet_aton("10.7.4.3")
         info.async_update_records(
             zc,
             now,
             [
                 RecordUpdate(
                     r.DNSAddress(
-                        "ASH-2.local.",
+                        "SPARE-RIG.local.",
                         const._TYPE_A,
                         const._CLASS_IN | const._CLASS_UNIQUE,
                         ttl,
@@ -171,15 +179,15 @@ class TestServiceInfo(unittest.TestCase):
                         0,
                         0,
                         80,
-                        "ASH-2.local.",
+                        "SPARE-RIG.local.",
                     ),
                     None,
                 )
             ],
         )
-        assert info.server_key == "ash-2.local."
-        assert info.server == "ASH-2.local."
-        new_address = socket.inet_aton("10.0.1.4")
+        assert info.server_key == "spare-rig.local."
+        assert info.server == "SPARE-RIG.local."
+        new_address = socket.inet_aton("10.7.4.4")
         info.async_update_records(
             zc,
             now,
@@ -202,11 +210,11 @@ class TestServiceInfo(unittest.TestCase):
     def test_service_info_rejects_expired_records(self):
         """Verify records that are expired are rejected."""
         zc = r.Zeroconf(interfaces=["127.0.0.1"])
-        desc = {"path": "/~paulsm/"}
+        desc = {"path": "/healthz/"}
         service_name = "name._type._tcp.local."
         service_type = "_type._tcp.local."
         service_server = "ash-1.local."
-        service_address = socket.inet_aton("10.0.1.2")
+        service_address = socket.inet_aton("10.7.4.2")
         ttl = 120
         now = r.current_time_millis()
         info = ServiceInfo(
@@ -260,7 +268,7 @@ class TestServiceInfo(unittest.TestCase):
         service_type = "_type._tcp.local."
         service_server = "ash-1.local."
         service_text = b"path=/~matt1/"
-        service_address = "10.0.1.2"
+        service_address = "10.7.4.2"
         service_address_v6_ll = "fe80::52e:c2f2:bc5f:e9c6"
         service_scope_id = 12
 
@@ -271,7 +279,6 @@ class TestServiceInfo(unittest.TestCase):
         last_sent: r.DNSOutgoing | None = None
 
         def send(out, addr=const._MDNS_ADDR, port=const._MDNS_PORT, v6_flow_scope=()):
-            """Sends an outgoing packet."""
             nonlocal last_sent
 
             last_sent = out
@@ -282,7 +289,7 @@ class TestServiceInfo(unittest.TestCase):
 
             def get_service_info_helper(zc, type, name):
                 nonlocal service_info
-                service_info = zc.get_service_info(type, name)
+                service_info = zc.get_service_info(type, name, timeout=10000)
                 service_info_event.set()
 
             try:
@@ -292,7 +299,9 @@ class TestServiceInfo(unittest.TestCase):
                     args=(zc, service_type, service_name),
                 )
                 helper_thread.start()
-                wait_time = 1
+                # Covers the ~1s duplicate-question interval when a query
+                # generated from the pre-inject cache burns a slot.
+                wait_time = 2
 
                 # Expect query for SRV, TXT, A, AAAA
                 send_event.wait(wait_time)
@@ -305,8 +314,6 @@ class TestServiceInfo(unittest.TestCase):
                 assert service_info is None
 
                 # Expect query for SRV, A, AAAA
-                last_sent = None
-                send_event.clear()
                 _inject_response(
                     zc,
                     mock_incoming_msg(
@@ -321,6 +328,11 @@ class TestServiceInfo(unittest.TestCase):
                         ]
                     ),
                 )
+                # Clear only after the inject has been processed on the
+                # loop so a query built from the pre-inject cache cannot
+                # satisfy the wait below.
+                last_sent = None
+                send_event.clear()
                 send_event.wait(wait_time)
                 assert last_sent is not None
                 assert len(last_sent.questions) == 3  # type: ignore[unreachable]
@@ -330,8 +342,6 @@ class TestServiceInfo(unittest.TestCase):
                 assert service_info is None
 
                 # Expect query for A, AAAA
-                last_sent = None
-                send_event.clear()
                 _inject_response(
                     zc,
                     mock_incoming_msg(
@@ -349,6 +359,8 @@ class TestServiceInfo(unittest.TestCase):
                         ]
                     ),
                 )
+                last_sent = None
+                send_event.clear()
                 send_event.wait(wait_time)
                 assert last_sent is not None
                 assert len(last_sent.questions) == 2
@@ -358,8 +370,6 @@ class TestServiceInfo(unittest.TestCase):
                 assert service_info is None
 
                 # Expect no further queries
-                last_sent = None
-                send_event.clear()
                 _inject_response(
                     zc,
                     mock_incoming_msg(
@@ -382,7 +392,9 @@ class TestServiceInfo(unittest.TestCase):
                         ]
                     ),
                 )
-                send_event.wait(wait_time)
+                last_sent = None
+                send_event.clear()
+                service_info_event.wait(wait_time)
                 assert last_sent is None
                 assert service_info is not None
 
@@ -406,7 +418,6 @@ class TestServiceInfo(unittest.TestCase):
         last_sent: r.DNSOutgoing | None = None
 
         def send(out, addr=const._MDNS_ADDR, port=const._MDNS_PORT, v6_flow_scope=()):
-            """Sends an outgoing packet."""
             nonlocal last_sent
 
             last_sent = out
@@ -504,7 +515,7 @@ class TestServiceInfo(unittest.TestCase):
         service_type = "_type._tcp.local."
         service_server = "ash-1.local."
         service_text = b"path=/~matt1/"
-        service_address = "10.0.1.2"
+        service_address = "10.7.4.2"
 
         service_info = None
         service_info_event = Event()
@@ -592,11 +603,11 @@ class TestServiceInfo(unittest.TestCase):
         """Verify the first property is always used when there are duplicates in a txt record."""
 
         zc = r.Zeroconf(interfaces=["127.0.0.1"])
-        desc = {"path": "/~paulsm/"}
+        desc = {"path": "/healthz/"}
         service_name = "name._type._tcp.local."
         service_type = "_type._tcp.local."
         service_server = "ash-1.local."
-        service_address = socket.inet_aton("10.0.1.2")
+        service_address = socket.inet_aton("10.7.4.2")
         ttl = 120
         now = r.current_time_millis()
         info = ServiceInfo(
@@ -630,38 +641,83 @@ class TestServiceInfo(unittest.TestCase):
         assert info.properties[b"ci"] == b"2"
         zc.close()
 
+    def test_service_info_empty_value_txt_record(self):
+        """Verify `key=` decodes to an empty value, not to a valueless `key`."""
+        zc = r.Zeroconf(interfaces=["127.0.0.1"])
+        service_name = "name._type._tcp.local."
+        service_type = "_type._tcp.local."
+        service_server = "ash-1.local."
+        text = b"\x03rm=\x02rs\x05ve=05"
+        info = ServiceInfo(
+            service_type,
+            service_name,
+            22,
+            0,
+            0,
+            {"path": "/healthz/"},
+            service_server,
+            addresses=[socket.inet_aton("10.7.4.2")],
+        )
+        info.async_update_records(
+            zc,
+            r.current_time_millis(),
+            [
+                r.RecordUpdate(
+                    r.DNSText(
+                        service_name,
+                        const._TYPE_TXT,
+                        const._CLASS_IN | const._CLASS_UNIQUE,
+                        120,
+                        text,
+                    ),
+                    None,
+                )
+            ],
+        )
+        assert info.properties[b"rm"] == b""
+        assert info.properties[b"rs"] is None
+        assert info.properties[b"ve"] == b"05"
+
+        # The string-facing API must preserve the distinction too.
+        assert info.decoded_properties["rm"] == ""
+        assert info.decoded_properties["rs"] is None
+        assert info.decoded_properties["ve"] == "05"
+
+        # Re-encoding either view of the properties must reproduce the received rdata.
+        for properties in (info.properties, info.decoded_properties):
+            assert (
+                ServiceInfo(
+                    service_type,
+                    service_name,
+                    22,
+                    0,
+                    0,
+                    properties,
+                    service_server,
+                ).text
+                == text
+            )
+        zc.close()
+
 
 def test_multiple_addresses():
     type_ = "_http._tcp.local."
     registration_name = f"xxxyyy.{type_}"
-    desc = {"path": "/~paulsm/"}
-    address_parsed = "10.0.1.2"
+    desc = {"path": "/healthz/"}
+    address_parsed = "10.7.4.2"
     address = socket.inet_aton(address_parsed)
 
     # New kwarg way
-    info = ServiceInfo(
-        type_,
-        registration_name,
-        80,
-        0,
-        0,
-        desc,
-        "ash-2.local.",
-        addresses=[address, address],
-    )
+    info = make_service_info(type_, registration_name, properties=desc, addresses=[address, address])
 
     assert info.addresses == [address, address]
     assert info.parsed_addresses() == [address_parsed, address_parsed]
     assert info.parsed_scoped_addresses() == [address_parsed, address_parsed]
 
-    info = ServiceInfo(
+    info = make_service_info(
         type_,
         registration_name,
-        80,
-        0,
-        0,
-        desc,
-        "ash-2.local.",
+        properties=desc,
         parsed_addresses=[address_parsed, address_parsed],
     )
     assert info.addresses == [address, address]
@@ -676,30 +732,19 @@ def test_multiple_addresses():
         address_v6_ll = socket.inet_pton(socket.AF_INET6, address_v6_ll_parsed)
         interface_index = 12
         infos = [
-            ServiceInfo(
+            make_service_info(
                 type_,
                 registration_name,
-                80,
-                0,
-                0,
-                desc,
-                "ash-2.local.",
+                properties=desc,
                 addresses=[address, address_v6, address_v6_ll],
                 interface_index=interface_index,
             ),
-            ServiceInfo(
+            make_service_info(
                 type_,
                 registration_name,
-                80,
-                0,
-                0,
-                desc,
-                "ash-2.local.",
-                parsed_addresses=[
-                    address_parsed,
-                    address_v6_parsed,
-                    address_v6_ll_parsed,
-                ],
+                properties=desc,
+                addresses=[],
+                parsed_addresses=[address_parsed, address_v6_parsed, address_v6_ll_parsed],
                 interface_index=interface_index,
             ),
         ]
@@ -1014,7 +1059,7 @@ async def test_multiple_a_addresses_newest_address_first():
     """Test that info.addresses returns the newest seen address first."""
     type_ = "_http._tcp.local."
     registration_name = f"multiarec.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     cache = aiozc.zeroconf.cache
     host = "multahost.local."
@@ -1023,7 +1068,7 @@ async def test_multiple_a_addresses_newest_address_first():
     cache.async_add_records([record1, record2])
 
     # New kwarg way
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
+    info = make_service_info(type_, registration_name, properties=desc, server=host, addresses=[])
     info.load_from_cache(aiozc.zeroconf)
     assert info.addresses == [b"\x7f\x00\x00\x02", b"\x7f\x00\x00\x01"]
     await aiozc.async_close()
@@ -1033,7 +1078,7 @@ async def test_multiple_a_addresses_newest_address_first():
 async def test_invalid_a_addresses(caplog):
     type_ = "_http._tcp.local."
     registration_name = f"multiarec.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     cache = aiozc.zeroconf.cache
     host = "multahost.local."
@@ -1042,10 +1087,10 @@ async def test_invalid_a_addresses(caplog):
     cache.async_add_records([record1, record2])
 
     # New kwarg way
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
+    info = make_service_info(type_, registration_name, properties=desc, server=host, addresses=[])
     info.load_from_cache(aiozc.zeroconf)
     assert not info.addresses
-    assert "Encountered invalid address while processing record" in caplog.text
+    assert "Encountered invalid address while processing" in caplog.text
 
     await aiozc.async_close()
 
@@ -1054,13 +1099,13 @@ async def test_invalid_a_addresses(caplog):
 @unittest.skipIf(os.environ.get("SKIP_IPV6"), "IPv6 tests disabled")
 def test_filter_address_by_type_from_service_info():
     """Verify dns_addresses can filter by ipversion."""
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     type_ = "_homeassistant._tcp.local."
     name = "MyTestHome"
     registration_name = f"{name}.{type_}"
-    ipv4 = socket.inet_aton("10.0.1.2")
+    ipv4 = socket.inet_aton("10.7.4.2")
     ipv6 = socket.inet_pton(socket.AF_INET6, "2001:db8::1")
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, "ash-2.local.", addresses=[ipv4, ipv6])
+    info = make_service_info(type_, registration_name, properties=desc, addresses=[ipv4, ipv6])
 
     def dns_addresses_to_addresses(dns_address: list[DNSAddress]) -> list[bytes]:
         return [address.address for address in dns_address]
@@ -1078,16 +1123,7 @@ def test_changing_name_updates_serviceinfo_key():
     """Verify a name change will adjust the underlying key value."""
     type_ = "_homeassistant._tcp.local."
     name = "MyTestHome"
-    info_service = ServiceInfo(
-        type_,
-        f"{name}.{type_}",
-        80,
-        0,
-        0,
-        {"path": "/~paulsm/"},
-        "ash-2.local.",
-        addresses=[socket.inet_aton("10.0.1.2")],
-    )
+    info_service = make_service_info(type_, f"{name}.{type_}", properties={"path": "/healthz/"})
     assert info_service.key == "mytesthome._homeassistant._tcp.local."
     info_service.name = "YourTestHome._homeassistant._tcp.local."
     assert info_service.key == "yourtesthome._homeassistant._tcp.local."
@@ -1106,76 +1142,39 @@ def test_serviceinfo_address_updates():
             80,
             0,
             0,
-            {"path": "/~paulsm/"},
-            "ash-2.local.",
-            addresses=[socket.inet_aton("10.0.1.2")],
-            parsed_addresses=["10.0.1.2"],
+            {"path": "/healthz/"},
+            "spare-rig.local.",
+            addresses=[socket.inet_aton("10.7.4.2")],
+            parsed_addresses=["10.7.4.2"],
         )
 
-    info_service = ServiceInfo(
-        type_,
-        f"{name}.{type_}",
-        80,
-        0,
-        0,
-        {"path": "/~paulsm/"},
-        "ash-2.local.",
-        addresses=[socket.inet_aton("10.0.1.2")],
-    )
-    info_service.addresses = [socket.inet_aton("10.0.1.3")]
-    assert info_service.addresses == [socket.inet_aton("10.0.1.3")]
+    info_service = make_service_info(type_, f"{name}.{type_}", properties={"path": "/healthz/"})
+    info_service.addresses = [socket.inet_aton("10.7.4.3")]
+    assert info_service.addresses == [socket.inet_aton("10.7.4.3")]
 
 
 def test_serviceinfo_accepts_bytes_or_string_dict():
     """Verify a bytes or string dict can be passed to ServiceInfo."""
     type_ = "_homeassistant._tcp.local."
     name = "MyTestHome"
-    addresses = [socket.inet_aton("10.0.1.2")]
-    server_name = "ash-2.local."
-    info_service = ServiceInfo(
-        type_,
-        f"{name}.{type_}",
-        80,
-        0,
-        0,
-        {b"path": b"/~paulsm/"},
-        server_name,
-        addresses=addresses,
+    addresses = [socket.inet_aton("10.7.4.2")]
+    server_name = "spare-rig.local."
+    info_service = make_service_info(
+        type_, f"{name}.{type_}", properties={b"path": b"/healthz/"}, server=server_name, addresses=addresses
     )
-    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
-    info_service = ServiceInfo(
-        type_,
-        f"{name}.{type_}",
-        80,
-        0,
-        0,
-        {"path": "/~paulsm/"},
-        server_name,
-        addresses=addresses,
+    assert info_service.dns_text().text == b"\x0epath=/healthz/"
+    info_service = make_service_info(
+        type_, f"{name}.{type_}", properties={"path": "/healthz/"}, server=server_name, addresses=addresses
     )
-    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
-    info_service = ServiceInfo(
-        type_,
-        f"{name}.{type_}",
-        80,
-        0,
-        0,
-        {b"path": "/~paulsm/"},
-        server_name,
-        addresses=addresses,
+    assert info_service.dns_text().text == b"\x0epath=/healthz/"
+    info_service = make_service_info(
+        type_, f"{name}.{type_}", properties={b"path": "/healthz/"}, server=server_name, addresses=addresses
     )
-    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
-    info_service = ServiceInfo(
-        type_,
-        f"{name}.{type_}",
-        80,
-        0,
-        0,
-        {"path": b"/~paulsm/"},
-        server_name,
-        addresses=addresses,
+    assert info_service.dns_text().text == b"\x0epath=/healthz/"
+    info_service = make_service_info(
+        type_, f"{name}.{type_}", properties={"path": b"/healthz/"}, server=server_name, addresses=addresses
     )
-    assert info_service.dns_text().text == b"\x0epath=/~paulsm/"
+    assert info_service.dns_text().text == b"\x0epath=/healthz/"
 
 
 def test_asking_qu_questions(quick_request_timing):
@@ -1189,7 +1188,6 @@ def test_asking_qu_questions(quick_request_timing):
     first_outgoing = None
 
     def send(out, addr=const._MDNS_ADDR, port=const._MDNS_PORT):
-        """Sends an outgoing packet."""
         nonlocal first_outgoing
         if first_outgoing is None:
             first_outgoing = out
@@ -1215,7 +1213,6 @@ def test_asking_qm_questions(quick_request_timing):
     first_outgoing = None
 
     def send(out, addr=const._MDNS_ADDR, port=const._MDNS_PORT):
-        """Sends an outgoing packet."""
         nonlocal first_outgoing
         if first_outgoing is None:
             first_outgoing = out
@@ -1252,7 +1249,6 @@ async def test_we_try_four_times_with_random_delay():
     request_count = 0
 
     def async_send(out, addr=const._MDNS_ADDR, port=const._MDNS_PORT):
-        """Sends an outgoing packet."""
         nonlocal request_count
         request_count += 1
 
@@ -1270,12 +1266,12 @@ async def test_release_wait_when_new_recorded_added():
     """Test that async_request returns as soon as new matching records are added to the cache."""
     type_ = "_http._tcp.local."
     registration_name = f"multiarec.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
     # New kwarg way
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
+    info = make_service_info(type_, registration_name, properties=desc, server=host, addresses=[])
     task = asyncio.create_task(info.async_request(aiozc.zeroconf, timeout=200))
     generated = r.DNSOutgoing(const._FLAGS_QR_RESPONSE)
     generated.add_answer_at_time(
@@ -1335,7 +1331,7 @@ async def test_port_changes_are_seen():
     """Test that port changes are seen by async_request."""
     type_ = "_http._tcp.local."
     registration_name = f"multiarec.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
@@ -1418,7 +1414,7 @@ async def test_port_changes_are_seen_with_directed_request():
     """Test that port changes are seen by async_request with a directed request."""
     type_ = "_http._tcp.local."
     registration_name = f"multiarec.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahost.local."
 
@@ -1904,13 +1900,13 @@ async def test_release_wait_when_new_recorded_added_concurrency():
     """Test that concurrent async_request returns as soon as new matching records are added to the cache."""
     type_ = "_http._tcp.local."
     registration_name = f"multiareccon.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
     host = "multahostcon.local."
     await aiozc.zeroconf.async_wait_for_start()
 
     # New kwarg way
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
+    info = make_service_info(type_, registration_name, properties=desc, server=host, addresses=[])
     tasks = [asyncio.create_task(info.async_request(aiozc.zeroconf, timeout=200000)) for _ in range(10)]
     await asyncio.sleep(0.1)
     for task in tasks:
@@ -1971,18 +1967,51 @@ async def test_release_wait_when_new_recorded_added_concurrency():
 
 
 @pytest.mark.asyncio
-async def test_service_info_nsec_records():
-    """Test we can generate nsec records from ServiceInfo."""
+async def test_service_info_address_nsec_records() -> None:
+    """Test we can generate address nsec records from ServiceInfo."""
     type_ = "_http._tcp.local."
     registration_name = f"multiareccon.{type_}"
-    desc = {"path": "/~paulsm/"}
+    desc = {"path": "/healthz/"}
     host = "multahostcon.local."
-    info = ServiceInfo(type_, registration_name, 80, 0, 0, desc, host)
-    nsec_record = info.dns_nsec([const._TYPE_A, const._TYPE_AAAA], 50)
-    assert nsec_record.name == registration_name
+    info = make_service_info(
+        type_, registration_name, properties=desc, server=host, addresses=[b"\x7f\x00\x00\x01"]
+    )
+    nsec_record = info.dns_address_nsec(50)
+    assert nsec_record is not None
+    assert nsec_record.name == host
+    assert nsec_record.next_name == host
     assert nsec_record.type == const._TYPE_NSEC
     assert nsec_record.ttl == 50
-    assert nsec_record.rdtypes == [const._TYPE_A, const._TYPE_AAAA]
+    assert nsec_record.rdtypes == [const._TYPE_A]
+
+    # the no-override call is memoized; mutating addresses must drop the cache
+    assert info.dns_address_nsec() is not None
+    assert info.dns_address_nsec() is info.dns_address_nsec()
+    info.addresses = []
+    assert info.dns_address_nsec() is None
+
+    v6 = socket.inet_pton(socket.AF_INET6, "2001:db8::1")
+    info.addresses = [b"\x7f\x00\x00\x01", v6]
+    assert info.dns_address_nsec() is None
+
+
+def test_service_info_dns_nsec_deprecated() -> None:
+    """dns_nsec warns and delegates to dns_address_nsec, ignoring missing_types."""
+    type_ = "_http._tcp.local."
+    registration_name = f"depnsec.{type_}"
+    host = "depnsec-host.local."
+    info = make_service_info(
+        type_,
+        registration_name,
+        properties={"path": "/healthz/"},
+        server=host,
+        addresses=[b"\x7f\x00\x00\x01"],
+    )
+    with pytest.warns(DeprecationWarning, match="dns_address_nsec"):
+        record = info.dns_nsec([const._TYPE_AAAA], 50)
+    assert record == info.dns_address_nsec(50)
+    assert record is not None
+    assert record.rdtypes == [const._TYPE_A]
 
 
 @pytest.mark.asyncio
@@ -2069,7 +2098,6 @@ async def test_unicast_flag_if_requested() -> None:
     aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
 
     def async_send(out: DNSOutgoing, addr: str | None = None, port: int = const._MDNS_PORT) -> None:
-        """Sends an outgoing packet."""
         for question in out.questions:
             assert question.unicast
 
@@ -2080,3 +2108,917 @@ async def test_unicast_flag_if_requested() -> None:
         )
 
     await aiozc.async_close()
+
+
+def test_load_from_cache_incomplete_without_txt_record():
+    """A service with addresses but no TXT record is not complete (RFC 6763 section 6)."""
+    type_ = "_http._tcp.local."
+    registration_name = f"notxt.{type_}"
+    host = "notxt.local."
+    zc = r.Zeroconf(interfaces=["127.0.0.1"])
+    zc.cache.async_add_records(
+        [
+            r.DNSService(
+                registration_name,
+                const._TYPE_SRV,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                0,
+                0,
+                80,
+                host,
+            ),
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+        ]
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    assert info.load_from_cache(zc) is False
+    assert info.addresses == [socket.inet_aton("127.0.0.1")]
+    zc.close()
+
+
+def test_load_from_cache_complete_with_empty_txt_record():
+    """An empty TXT record still completes the service; only a missing one does not."""
+    type_ = "_http._tcp.local."
+    registration_name = f"emptytxt.{type_}"
+    host = "emptytxt.local."
+    zc = r.Zeroconf(interfaces=["127.0.0.1"])
+    zc.cache.async_add_records(
+        [
+            r.DNSService(
+                registration_name,
+                const._TYPE_SRV,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                0,
+                0,
+                80,
+                host,
+            ),
+            r.DNSText(
+                registration_name,
+                const._TYPE_TXT,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                b"",
+            ),
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+        ]
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    assert info.load_from_cache(zc) is True
+    assert info.properties == {}
+    zc.close()
+
+
+def test_load_from_cache_complete_with_locally_set_properties():
+    """Properties supplied by the caller count as the TXT data for completeness."""
+    type_ = "_http._tcp.local."
+    registration_name = f"localtxt.{type_}"
+    host = "localtxt.local."
+    zc = r.Zeroconf(interfaces=["127.0.0.1"])
+    zc.cache.async_add_records(
+        [
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+        ]
+    )
+
+    info = make_service_info(
+        type_, registration_name, properties={"path": "/healthz/"}, server=host, addresses=[]
+    )
+    assert info.load_from_cache(zc) is True
+    zc.close()
+
+
+def test_load_from_cache_complete_with_empty_locally_set_properties():
+    """An explicitly supplied empty properties dict counts as the TXT data."""
+    type_ = "_http._tcp.local."
+    registration_name = f"emptylocaltxt.{type_}"
+    host = "emptylocaltxt.local."
+    zc = r.Zeroconf(interfaces=["127.0.0.1"])
+    zc.cache.async_add_records(
+        [
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+        ]
+    )
+
+    info = make_service_info(type_, registration_name, properties={}, server=host, addresses=[])
+    assert info.load_from_cache(zc) is True
+    assert info.properties == {}
+    zc.close()
+
+
+def test_load_from_cache_complete_with_empty_locally_set_text():
+    """An explicitly supplied empty text blob counts as the TXT data."""
+    type_ = "_http._tcp.local."
+    registration_name = f"emptylocaltext.{type_}"
+    host = "emptylocaltext.local."
+    zc = r.Zeroconf(interfaces=["127.0.0.1"])
+    zc.cache.async_add_records(
+        [
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+        ]
+    )
+
+    info = make_service_info(type_, registration_name, properties=b"", server=host, addresses=[])
+    assert info.load_from_cache(zc) is True
+    assert info.properties == {}
+    zc.close()
+
+
+@pytest.mark.asyncio
+async def test_async_request_incomplete_without_txt_record(quick_request_timing):
+    """async_request fails while the responder sends no TXT record, and succeeds once it does."""
+    type_ = "_http._tcp.local."
+    registration_name = f"notxtrequest.{type_}"
+    host = "notxtrequest.local."
+    aiozc = AsyncZeroconf(interfaces=["127.0.0.1"])
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    address_records = [
+        r.DNSService(
+            registration_name,
+            const._TYPE_SRV,
+            const._CLASS_IN | const._CLASS_UNIQUE,
+            120,
+            0,
+            0,
+            80,
+            host,
+        ),
+        r.DNSAddress(
+            host,
+            const._TYPE_A,
+            const._CLASS_IN | const._CLASS_UNIQUE,
+            120,
+            socket.inet_aton("127.0.0.1"),
+        ),
+    ]
+    zc.record_manager.async_updates_from_response(mock_incoming_msg(address_records))
+
+    info = ServiceInfo(type_, registration_name)
+    with patch.object(zc, "async_send"):
+        assert await info.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is False
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSText(
+                    registration_name,
+                    const._TYPE_TXT,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    b"\x05ttl=2",
+                )
+            ]
+        )
+    )
+    with patch.object(zc, "async_send"):
+        assert await info.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is True
+    assert info.properties == {b"ttl": b"2"}
+
+    await aiozc.async_close()
+
+
+@pytest.mark.parametrize(
+    ("nsec_rdtypes", "expected_complete"),
+    [
+        # SRV bit set with TXT absent is a TXT denial (RFC 6762 §6.1)
+        ([const._TYPE_SRV], True),
+        # no SRV bit: the inverted bitmap older releases emitted, not a denial
+        ([const._TYPE_AAAA], False),
+    ],
+)
+def test_load_from_cache_with_nsec(zc: r.Zeroconf, nsec_rdtypes: list[int], expected_complete: bool) -> None:
+    """An NSEC listing SRV but not TXT denies the TXT record and completes the service."""
+    type_ = "_http._tcp.local."
+    registration_name = f"nsecdenial.{type_}"
+    host = "nsecdenial.local."
+    zc.cache.async_add_records(
+        [
+            r.DNSService(
+                registration_name,
+                const._TYPE_SRV,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                0,
+                0,
+                80,
+                host,
+            ),
+            r.DNSNsec(
+                registration_name,
+                const._TYPE_NSEC,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                registration_name,
+                nsec_rdtypes,
+            ),
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+        ]
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    assert info.load_from_cache(zc) is expected_complete
+    if expected_complete:
+        assert info.properties == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("quick_request_timing")
+async def test_async_request_completes_on_nsec_txt_denial(aiozc: AsyncZeroconf) -> None:
+    """async_request succeeds promptly when the responder denies the TXT record via NSEC."""
+    type_ = "_http._tcp.local."
+    registration_name = f"nsecrequest.{type_}"
+    host = "nsecrequest.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSService(
+                    registration_name,
+                    const._TYPE_SRV,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    0,
+                    0,
+                    80,
+                    host,
+                ),
+                r.DNSAddress(
+                    host,
+                    const._TYPE_A,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    socket.inet_aton("127.0.0.1"),
+                ),
+            ]
+        )
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    with patch.object(zc, "async_send"):
+        assert await info.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is False
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSNsec(
+                    registration_name,
+                    const._TYPE_NSEC,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    registration_name,
+                    [const._TYPE_SRV],
+                )
+            ]
+        )
+    )
+    with patch.object(zc, "async_send"):
+        assert await info.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is True
+    assert info.properties == {}
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSText(
+                    registration_name,
+                    const._TYPE_TXT,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    b"\x05ttl=2",
+                )
+            ]
+        )
+    )
+    assert info.load_from_cache(zc) is True
+    assert info.properties == {b"ttl": b"2"}
+
+
+@pytest.mark.asyncio
+async def test_nsec_after_txt_record_is_ignored(aiozc: AsyncZeroconf) -> None:
+    """An NSEC arriving after a real TXT record does not clear the properties."""
+    type_ = "_http._tcp.local."
+    registration_name = f"nsecaftertxt.{type_}"
+    host = "nsecaftertxt.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSService(
+                    registration_name,
+                    const._TYPE_SRV,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    0,
+                    0,
+                    80,
+                    host,
+                ),
+                r.DNSText(
+                    registration_name,
+                    const._TYPE_TXT,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    b"\x05ttl=2",
+                ),
+                r.DNSAddress(
+                    host,
+                    const._TYPE_A,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    socket.inet_aton("127.0.0.1"),
+                ),
+            ]
+        )
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    assert info.load_from_cache(zc) is True
+
+    nsec_record = r.DNSNsec(
+        registration_name,
+        const._TYPE_NSEC,
+        const._CLASS_IN | const._CLASS_UNIQUE,
+        120,
+        registration_name,
+        [const._TYPE_SRV],
+    )
+    info.async_update_records(zc, r.current_time_millis(), [RecordUpdate(nsec_record, None)])
+    assert info.properties == {b"ttl": b"2"}
+    assert info._is_complete
+
+
+def test_unhandled_record_type_at_service_name_is_ignored(zc: r.Zeroconf) -> None:
+    """A record type with no handler at the service name does not change state."""
+    type_ = "_http._tcp.local."
+    registration_name = f"unhandledrec.{type_}"
+    info = ServiceInfo(type_, registration_name)
+    ptr_record = r.DNSPointer(
+        registration_name,
+        const._TYPE_PTR,
+        const._CLASS_IN,
+        120,
+        f"other.{type_}",
+    )
+    info.async_update_records(zc, r.current_time_millis(), [RecordUpdate(ptr_record, None)])
+    assert info._txt_seen is False
+    assert info._is_complete is False
+
+
+@pytest.mark.asyncio
+async def test_own_nsec_response_does_not_complete_service(aiozc: AsyncZeroconf) -> None:
+    """The NSEC our own responder emits for a missing address type must not deny the TXT record."""
+    type_ = "_http._tcp.local."
+    registration_name = f"ownnsec.{type_}"
+    host = "ownnsec.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    registered = make_service_info(type_, registration_name, properties={"path": "/healthz/"}, server=host)
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg([registered.dns_service(), *registered.get_address_and_nsec_records()])
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    assert info.load_from_cache(zc) is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("resolver_class", "nsec_rdtypes"),
+    [
+        (r.AddressResolverIPv4, [const._TYPE_AAAA]),
+        (r.AddressResolverIPv6, [const._TYPE_A]),
+    ],
+)
+async def test_address_resolver_bails_on_nsec_denial(
+    aiozc: AsyncZeroconf,
+    resolver_class: Callable[[str], ServiceInfo],
+    nsec_rdtypes: list[int],
+) -> None:
+    """A cached NSEC denying the wanted address type fails the request without waiting."""
+    host = "nsec-addr-denial.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSNsec(
+                    host,
+                    const._TYPE_NSEC,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    host,
+                    nsec_rdtypes,
+                )
+            ]
+        )
+    )
+
+    resolver = resolver_class(host)
+    start = time.monotonic()
+    with patch.object(zc, "async_send") as mock_send:
+        assert await resolver.async_request(zc, 10000) is False
+    assert time.monotonic() - start < 2
+    # a cached denial fails without putting a query on the wire
+    assert mock_send.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_address_resolver_bails_on_live_nsec_denial(aiozc: AsyncZeroconf) -> None:
+    """An NSEC denial arriving mid request wakes the waiter and fails it early."""
+    host = "nsec-live-denial.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    resolver = r.AddressResolverIPv6(host)
+    start = time.monotonic()
+    with patch.object(zc, "async_send"):
+        task = asyncio.ensure_future(resolver.async_request(zc, 10000))
+        await asyncio.sleep(0.1)
+        assert not task.done()
+        zc.record_manager.async_updates_from_response(
+            mock_incoming_msg(
+                [
+                    r.DNSNsec(
+                        host,
+                        const._TYPE_NSEC,
+                        const._CLASS_IN | const._CLASS_UNIQUE,
+                        120,
+                        host,
+                        [const._TYPE_A],
+                    )
+                ]
+            )
+        )
+        assert await task is False
+    assert time.monotonic() - start < 2
+
+
+@pytest.mark.asyncio
+async def test_address_resolver_succeeds_despite_partial_denial(
+    aiozc: AsyncZeroconf,
+) -> None:
+    """Denial of one address family does not fail a resolver that accepts either."""
+    host = "nsec-partial-denial.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSAddress(
+                    host,
+                    const._TYPE_A,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    socket.inet_aton("127.0.0.1"),
+                ),
+                r.DNSNsec(
+                    host,
+                    const._TYPE_NSEC,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    host,
+                    [const._TYPE_A],
+                ),
+            ]
+        )
+    )
+
+    resolver = r.AddressResolver(host)
+    with patch.object(zc, "async_send"):
+        assert await resolver.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is True
+    assert resolver.addresses == [socket.inet_aton("127.0.0.1")]
+
+
+@pytest.mark.asyncio
+async def test_address_resolver_bails_when_other_family_is_present(
+    aiozc: AsyncZeroconf,
+) -> None:
+    """A cached NSEC denial bails a single family resolver even when the other family resolved."""
+    host = "nsec-mixed-denial.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSAddress(
+                    host,
+                    const._TYPE_A,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    socket.inet_aton("127.0.0.1"),
+                ),
+                r.DNSNsec(
+                    host,
+                    const._TYPE_NSEC,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    host,
+                    [const._TYPE_A],
+                ),
+            ]
+        )
+    )
+
+    resolver = r.AddressResolverIPv6(host)
+    start = time.monotonic()
+    with patch.object(zc, "async_send"):
+        assert await resolver.async_request(zc, 10000) is False
+    assert time.monotonic() - start < 2
+
+
+@pytest.mark.asyncio
+async def test_address_denial_cleared_on_new_request(aiozc: AsyncZeroconf) -> None:
+    """A denial only lasts one request; a host that gains the record resolves again."""
+    host = "nsec-denial-reset.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSNsec(
+                    host,
+                    const._TYPE_NSEC,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    host,
+                    [const._TYPE_A],
+                )
+            ]
+        )
+    )
+
+    resolver = r.AddressResolverIPv6(host)
+    with patch.object(zc, "async_send"):
+        assert await resolver.async_request(zc, 10000) is False
+
+    v6 = socket.inet_pton(socket.AF_INET6, "fd00::1")
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSAddress(
+                    host,
+                    const._TYPE_AAAA,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    v6,
+                )
+            ]
+        )
+    )
+    with patch.object(zc, "async_send"):
+        assert await resolver.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is True
+    assert resolver.ip_addresses_by_version(IPVersion.V6Only)
+
+
+@pytest.mark.asyncio
+async def test_service_info_bails_when_all_address_types_denied(
+    aiozc: AsyncZeroconf,
+) -> None:
+    """An NSEC denying both address families at the host fails the request early."""
+    type_ = "_http._tcp.local."
+    registration_name = f"alldenied.{type_}"
+    host = "alldenied-host.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                r.DNSService(
+                    registration_name,
+                    const._TYPE_SRV,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    0,
+                    0,
+                    80,
+                    host,
+                ),
+                r.DNSText(
+                    registration_name,
+                    const._TYPE_TXT,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    b"\x05ttl=2",
+                ),
+                r.DNSNsec(
+                    host,
+                    const._TYPE_NSEC,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    host,
+                    [const._TYPE_TXT],
+                ),
+            ]
+        )
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    start = time.monotonic()
+    with patch.object(zc, "async_send"):
+        assert await info.async_request(zc, 10000) is False
+    assert time.monotonic() - start < 2
+
+
+def test_nsec_for_unrelated_name_is_ignored(zc: r.Zeroconf) -> None:
+    """An NSEC for a name that is neither the service nor the server changes nothing."""
+    type_ = "_http._tcp.local."
+    registration_name = f"unrelatednsec.{type_}"
+    info = ServiceInfo(type_, registration_name)
+    foreign_nsec = r.DNSNsec(
+        "other-host.local.",
+        const._TYPE_NSEC,
+        const._CLASS_IN | const._CLASS_UNIQUE,
+        120,
+        "other-host.local.",
+        [const._TYPE_A],
+    )
+    info.async_update_records(zc, r.current_time_millis(), [RecordUpdate(foreign_nsec, None)])
+    assert info._ipv4_denied is False
+    assert info._ipv6_denied is False
+    assert info._txt_seen is False
+
+
+def _nsec(name: str, rdtypes: list[int]) -> r.DNSNsec:
+    return r.DNSNsec(
+        name,
+        const._TYPE_NSEC,
+        const._CLASS_IN | const._CLASS_UNIQUE,
+        120,
+        name,
+        rdtypes,
+    )
+
+
+def _srv(name: str, host: str) -> r.DNSService:
+    return r.DNSService(
+        name,
+        const._TYPE_SRV,
+        const._CLASS_IN | const._CLASS_UNIQUE,
+        120,
+        0,
+        0,
+        80,
+        host,
+    )
+
+
+@pytest.mark.parametrize("nsec_first", [False, True])
+def test_nsec_and_srv_in_same_batch_record_denial(zc: r.Zeroconf, nsec_first: bool) -> None:
+    """A batch with an SRV and an NSEC for its target records the denial in either order."""
+    type_ = "_http._tcp.local."
+    registration_name = f"nsecfirst.{type_}"
+    host = "nsecfirst-host.local."
+    info = ServiceInfo(type_, registration_name)
+    now = r.current_time_millis()
+    records = [_nsec(host, [const._TYPE_TXT]), _srv(registration_name, host)]
+    if not nsec_first:
+        records.reverse()
+    info.async_update_records(zc, now, [RecordUpdate(record, None) for record in records])
+    assert (info._ipv4_denied, info._ipv6_denied) == (True, True)
+
+
+def test_denial_is_reset_when_srv_changes_server(zc: r.Zeroconf) -> None:
+    """A denial learned for the old SRV target does not apply to a new target."""
+    type_ = "_http._tcp.local."
+    registration_name = f"srvmove.{type_}"
+    old_host = "srvmove-old.local."
+    new_host = "srvmove-new.local."
+    denied_host = "srvmove-denied.local."
+    info = ServiceInfo(type_, registration_name)
+    now = r.current_time_millis()
+
+    info.async_update_records(
+        zc,
+        now,
+        [
+            RecordUpdate(_srv(registration_name, old_host), None),
+            RecordUpdate(_nsec(old_host, [const._TYPE_TXT]), None),
+        ],
+    )
+    assert (info._ipv4_denied, info._ipv6_denied) == (True, True)
+
+    # moving to a host with no cached NSEC clears the denial
+    info.async_update_records(zc, now, [RecordUpdate(_srv(registration_name, new_host), None)])
+    assert (info._ipv4_denied, info._ipv6_denied) == (False, False)
+
+    # moving to a host with a cached NSEC re-establishes it from the cache
+    zc.cache.async_add_records([_nsec(denied_host, [const._TYPE_TXT])])
+    info.async_update_records(zc, now, [RecordUpdate(_srv(registration_name, denied_host), None)])
+    assert (info._ipv4_denied, info._ipv6_denied) == (True, True)
+
+
+def test_newer_nsec_clears_previous_denial(zc: r.Zeroconf) -> None:
+    """A later NSEC whose bitmap includes a previously denied type clears that denial."""
+    type_ = "_http._tcp.local."
+    registration_name = f"nsecrefresh.{type_}"
+    host = "nsecrefresh-host.local."
+    info = ServiceInfo(type_, registration_name)
+    now = r.current_time_millis()
+    info.async_update_records(zc, now, [RecordUpdate(_srv(registration_name, host), None)])
+
+    info.async_update_records(zc, now, [RecordUpdate(_nsec(host, [const._TYPE_A]), None)])
+    assert (info._ipv4_denied, info._ipv6_denied) == (False, True)
+
+    info.async_update_records(zc, now, [RecordUpdate(_nsec(host, [const._TYPE_A, const._TYPE_AAAA]), None)])
+    assert (info._ipv4_denied, info._ipv6_denied) == (False, False)
+
+
+def test_multiple_nsec_records_in_one_batch(zc: r.Zeroconf) -> None:
+    """A batch with more than one NSEC processes every denial it carries."""
+    type_ = "_http._tcp.local."
+    registration_name = f"multinsec.{type_}"
+    host = "multinsec-host.local."
+    info = ServiceInfo(type_, registration_name)
+    now = r.current_time_millis()
+    records = [
+        _srv(registration_name, host),
+        _nsec(registration_name, [const._TYPE_SRV]),
+        _nsec(host, [const._TYPE_TXT]),
+    ]
+    info.async_update_records(zc, now, [RecordUpdate(record, None) for record in records])
+    assert info._txt_seen is True
+    assert (info._ipv4_denied, info._ipv6_denied) == (True, True)
+
+
+@pytest.mark.asyncio
+async def test_v4_only_host_with_nsec_still_resolves(aiozc: AsyncZeroconf) -> None:
+    """The common case: a v4 only host denying AAAA via NSEC still resolves the service."""
+    type_ = "_http._tcp.local."
+    registration_name = f"v4onlynsec.{type_}"
+    host = "v4onlynsec-host.local."
+    await aiozc.zeroconf.async_wait_for_start()
+    zc = aiozc.zeroconf
+
+    zc.record_manager.async_updates_from_response(
+        mock_incoming_msg(
+            [
+                _srv(registration_name, host),
+                r.DNSText(
+                    registration_name,
+                    const._TYPE_TXT,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    b"\x05ttl=2",
+                ),
+                r.DNSAddress(
+                    host,
+                    const._TYPE_A,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    socket.inet_aton("127.0.0.1"),
+                ),
+                _nsec(host, [const._TYPE_A]),
+            ]
+        )
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    with patch.object(zc, "async_send"):
+        assert await info.async_request(zc, QUICK_REQUEST_TIMEOUT_MS) is True
+    assert info.properties == {b"ttl": b"2"}
+    assert info.addresses == [socket.inet_aton("127.0.0.1")]
+
+
+def test_legacy_inverted_nsec_at_own_name_does_not_fail_request(zc: r.Zeroconf) -> None:
+    """A pre-0.150.4 inverted NSEC from a service with server == name never denies the request."""
+    type_ = "_http._tcp.local."
+    registration_name = f"legacyownname.{type_}"
+    info = ServiceInfo(type_, registration_name)
+    now = r.current_time_millis()
+    # legacy v4 only responder registered without server=: NSEC at its own
+    # name with the inverted bitmap listing the missing AAAA
+    info.async_update_records(
+        zc,
+        now,
+        [
+            RecordUpdate(_srv(registration_name, registration_name), None),
+            RecordUpdate(_nsec(registration_name, [const._TYPE_AAAA]), None),
+        ],
+    )
+    assert (info._ipv4_denied, info._ipv6_denied) == (True, False)
+    assert info._is_denied is False
+
+    info.async_update_records(
+        zc,
+        now,
+        [
+            RecordUpdate(
+                r.DNSAddress(
+                    registration_name,
+                    const._TYPE_A,
+                    const._CLASS_IN | const._CLASS_UNIQUE,
+                    120,
+                    socket.inet_aton("127.0.0.1"),
+                ),
+                None,
+            )
+        ],
+    )
+    assert info.addresses == [socket.inet_aton("127.0.0.1")]
+    assert info._is_denied is False
+
+
+def test_denied_flag_is_ignored_when_address_is_held(zc: r.Zeroconf) -> None:
+    """A denial never vetoes an address the client already holds."""
+    type_ = "_http._tcp.local."
+    registration_name = f"guardednsec.{type_}"
+    host = "guardednsec-host.local."
+    zc.cache.async_add_records(
+        [
+            _srv(registration_name, host),
+            r.DNSAddress(
+                host,
+                const._TYPE_A,
+                const._CLASS_IN | const._CLASS_UNIQUE,
+                120,
+                socket.inet_aton("127.0.0.1"),
+            ),
+            _nsec(host, [const._TYPE_TXT]),
+        ]
+    )
+
+    info = ServiceInfo(type_, registration_name)
+    # incomplete only because the TXT record is still missing
+    assert info.load_from_cache(zc) is False
+    assert (info._ipv4_denied, info._ipv6_denied) == (True, True)
+    assert info.addresses == [socket.inet_aton("127.0.0.1")]
+    # the held A record keeps the request querying instead of fast failing
+    assert info._is_denied is False
+
+
+@pytest.mark.parametrize(
+    "addresses",
+    [
+        ["10.7.4.2", "2001:db8::1"],
+        [socket.inet_aton("10.7.4.2"), socket.inet_pton(socket.AF_INET6, "2001:db8::1")],
+        ["10.7.4.2", socket.inet_pton(socket.AF_INET6, "2001:db8::1")],
+    ],
+)
+def test_addresses_setter_accepts_str_and_bytes(addresses):
+    """The addresses setter accepts str and bytes addresses."""
+    type_ = "_http._tcp.local."
+    info = ServiceInfo(type_, f"xxxyyy.{type_}", 80, server="spare-rig.local.")
+    info.addresses = addresses
+    assert info.parsed_addresses() == ["10.7.4.2", "2001:db8::1"]
+
+    info = ServiceInfo(type_, f"xxxyyy.{type_}", 80, server="spare-rig.local.", addresses=addresses)
+    assert info.parsed_addresses() == ["10.7.4.2", "2001:db8::1"]
+
+
+def test_addresses_setter_rejects_invalid_address():
+    """The addresses setter raises TypeError for invalid addresses."""
+    type_ = "_http._tcp.local."
+    info = ServiceInfo(type_, f"xxxyyy.{type_}", 80, server="spare-rig.local.")
+    with pytest.raises(TypeError, match="Addresses must either be"):
+        info.addresses = ["not an address"]
