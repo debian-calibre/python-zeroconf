@@ -1,3 +1,13 @@
+python-zeroconf (0.151.3-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.151.3
+  * Drop unused line: Rules-Requires-Root
+  * Drop obsolete disabled test names
+  * Disable some tests that requires external network
+  * Rediff patches: Update CodSpeed fixup
+
+ -- YOKOTA Hiroshi <yokota.hgml@gmail.com>  Tue, 01 Sep 2026 11:08:54 +0900
+
 python-zeroconf (0.150.0-2) unstable; urgency=medium
 
   * Upgrade debhelper-compat to v14
