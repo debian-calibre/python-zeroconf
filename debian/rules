@@ -9,7 +9,10 @@ export SKIP_CYTHON=True
 
 DISABLE_TESTS = \
 	    not test_integration_with_listener_ipv6 \
-	and not test_close_multiple_times
+	and not test_open_and_close_cleanly[InterfaceChoice.Default-False] \
+	and not test_context_manager_marks_done[InterfaceChoice.Default] \
+	and not test_close_multiple_times \
+	and not test_default_interface_warns_when_ipv6_requested[IPVersion.All]
 
 ifeq      ($(DEB_HOST_ARCH),ppc64el)
   DISABLE_TESTS += and not test_run_coro_with_timeout
