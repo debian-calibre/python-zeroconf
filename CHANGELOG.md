@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v0.153.0 (2026-10-31)
+
+### Features
+
+- Drop Python 3.10 support ([#1935](https://github.com/python-zeroconf/python-zeroconf/pull/1935),
+  [`7fd81ac`](https://github.com/python-zeroconf/python-zeroconf/commit/7fd81ac5d3ce1846671e9b8e1fab0b425b112f67))
+
+
+## v0.152.1 (2026-10-31)
+
+### Bug Fixes
+
+- Don't suppress a scoped copy of a packet as a duplicate of an unscoped one
+  ([#1926](https://github.com/python-zeroconf/python-zeroconf/pull/1926),
+  [`737c667`](https://github.com/python-zeroconf/python-zeroconf/commit/737c6675a66428624b0c2382d460cd600f11838e))
+
+
 ## v0.152.0 (2026-10-31)
 
 ### Features
